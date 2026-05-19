@@ -1346,9 +1346,55 @@ Kᴀɴᴀɪʀᴏ • Exᴄʜᴀɴɢᴇ
             margin-bottom: 10px;
             color: #666;
         }
+        
+        /* Splash screen styles */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Logo styling */
+        .logo {
+            max-width: 300px;
+            width: 80%;
+            animation: fadeIn 1s ease;
+        }
+
+        /* Fade in animation for logo */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Main content (initially hidden) */
+        #main-content {
+            display: none;
+        }
+        
     </style>
 </head>
 <body>
+    
+    <!-- Splash Screen with Logo -->
+    <div id="splash-screen">
+        <img src="kanairopng.png" alt="Logo" class="logo">
+    </div>
+    
     <div class="app-header">
         <div class="container">
             <div class="logo">
@@ -8102,6 +8148,25 @@ ${JSON.stringify(vcData.credentialSubject, null, 2)}
     NOTE: No system is 100% unhackable, but this provides strong client-side obfuscation
     and makes it extremely difficult for average users to view or copy your source code.
 -->
+
+
+    <script>
+        // Show splash screen for 5 seconds, then fade out and show main content
+        setTimeout(function() {
+            var splash = document.getElementById('splash-screen');
+            var mainContent = document.getElementById('main-content');
+            
+            // Fade out splash screen
+            splash.style.opacity = '0';
+            
+            // After fade out, remove splash screen and show main content
+            setTimeout(function() {
+                splash.style.display = 'none';
+                mainContent.style.display = 'block';
+            }, 500);
+        }, 5000); // 5000 milliseconds = 5 seconds
+    </script>
+
 
 
 </body>
