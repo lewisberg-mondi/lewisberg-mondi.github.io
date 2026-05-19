@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-USD AI </title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .ai-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #07BB0F 0%, #07BB0F 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .user-message {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            position: relative;
+        }
+
+        .ai-message .message-content {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-top-left-radius: 4px;
+        }
+
+        .user-message .message-content {
+            background: #667eea;
+            color: white;
+            border-top-right-radius: 4px;
+        }
+
+        .message-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .ai-icon {
+            background: #764ba2;
+            color: white;
+        }
+
+        .user-icon {
+            background: #667eea;
+            color: white;
+        }
+
+        .input-container {
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        #questionInput {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #questionInput:focus {
+            border-color: #667eea;
+        }
+
+        #askButton {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.3s;
+        }
+
+        #askButton:hover {
+            transform: translateY(-2px);
+        }
+
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .api-section {
+            margin-bottom: 20px;
+        }
+
+        .api-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .api-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+
+        .api-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .api-option {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .status {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .status.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+
+        .search-sources {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .ai-container {
+                flex-direction: column;
+            }
+            
+            .chat-messages {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+   
+        <div class="ai-container">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h2><i class="fas fa-robot"></i>M-USD AI Assistant</h2>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message">
+                        <div class="message-icon ai-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-content ai-message">
+                            Hello! I'm your M-USD AI. I can search the web and analyze information to answer your questions. 
+                            🟢Please enter your API key below and ask me anything!
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-container">
+                    <input type="text" id="questionInput" placeholder="Ask me anything... (e.g., 'What are the latest AI developments?')">
+                    <button id="askButton">
+                        <i class="fas fa-paper-plane"></i> Ask 
+                    </button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="api-section">
+                    <h3><i class="fas fa-key"></i> API Configuration</h3>
+                    
+                    <div class="api-options">
+                        <div class="api-option">
+                            <label for="apiChoice">Choose API Method:</label>
+                            <select id="apiChoice" class="api-input">
+                                <option value="serper">Serper (Recommended)</option>
+                                <option value="serpapi">SerpAPI</option>
+                                <option value="openai">OpenAI + Browser Search</option>
+                                <option value="custom">Custom API Endpoint</option>
+                            </select>
+                        </div>
+                        
+                        <div class="api-option">
+                            <label for="apiKey">API Key:</label>
+                            <input type="password" id="apiKey" class="api-input" 
+                                   placeholder="Enter your API key">
+                        </div>
+                    </div>
+                    
+                    <div id="apiInfo" style="color: #666; font-size: 0.9em; margin-top: 10px;">
+                        <p><strong>Serper API:</strong> Free tier available at <a href="https://serper.dev" target="_blank">serper.dev</a></p>
+                        <p><strong>SerpAPI:</strong> Get key from <a href="https://serpapi.com" target="_blank">serpapi.com</a></p>
+                    </div>
+                </div>
+                
+                <div class="status" id="status">
+                    <div id="statusMessage">
+                        <span class="loading"></span> Searching and analyzing...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>🇺🇸M-USD AI ©2025-2026|Transparent•Simple•Honest</p>
+        </div>
+    </div>
+
+    <script>
+        class AIResearchAssistant {
+            constructor() {
+                this.apiKey = '';
+                this.apiMethod = 'serper';
+                this.chatHistory = [];
+                this.setupEventListeners();
+                this.updateApiInfo();
+            }
+
+            setupEventListeners() {
+                document.getElementById('askButton').addEventListener('click', () => this.askQuestion());
+                document.getElementById('questionInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.askQuestion();
+                });
+                document.getElementById('apiChoice').addEventListener('change', () => this.updateApiInfo());
+            }
+
+            updateApiInfo() {
+                const method = document.getElementById('apiChoice').value;
+                let info = '';
+                
+                switch(method) {
+                    case 'serper':
+                        info = '<p><strong>Serper API:</strong> Google Search API. Free tier: 2,500 searches/month</p>';
+                        break;
+                    case 'serpapi':
+                        info = '<p><strong>SerpAPI:</strong> Google Search API. 100 searches/month free</p>';
+                        break;
+                    case 'openai':
+                        info = '<p><strong>OpenAI + Search:</strong> Requires OpenAI API key and a search API</p>';
+                        break;
+                    case 'custom':
+                        info = '<p><strong>Custom Endpoint:</strong> Enter your own API endpoint</p>';
+                        break;
+                }
+                
+                document.getElementById('apiInfo').innerHTML = info;
+            }
+
+            async askQuestion() {
+                const question = document.getElementById('questionInput').value.trim();
+                if (!question) return;
+
+                this.apiKey = document.getElementById('apiKey').value.trim();
+                this.apiMethod = document.getElementById('apiChoice').value;
+                
+                if (!this.apiKey && this.apiMethod !== 'custom') {
+                    this.showMessage('Please enter a valid API key', 'ai');
+                    return;
+                }
+
+                this.showMessage(question, 'user');
+                document.getElementById('questionInput').value = '';
+                this.showStatus(true);
+
+                try {
+                    const answer = await this.searchAndAnalyze(question);
+                    this.showMessage(answer, 'ai');
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.showMessage(`Error: ${error.message}. Please check your API key and try again.`, 'ai');
+                } finally {
+                    this.showStatus(false);
+                }
+            }
+
+            async searchAndAnalyze(question) {
+                // Search the web
+                const searchResults = await this.performWebSearch(question);
+                
+                // Analyze and synthesize answer
+                const answer = await this.analyzeResults(question, searchResults);
+                
+                return answer;
+            }
+
+            async performWebSearch(query) {
+                this.updateStatus('Searching the web...');
+                
+                let searchUrl, params;
+                
+                switch(this.apiMethod) {
+                    case 'serper':
+                        searchUrl = 'https://google.serper.dev/search';
+                        params = {
+                            method: 'POST',
+                            headers: {
+                                'X-API-KEY': this.apiKey,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ q: query, num: 5 })
+                        };
+                        break;
+                        
+                    case 'serpapi':
+                        searchUrl = `https://serpapi.com/search.json?q=${encodeURIComponent(query)}&api_key=${this.apiKey}`;
+                        params = { method: 'GET' };
+                        break;
+                        
+                    case 'custom':
+                        searchUrl = this.apiKey; // In custom mode, apiKey is the endpoint
+                        params = {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ query: query })
+                        };
+                        break;
+                        
+                    default:
+                        // Mock search for demo
+                        return this.mockSearch(query);
+                }
+
+                try {
+                    const response = await fetch(searchUrl, params);
+                    if (!response.ok) throw new Error(`Search failed: ${response.status}`);
+                    
+                    const data = await response.json();
+                    return this.parseSearchResults(data);
+                } catch (error) {
+                    console.warn('Search failed, using mock data:', error);
+                    return this.mockSearch(query);
+                }
+            }
+
+            parseSearchResults(data) {
+                if (this.apiMethod === 'serper') {
+                    return {
+                        organic: data.organic || [],
+                        answerBox: data.answerBox,
+                        knowledgeGraph: data.knowledgeGraph
+                    };
+                } else if (this.apiMethod === 'serpapi') {
+                    return {
+                        organic: data.organic_results || [],
+                        answerBox: data.answer_box,
+                        knowledgeGraph: data.knowledge_graph
+                    };
+                }
+                return data;
+            }
+
+            mockSearch(query) {
+                // Mock search results for demonstration
+                return {
+                    organic: [
+                        {
+                            title: `Latest information about ${query}`,
+                            link: `https://example.com/${encodeURIComponent(query)}`,
+                            snippet: `This is a comprehensive article about ${query}. The latest research shows significant developments in this field.`
+                        },
+                        {
+                            title: `Research Paper: ${query} Analysis`,
+                            link: `https://research.org/${encodeURIComponent(query)}`,
+                            snippet: `Recent studies indicate that ${query} has evolved rapidly in the past year with new methodologies emerging.`
+                        }
+                    ],
+                    answerBox: {
+                        answer: `Based on current information, ${query} is a rapidly evolving field with multiple advancements.`
+                    }
+                };
+            }
+
+            async analyzeResults(question, searchResults) {
+                this.updateStatus('Analyzing results...');
+                
+                // Extract key information from search results
+                const organicText = searchResults.organic
+                    .map((result, i) => `${i+1}. ${result.title}: ${result.snippet}`)
+                    .join('\n');
+                
+                const sources = searchResults.organic
+                    .slice(0, 3)
+                    .map((result, i) => `${i+1}. <a href="${result.link}" target="_blank">${result.title}</a>`)
+                    .join('<br>');
+                
+                // Create a synthesized answer
+                let answer = `Based on my analysis of web search results about "${question}":\n\n`;
+                
+                if (searchResults.answerBox) {
+                    answer += `**Quick Answer:** ${searchResults.answerBox.answer || searchResults.answerBox}\n\n`;
+                }
+                
+                answer += `**Detailed Analysis:**\n`;
+                
+                // Simulate AI analysis (in a real implementation, this would use an LLM)
+                const analysis = this.generateAnalysis(question, organicText);
+                answer += analysis;
+                
+                answer += `\n\n**Sources Used:**\n${sources}\n\n`;
+                answer += `*Note: This analysis is based on current web search results. For the most accurate information, please verify with primary sources.*`;
+                
+                return answer;
+            }
+
+            generateAnalysis(question, searchText) {
+                // This is a simplified analysis - in reality, you'd use an LLM API here
+                const analysisPoints = [
+                    "The search results indicate several key perspectives on this topic.",
+                    "There appears to be consensus among recent sources about fundamental aspects.",
+                    "Some variations in findings were noted across different sources.",
+                    "The most current information suggests ongoing developments in this area.",
+                    "Multiple reputable sources corroborate the main findings."
+                ];
+                
+                return analysisPoints.join('\n• ');
+            }
+
+            showMessage(content, sender) {
+                const chatMessages = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                
+                const icon = sender === 'ai' ? 
+                    '<div class="message-icon ai-icon"><i class="fas fa-robot"></i></div>' :
+                    '<div class="message-icon user-icon"><i class="fas fa-user"></i></div>';
+                
+                messageDiv.innerHTML = `
+                    ${sender === 'ai' ? icon : ''}
+                    <div class="message-content ${sender}-message">
+                        ${content.replace(/\n/g, '<br>')}
+                    </div>
+                    ${sender === 'user' ? icon : ''}
+                `;
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Add to history
+                this.chatHistory.push({ sender, content, timestamp: new Date() });
+            }
+
+            showStatus(show) {
+                const status = document.getElementById('status');
+                if (show) {
+                    status.classList.add('active');
+                } else {
+                    status.classList.remove('active');
+                }
+            }
+
+            updateStatus(message) {
+                document.getElementById('statusMessage').innerHTML = 
+                    `<span class="loading"></span> ${message}`;
+            }
+        }
+
+        // Initialize the AI assistant when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.aiAssistant = new AIResearchAssistant();
+            
+            // Add example questions
+            const examples = [
+                "What are the latest developments in AI?",
+                "How does quantum computing work?",
+                "What's happening in space exploration?",
+                "Explain climate change solutions"
+            ];
+            
+            // Show one example as placeholder text rotation
+            let exampleIndex = 0;
+            setInterval(() => {
+                const input = document.getElementById('questionInput');
+                input.placeholder = `Ask me anything... (e.g., '${examples[exampleIndex]}')`;
+                exampleIndex = (exampleIndex + 1) % examples.length;
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

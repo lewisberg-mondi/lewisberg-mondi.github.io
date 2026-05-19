@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self'; 
+                   script-src 'self' 'unsafe-inline'; 
+                   style-src 'self' 'unsafe-inline';
+                   connect-src 'self'">
+    <title>M-USD</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
+        <div class="container">
+            <div class="card">
+                 <h1>📱M-USD</h1>
+                <div class="form-group">
+                    <input type="tel" id="phoneNumber" placeholder="+000 000 000 000" pattern="[\+\d\s\-]+">
+                    <input type="password" id="password" placeholder="Password">
+                    <button onclick="login()" class="btn primary">Login</button>
+                    <button onclick="showRegister()" class="btn secondary">Create Account</button>
+                </div>
+                <div class="security-notice">
+                    <h3>🔒 Security Features</h3>
+                    <ul>
+                        <li>✅ Simple</li>
+                        <li>✅ Transparent</li>
+                            <li>✅ Honest</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Register Screen -->
+    <div id="registerScreen" class="screen">
+        <div class="container">
+            <div class="card">
+                <h1>Create Account</h1>
+                <div class="form-group">
+                    <input type="tel" id="regPhone" placeholder="+000 000 000 000">
+                    <input type="password" id="regPassword" placeholder="Create Password">
+                    <input type="password" id="confirmPassword" placeholder="Confirm Password">
+                    <p>🔴NB : Store your password and number securely, Once lost can't be recovered</p>
+                    <button onclick="register()" class="btn primary">Create Wallet</button>
+                    <button onclick="showLogin()" class="btn secondary">Back to Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="screen">
+        <div class="container">
+            <header>
+                <h1>📱M-USD</h1>
+                <div class="user-info">
+                    <span id="userPhone"></span>
+                 <button onclick="logout()" class="btn small">( Logout )</button>
+                </div>
+            </header>
+            <!-- Balance Card -->
+            <div class="card balance-card">
+                <h2>Your Balance</h2>
+                <div class="balance" id="balanceAmount">0.00 </div>
+                <div class="currency">( United States Dollar )</div>
+            </div>
+            <!-- Connection Status Panel -->
+            <div class="connection-panel">
+                <div class="connection-actions">
+                      <button onclick="showSend()" class="action-btn">
+                    <span>📤</span>
+                    Send USD
+                </button>
+                <button onclick="showHistory()" class="action-btn">
+                    <span>📊</span>
+                   Transaction History
+                </button>
+        <button onclick="showDepositOptions()" class="btn primary" style="padding: 15px;">
+            🏦 Add Funds
+        </button>
+                </div>
+            </div>
+            <!-- Send Money Section -->
+            <div id="sendSection" class="section">
+                <h2>Send USD</h2>
+                <div class="form-group">
+                    <input type="tel" id="recipientPhone" placeholder="Recipient Phone Number">
+                    <input type="number" id="sendAmount" placeholder="Amount" step="0.01">
+                    <input type="password" id="txPassword" placeholder="Confirm Password">
+                    <div id="feeInfo" style="display: none;"></div>
+                    <button onclick="sendMoney()" class="btn primary">Send Now</button>
+                    <button onclick="hideSend()" class="btn secondary">Cancel</button>
+                </div>
+            </div>
+            <!-- Transaction History -->
+            <div id="historySection" class="section">
+                <h2>Transaction History</h2>
+                <div id="transactionHistory" class="transaction-list">
+                    <!-- Transactions will be loaded here -->
+                </div>
+                <button onclick="hideHistory()" class="btn secondary">Close</button>
+            </div>
+            <!-- Security Info -->
+            <div class="security-info">
+                <h3>🔐 Security Status</h3>
+                <div class="security-items">
+                    <div class="security-item">
+                        <span class="status good">●</span>
+                        Simple
+                    </div>
+                    <div class="security-item">
+                        <span class="status good">●</span>
+                        Transparent 
+                    </div>
+                    <div class="security-item" id="sessionStatus">
+                        <span class="status good">●</span>
+                        Honest
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Notification System -->
+    <div id="notification" class="notification"></div>
+    <!-- Load Scripts in Correct Order -->
+    <script src="config.js"></script>
+    <script src="security.js"></script>
+    <script src="blockchain.js"></script>
+    <script src="database.js"></script>
+    <script src="compliance.js"></script>
+    <script src="backup-recovery.js"></script>
+    <script src="admin-auth.js"></script>
+    <script src="admin.js"></script>
+    <script src="analytics.js"></script>
+    <script src="ai-monitor.js"></script>
+    <script src="notification-system.js"></script>
+    <script src="security-enhanced.js"></script>
+    <script src="app.js"></script>
+    <script src="payment-gateway.js"></script>
+    <script src="mobile-enhancement.js"></script>
+    <script src="bank-connection.js"></script>
+    <script src="i18n.js"></script>
+<!-- Add after other scripts -->
+<script src="chat-system.js"></script>
+    <!-- Register Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => console.log('SW registered'))
+                .catch(error => console.log('SW registration failed'));
+        }
+    </script>
+<!-- Add this right before closing body tag -->
+<div id="secretAdmin" style="position: fixed; bottom: 10px; left: 10px; opacity: 0.1; transition: opacity 0.3s;">
+<button onclick="window.location.href='admin.html'" class="btn small" style="background: #48bb78; color: white; margin: 0 5px;">🔧 </butto
+</div>
+<script>
+    // Secret admin access - triple click anywhere to reveal
+    let clickCount = 0;
+    let clickTimer;
+    
+    document.addEventListener('click', function() {
+        clickCount++;
+        clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => { clickCount = 0; }, 1000);
+        
+        if (clickCount >= 33) {
+            document.getElementById('secretAdmin').style.opacity = '1';
+            setTimeout(() => {
+                document.getElementById('secretAdmin').style.opacity = '0.1';
+            }, 5000);
+            clickCount = 0;
+        }
+    });
+</script>
+</body>
+</html>

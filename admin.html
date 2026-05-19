@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self'; 
+                   script-src 'self' 'unsafe-inline'; 
+                   style-src 'self' 'unsafe-inline';
+                   connect-src 'self'">
+    <title>Admin Panel - M-USD</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-container {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 15px;
+            min-height: 100vh;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .admin-header {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .admin-sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .admin-main {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+        
+        .admin-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .action-card {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .action-card h3 {
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+        
+        .section-content {
+            display: none;
+        }
+        
+        .section-content.active {
+            display: block;
+        }
+        
+        .user-list, .transaction-list {
+            max-height: 500px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        
+        .user-item, .transaction-item {
+            background: #f7fafc;
+            padding: 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #4299e1;
+        }
+        
+        .user-item.suspended {
+            border-left-color: #e53e3e;
+            background: #fed7d7;
+        }
+        
+        .user-item.frozen {
+            border-left-color: #ed8936;
+            background: #fefcbf;
+        }
+        
+        .search-box {
+            margin: 15px 0;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        
+        .nav-item {
+            padding: 15px;
+            margin: 5px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            background: #f7fafc;
+            text-align: left;
+            width: 100%;
+            font-size: 16px;
+        }
+        
+        .nav-item:hover {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .nav-item.active {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .system-status {
+            background: #f0fff4;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #48bb78;
+        }
+        
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .security-items {
+            margin: 10px 0;
+        }
+        
+        .security-item {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Login -->
+    <div id="adminLoginScreen" class="screen active">
+        <div class="login-container">
+            <div class="card">
+                <h1>🔧 Admin Panel</h1>
+                <div class="form-group">
+                    <input type="password" id="adminPassword" placeholder="Admin Password">
+                    <button onclick="adminLogin()" class="btn primary">Login as Admin</button>
+                </div>
+                <div class="security-notice">
+                    <h3>⚠️ Admin Access Only</h3>
+                    <p>This panel provides full system control. Use with caution.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="screen">
+        <div class="admin-container">
+            <!-- Header -->
+            <div class="admin-header">
+                <h1>🔧 M-USD Admin Panel</h1>
+                <div class="user-info">
+                    <span>System Administrator</span>
+                    <button onclick="adminLogout()" class="btn small danger">Logout</button>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="admin-sidebar">
+                <h3>Navigation</h3>
+                <div class="nav-menu">
+                    <button class="nav-item active" onclick="showSection('dashboard')">
+                        📊 Dashboard
+                    </button>
+                    <button class="nav-item" onclick="showSection('users')">
+                        👥 User Management
+                    </button>
+                    <button class="nav-item" onclick="showSection('transactions')">
+                        📋 Transactions
+                    </button>
+                    <button class="nav-item" onclick="showSection('system')">
+                        ⚙️ System Controls
+                    </button>
+                    <button class="nav-item" onclick="window.location.href='admin-chat.html'">
+                        💬 Live Chat Support
+                    </button>
+                </div>
+                
+                <!-- System Status -->
+                <div class="system-status">
+                    <h4>System Status</h4>
+                    <div id="systemStatus">
+                        <!-- Status will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="admin-main">
+                <!-- Dashboard Section -->
+                <div id="dashboardSection" class="section-content active">
+                    <h2>📊 System Overview</h2>
+                    <!-- Statistics Cards -->
+                    <div class="admin-stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalUsers">0</div>
+                            <div class="stat-label">Total Users</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalTransactions">0</div>
+                            <div class="stat-label">Total Transactions</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalBalance">0</div>
+                            <div class="stat-label">Circulating Amount (USD)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalFees">0</div>
+                            <div class="stat-label">Total Fees Collected (USD)</div>
+                        </div>
+                    </div>
+                    
+                    <!-- System Actions -->
+                    <div class="admin-actions">
+                        <div class="action-card" onclick="runSecurityScan()">
+                            <h3>🔒 Security Scan</h3>
+                            <p>Run comprehensive security check</p>
+                        </div>
+                        <div class="action-card" onclick="emergencyUnlockAll()">
+                            <h3>🔓 Emergency Unlock</h3>
+                            <p>Unlock all locked accounts</p>
+                        </div>
+                        <div class="action-card" onclick="createBackup()">
+                            <h3>💾 Create Backup</h3>
+                            <p>Backup all system data</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Management Section -->
+                <div id="usersSection" class="section-content">
+                    <h2>👥 User Management</h2>
+                    <div class="search-box">
+                        <input type="text" id="userSearch" placeholder="Search by phone number..." 
+                               oninput="searchUsers()" style="width: 100%; padding: 12px;">
+                    </div>
+                    <div id="usersList" class="user-list">
+                        <!-- Users will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Transactions Section -->
+                <div id="transactionsSection" class="section-content">
+                    <h2>📋 All Transactions</h2>
+                    <div id="allTransactionsList" class="transaction-list">
+                        <!-- Transactions will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- System Controls Section -->
+                <div id="systemSection" class="section-content">
+                    <h2>⚙️ System Controls</h2>
+                    <div class="admin-actions">
+                        <div class="action-card" onclick="emergencyUnlockAll()">
+                            <h3>🔓 Emergency Unlock</h3>
+                            <p>Unlock all locked accounts</p>
+                        </div>
+                        <div class="action-card" onclick="clearAllData()">
+                            <h3>🗑️ Clear Data</h3>
+                            <p>Reset all system data</p>
+                        </div>
+                        <div class="action-card" onclick="runSecurityScan()">
+                            <h3>🔒 Security Scan</h3>
+                            <p>Run security audit</p>
+                        </div>
+                        <div class="action-card" onclick="createBackup()">
+                            <h3>💾 Create Backup</h3>
+                            <p>Backup system data</p>
+                        </div>
+                    </div>
+                    
+                    <div class="system-status">
+                        <h4>System Information</h4>
+                        <div id="systemInfo">
+                            <!-- System info will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Action Modal -->
+    <div id="userActionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">User Actions</h2>
+                <button onclick="closeModal()" class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent">
+                    <!-- Modal content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification System -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Load Scripts -->
+    <script src="config.js"></script>
+    <script src="security.js"></script>
+    <script src="blockchain.js"></script>
+    <script src="database.js"></script>
+    <script src="compliance.js"></script>
+    <script src="backup-recovery.js"></script>
+    <script src="ai-monitor.js"></script>
+    <script src="security-enhanced.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

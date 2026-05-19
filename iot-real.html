@@ -1,0 +1,3825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>📡 M-USD Sensor Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    
+    
+    
+    
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --primary: #4299e1;
+            --success: #48bb78;
+            --warning: #ed8936;
+            --danger: #f56565;
+            --dark: #2d3748;
+            --darker: #1a202c;
+            --light: #e2e8f0;
+            --lighter: #f7fafc;
+            --gray: #718096;
+            --text-dark: #000000;
+            --text-light: #4a5568;
+        }
+        
+        body {
+            background: #8D9097;
+            color: var(--text-dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 15px;
+            background: #B5AFAF;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        
+        /* Navigation */
+        .navbar {
+            background: #FFFFFE;
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary);
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .nav-links {
+            display: flex;
+            overflow-x: auto;
+            gap: 5px;
+            padding-bottom: 10px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        
+        .nav-links::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .nav-btn {
+            padding: 10px 15px;
+            background: transparent;
+            border: 2px solid transparent;
+            color: var(--text-light);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            white-space: nowrap;
+            flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+        
+        .nav-btn:hover, .nav-btn:active {
+            background: rgba(99, 179, 237, 0.1);
+            color: var(--primary);
+        }
+        
+        .nav-btn.active {
+            background: rgba(99, 179, 237, 0.2);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8f9fa;
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
+            justify-content: center;
+            color: var(--text-dark);
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--danger);
+        }
+        
+        .status-dot.connected {
+            background-color: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* Real Sensor Indicators */
+        .sensor-indicators {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .sensor-indicator {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-dark);
+        }
+        
+        .sensor-active {
+            background: rgba(72, 187, 120, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(72, 187, 120, 0.3);
+        }
+        
+        .sensor-inactive {
+            background: rgba(245, 101, 101, 0.2);
+            color: var(--danger);
+            border: 1px solid rgba(245, 101, 101, 0.3);
+        }
+        
+        /* Main Grid */
+        .main-grid {
+            display: block;
+            gap: 20px;
+            min-height: calc(100vh - 150px);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            height: fit-content;
+            margin-bottom: 20px;
+            width: 100%;
+            color: var(--text-dark);
+        }
+        
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+        
+        .sidebar-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(66, 153, 225, 0.3);
+        }
+        
+        /* Sensor Cards */
+        .sensor-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            touch-action: manipulation;
+            color: var(--text-dark);
+        }
+        
+        .sensor-card:active {
+            border-color: var(--primary);
+            transform: scale(0.98);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sensor-card.active {
+            border-color: var(--success);
+        }
+        
+        .sensor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .sensor-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-dark);
+        }
+        
+        .sensor-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 10px 0;
+            color: var(--text-dark);
+        }
+        
+        .sensor-unit {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-left: 2px;
+        }
+        
+        .value-normal { color: var(--success); }
+        .value-warning { color: var(--warning); }
+        .value-danger { color: var(--danger); }
+        
+        .sensor-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+        
+        .sensor-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 10px 0;
+            font-size: 0.8rem;
+            color: var(--text-dark);
+        }
+        
+        /* Charts Container */
+        .charts-container {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            min-height: 500px;
+            width: 100%;
+            color: var(--text-dark);
+        }
+        
+        .chart-header {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            text-align: center;
+        }
+        
+        .chart-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            height: 250px;
+            position: relative;
+            width: 100%;
+        }
+        
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .dashboard-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            touch-action: manipulation;
+            color: var(--text-dark);
+        }
+        
+        .dashboard-card:active {
+            border-color: var(--primary);
+            transform: scale(0.98);
+        }
+        
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Real-time Data Stream */
+        .data-stream {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            color: var(--text-dark);
+        }
+        
+        .data-stream-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+        }
+        
+        .data-entry {
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            background: #ffffff;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            animation: slideIn 0.3s ease;
+            word-break: break-word;
+            color: var(--text-dark);
+        }
+        
+        .data-entry.sensor { border-left-color: var(--success); }
+        .data-entry.command { border-left-color: var(--warning); }
+        .data-entry.alert { border-left-color: var(--danger); }
+        .data-entry.system { border-left-color: var(--primary); }
+        
+        /* Controls */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+        
+        .control-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            cursor: pointer;
+            touch-action: manipulation;
+            color: var(--text-dark);
+        }
+        
+        .control-card:active {
+            border-color: var(--primary);
+            transform: scale(0.98);
+        }
+        
+        .control-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.3s;
+            background: #4a5568;
+            color: white;
+            font-size: 0.85rem;
+            touch-action: manipulation;
+            user-select: none;
+            min-height: 44px; /* Better touch target */
+        }
+        
+        .btn:active {
+            opacity: 0.9;
+            transform: scale(0.98);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #3182ce 100%);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #38a169 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #e53e3e 100%);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning) 0%, #dd6b20 100%);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            min-height: 36px;
+        }
+        
+        /* Alerts */
+        .alerts-container {
+            position: fixed;
+            top: 80px;
+            left: 10px;
+            right: 10px;
+            z-index: 1000;
+            max-width: 100%;
+        }
+        
+        .alert {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-left: 5px solid var(--warning);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            animation: slideInRight 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            word-break: break-word;
+            color: var(--text-dark);
+        }
+        
+        .alert-success { border-left-color: var(--success); }
+        .alert-warning { border-left-color: var(--warning); }
+        .alert-danger { border-left-color: var(--danger); }
+        .alert-info { border-left-color: var(--primary); }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .alert-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            font-size: 0.9rem;
+        }
+        
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+            -webkit-overflow-scrolling: touch;
+            overflow-y: auto;
+        }
+        
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            max-height: 85vh;
+            overflow-y: auto;
+            color: var(--text-dark);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        
+        /* Forms */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            color: #000000;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+            touch-action: manipulation;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+            background: #ffffff;
+        }
+        
+        textarea.form-control {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        select.form-control {
+            cursor: pointer;
+        }
+        
+        /* Sensor Management */
+        .sensor-management {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .sensor-detail-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: var(--text-dark);
+        }
+        
+        .sensor-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        /* Loading */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 150px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(66, 153, 225, 0.3);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Progress Bars */
+        .progress-bar {
+            height: 6px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--primary));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 180px;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 6px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .tab {
+            padding: 8px 15px;
+            background: transparent;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+            flex-shrink: 0;
+            font-size: 0.85rem;
+            touch-action: manipulation;
+        }
+        
+        .tab:active {
+            color: var(--text-dark);
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        /* Badges */
+        .badge {
+            padding: 3px 6px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: rgba(72, 187, 120, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(72, 187, 120, 0.3);
+        }
+        
+        .badge-warning {
+            background: rgba(237, 137, 54, 0.2);
+            color: var(--warning);
+            border: 1px solid rgba(237, 137, 54, 0.3);
+        }
+        
+        .badge-danger {
+            background: rgba(245, 101, 101, 0.2);
+            color: var(--danger);
+            border: 1px solid rgba(245, 101, 101, 0.3);
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+        
+        ::webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+        
+        ::webkit-scrollbar-thumb:hover {
+            background: #3182ce;
+        }
+        
+        /* Mobile-Specific Styles */
+        @media (min-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .navbar {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            
+            .brand {
+                justify-content: flex-start;
+                text-align: left;
+            }
+            
+            .nav-links {
+                overflow-x: visible;
+                padding-bottom: 0;
+            }
+            
+            .main-grid {
+                display: grid;
+                grid-template-columns: 300px 1fr;
+                gap: 20px;
+            }
+            
+            .sidebar {
+                margin-bottom: 0;
+            }
+            
+            .sensor-management {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+            
+            .controls-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+            
+            .alerts-container {
+                width: 350px;
+                left: auto;
+                right: 20px;
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 350px 1fr;
+            }
+        }
+        
+        /* Touch-friendly adjustments */
+        input[type="number"],
+        input[type="text"],
+        select,
+        textarea {
+            font-size: 16px !important; /* Prevents zoom on iOS */
+        }
+        
+        /* Hide sidebar on non-dashboard pages for mobile */
+        .sidebar-hidden {
+            display: none !important;
+        }
+    </style>
+    
+    
+    
+    
+    
+    
+    
+
+</head>
+<body>
+    <!-- Alerts Container -->
+    <div class="alerts-container" id="alertsContainer"></div>
+    
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="brand">
+                <i class="fas fa-satellite-dish"></i>
+                <span> M-USD IoT Dashboard</span>
+            </div>
+            
+            <div class="nav-links">
+                <button class="nav-btn active" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </button>
+                <button class="nav-btn" data-page="sensors">
+                    <i class="fas fa-microchip"></i> Sensors
+                </button>
+                <button class="nav-btn" data-page="charts">
+                    <i class="fas fa-chart-line"></i> Charts
+                </button>
+                <button class="nav-btn" data-page="control">
+                    <i class="fas fa-gamepad"></i> Control
+                </button>
+                <button class="nav-btn" data-page="settings">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+            </div>
+            
+            <div class="sensor-indicators">
+                <div class="sensor-indicator sensor-inactive" id="tempIndicator">
+                    <i class="fas fa-thermometer-half"></i>
+                    <span>--°C</span>
+                </div>
+                <div class="sensor-indicator sensor-inactive" id="humidityIndicator">
+                    <i class="fas fa-tint"></i>
+                    <span>--%</span>
+                </div>
+                <div class="sensor-indicator sensor-inactive" id="motionIndicator">
+                    <i class="fas fa-running"></i>
+                    <span>No Motion</span>
+                </div>
+            </div>
+            
+            <div class="status-indicator">
+                <div class="status-dot" id="mqttStatusDot"></div>
+                <span id="mqttStatusText">Disconnected</span>
+            </div>
+        </nav>
+        
+        <!-- Main Content -->
+        <div class="main-grid">
+            <!-- Sidebar -->
+            <div id="sidebar" class="sidebar">
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">MQTT Connection</h3>
+                    <div id="connectionInfo">
+                        <div class="sensor-details">
+                            <div>
+                                <small>Status:</small>
+                                <div id="connectionStatus" style="color: var(--danger); font-weight: 600;">Disconnected</div>
+                            </div>
+                            <div>
+                                <small>Broker:</small>
+                                <div id="brokerUrl" style="font-size: 0.75rem;">Not connected</div>
+                            </div>
+                            <div>
+                                <small>Messages:</small>
+                                <div id="messageCount">0</div>
+                            </div>
+                            <div>
+                                <small>Uptime:</small>
+                                <div id="uptime">0s</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; margin-top: 15px;">
+                        <button id="connectBtn" class="btn btn-success" style="flex: 1;">
+                            <i class="fas fa-plug"></i> Connect
+                        </button>
+                        <button id="configBtn" class="btn btn-outline">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">Active Sensors</h3>
+                    <div id="sensorsList">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">Quick Actions</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <button id="scanSensorsBtn" class="btn btn-outline">
+                            <i class="fas fa-search"></i> Scan for Sensors
+                        </button>
+                        <button id="calibrateBtn" class="btn btn-outline">
+                            <i class="fas fa-ruler"></i> Calibrate All
+                        </button>
+                        <button id="exportDataBtn" class="btn btn-outline">
+                            <i class="fas fa-download"></i> Export Data
+                        </button>
+                        <button id="resetBtn" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Reset System
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content Area -->
+            <!-- Dashboard Page -->
+            <div id="dashboard" class="charts-container">
+                <div class="chart-header">
+                    <h2 class="chart-title">Real-Time Sensor Dashboard</h2>
+                    <div>
+                        <button id="refreshDashboard" class="btn btn-outline">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Dashboard Stats -->
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <div class="card-title">
+                            <i class="fas fa-thermometer-half"></i>
+                            Temperature
+                        </div>
+                        <div class="sensor-value value-normal" id="dashboardTemp">--<span class="sensor-unit">°C</span></div>
+                        <div class="sensor-meta">
+                            <span>Status: <span id="tempStatus">Normal</span></span>
+                            <span id="tempTime">--:--</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="tempProgress" style="width: 50%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-title">
+                            <i class="fas fa-tint"></i>
+                            Humidity
+                        </div>
+                        <div class="sensor-value value-normal" id="dashboardHumidity">--<span class="sensor-unit">%</span></div>
+                        <div class="sensor-meta">
+                            <span>Status: <span id="humidityStatus">Normal</span></span>
+                            <span id="humidityTime">--:--</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="humidityProgress" style="width: 50%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-title">
+                            <i class="fas fa-running"></i>
+                            Motion Detection
+                        </div>
+                        <div class="sensor-value value-normal" id="dashboardMotion">INACTIVE</div>
+                        <div class="sensor-meta">
+                            <span>Last detected:</span>
+                            <span id="lastMotionTime">--:--</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 15px;">
+                            <div class="badge badge-success" id="motionStatus">No Motion</div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-title">
+                            <i class="fas fa-door-closed"></i>
+                            Door Status
+                        </div>
+                        <div class="sensor-value value-normal" id="dashboardDoor">CLOSED</div>
+                        <div class="sensor-meta">
+                            <span>Last change:</span>
+                            <span id="lastDoorTime">--:--</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 15px;">
+                            <div class="badge badge-success" id="doorStatus">Secure</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mini Charts -->
+                <div class="chart-container" style="height: 200px;">
+                    <canvas id="miniTemperatureChart"></canvas>
+                </div>
+                
+                <!-- Real-time Data Stream -->
+                <div class="data-stream">
+                    <div class="data-stream-header">
+                        <h3>Real-Time Data Stream</h3>
+                        <div>
+                            <button id="pauseStream" class="btn btn-outline btn-sm">
+                                <i class="fas fa-pause"></i> Pause
+                            </button>
+                            <button id="clearStream" class="btn btn-outline btn-sm">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                    <div id="dataStream"></div>
+                </div>
+            </div>
+            
+            <!-- Sensors Page -->
+            <div id="sensors" class="charts-container" style="display: none;">
+                <div class="chart-header">
+                    <h2 class="chart-title">Sensor Management</h2>
+                    <div>
+                        <button id="addSensorBtn" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Add Sensor
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab active" data-tab="connected">Connected Sensors</button>
+                    <button class="tab" data-tab="discovered">Discovered Sensors</button>
+                    <button class="tab" data-tab="templates">Sensor Templates</button>
+                </div>
+                
+                <div id="sensorsManagement">
+                    <!-- Sensors will be loaded here -->
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Page -->
+            <div id="charts" class="charts-container" style="display: none;">
+                <div class="chart-header">
+                    <h2 class="chart-title">Historical Data Analysis</h2>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <select id="chartPeriod" class="form-control">
+                            <option value="1h">Last Hour</option>
+                            <option value="6h">Last 6 Hours</option>
+                            <option value="24h" selected>Last 24 Hours</option>
+                            <option value="7d">Last 7 Days</option>
+                        </select>
+                        <select id="chartSensor" class="form-control">
+                            <option value="all">All Sensors</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="temperatureChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="humidityChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="lightChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Control Page -->
+            <div id="control" class="charts-container" style="display: none;">
+                <div class="chart-header">
+                    <h2 class="chart-title">Device Control Center</h2>
+                    <div>
+                        <span class="badge badge-success" id="controlStatus">Ready</span>
+                    </div>
+                </div>
+                
+                <div class="controls-grid">
+                    <div class="control-card" onclick="sendControlCommand('led', 'toggle')">
+                        <div class="control-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <h3>Toggle LED</h3>
+                        <p>Turn LED on/off</p>
+                    </div>
+                    
+                    <div class="control-card" onclick="sendControlCommand('buzzer', 'beep')">
+                        <div class="control-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <h3>Sound Buzzer</h3>
+                        <p>Test audio alert</p>
+                    </div>
+                    
+                    <div class="control-card" onclick="sendControlCommand('relay', 'toggle')">
+                        <div class="control-icon">
+                            <i class="fas fa-toggle-on"></i>
+                        </div>
+                        <h3>Toggle Relay</h3>
+                        <p>Control power outlet</p>
+                    </div>
+                    
+                    <div class="control-card" onclick="sendControlCommand('motor', 'start')">
+                        <div class="control-icon">
+                            <i class="fas fa-fan"></i>
+                        </div>
+                        <h3>Start Motor</h3>
+                        <p>Control fan motor</p>
+                    </div>
+                    
+                    <div class="control-card" onclick="sendControlCommand('pump', 'start')">
+                        <div class="control-icon">
+                            <i class="fas fa-tint"></i>
+                        </div>
+                        <h3>Water Pump</h3>
+                        <p>Control irrigation</p>
+                    </div>
+                    
+                    <div class="control-card" onclick="sendControlCommand('valve', 'open')">
+                        <div class="control-icon">
+                            <i class="fas fa-faucet"></i>
+                        </div>
+                        <h3>Solenoid Valve</h3>
+                        <p>Control water valve</p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 25px;">
+                    <h3>Manual Command Interface</h3>
+                    <div class="form-group">
+                        <label>Select Device:</label>
+                        <select id="commandDevice" class="form-control">
+                            <option value="">-- Select Device --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Command:</label>
+                        <input type="text" id="commandInput" class="form-control" placeholder="Enter command (e.g., led:on, relay:toggle)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Parameters (JSON):</label>
+                        <textarea id="commandParams" class="form-control" rows="3" placeholder='{"duration": 5000, "intensity": 100}'></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="sendManualCommand()" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Send Command
+                        </button>
+                        <button onclick="testCommand()" class="btn btn-outline">
+                            <i class="fas fa-vial"></i> Test
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings Page -->
+            <div id="settings" class="charts-container" style="display: none;">
+                <div class="chart-header">
+                    <h2 class="chart-title">System Settings</h2>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab active" data-tab="mqtt">MQTT Settings</button>
+                    <button class="tab" data-tab="sensor">Sensor Settings</button>
+                    <button class="tab" data-tab="alert">Alert Settings</button>
+                    <button class="tab" data-tab="system">System Info</button>
+                </div>
+                
+                <div id="settingsContent">
+                    <!-- Settings content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div id="configModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">MQTT Configuration</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('configModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="form-group">
+                <label>Broker URL</label>
+                <input type="text" id="mqttBroker" class="form-control" 
+                       value="wss://test.mosquitto.org:8081">
+                <small style="color: #a0aec0; font-size: 0.8rem;">For local testing: ws://localhost:9001 or ws://YOUR_IP:9001</small>
+            </div>
+            
+            <div class="form-group">
+                <label>Client ID</label>
+                <input type="text" id="clientId" class="form-control" 
+                       value="iot-dashboard-" + Math.random().toString(36).substr(2, 9)">
+            </div>
+            
+            <div class="form-group">
+                <label>Username (optional)</label>
+                <input type="text" id="mqttUsername" class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label>Password (optional)</label>
+                <input type="password" id="mqttPassword" class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label>Base Topic</label>
+                <input type="text" id="baseTopic" class="form-control" value="iot/">
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                <button onclick="saveMQTTConfig()" class="btn btn-primary" style="flex: 1; min-width: 120px;">
+                    <i class="fas fa-save"></i> Save & Connect
+                </button>
+                <button onclick="closeModal('configModal')" class="btn btn-outline" style="flex: 1; min-width: 120px;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="sensorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Sensor</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('sensorModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="form-group">
+                <label>Sensor Name</label>
+                <input type="text" id="sensorName" class="form-control" placeholder="Living Room Temperature Sensor">
+            </div>
+            
+            <div class="form-group">
+                <label>Sensor Type</label>
+                <select id="sensorType" class="form-control">
+                    <option value="temperature">Temperature</option>
+                    <option value="humidity">Humidity</option>
+                    <option value="motion">Motion</option>
+                    <option value="door">Door/Window</option>
+                    <option value="light">Light</option>
+                    <option value="pressure">Pressure</option>
+                    <option value="air_quality">Air Quality</option>
+                    <option value="soil_moisture">Soil Moisture</option>
+                    <option value="water_leak">Water Leak</option>
+                    <option value="sound">Sound Level</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Sensor ID (auto-generated if empty)</label>
+                <input type="text" id="sensorId" class="form-control" placeholder="temp-sensor-001">
+            </div>
+            
+            <div class="form-group">
+                <label>Location</label>
+                <input type="text" id="sensorLocation" class="form-control" placeholder="Living Room">
+            </div>
+            
+            <div class="form-group">
+                <label>MQTT Topic</label>
+                <input type="text" id="sensorTopic" class="form-control" placeholder="sensors/temperature/livingroom">
+            </div>
+            
+            <div class="form-group">
+                <label>Hardware Type</label>
+                <select id="sensorHardware" class="form-control">
+                    <option value="dht22">DHT22 (Temp/Humidity)</option>
+                    <option value="dht11">DHT11</option>
+                    <option value="ds18b20">DS18B20</option>
+                    <option value="bme280">BME280</option>
+                    <option value="pir">PIR Motion</option>
+                    <option value="reed">Reed Switch</option>
+                    <option value="ldr">LDR (Light)</option>
+                    <option value="mq135">MQ-135 (Air Quality)</option>
+                    <option value="custom">Custom/DIY</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                <button onclick="saveSensor()" class="btn btn-success" style="flex: 1; min-width: 120px;">
+                    <i class="fas fa-save"></i> Add Sensor
+                </button>
+                <button onclick="closeModal('sensorModal')" class="btn btn-outline" style="flex: 1; min-width: 120px;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="calibrationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Sensor Calibration</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('calibrationModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="calibrationContent">
+                <!-- Calibration content will be loaded here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Application JavaScript -->
+    <script>
+        // ====================================================================
+        // REAL IOT SENSOR DASHBOARD - COMPLETE SYSTEM
+        // ====================================================================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("🚀 Starting Real IoT Sensor Dashboard...");
+            
+            // Initialize the complete system
+            initCompleteSystem();
+        });
+        
+        // ====================================================================
+        // GLOBAL STATE AND CONFIGURATION
+        // ====================================================================
+        
+        let RealIoT = {
+            // State
+            mqttClient: null,
+            isConnected: false,
+            sensors: new Map(),
+            devices: new Map(),
+            charts: {},
+            isStreamPaused: false,
+            systemStartTime: Date.now(),
+            
+            // Configuration
+            config: {
+                broker: 'wss://test.mosquitto.org:8081',
+                clientId: 'iot-dashboard-' + Math.random().toString(36).substr(2, 9),
+                baseTopic: 'iot/',
+                storageKey: 'real-iot-dashboard-v3',
+                
+                // Default thresholds
+                thresholds: {
+                    temperature: { min: 15, max: 30 },
+                    humidity: { min: 30, max: 70 },
+                    light: { min: 0, max: 1000 }
+                },
+                
+                // Alert settings
+                alerts: {
+                    enabled: true,
+                    sound: true,
+                    notification: true,
+                    email: false
+                }
+            },
+            
+            // Statistics
+            stats: {
+                messagesReceived: 0,
+                messagesSent: 0,
+                sensorsConnected: 0,
+                alertsTriggered: 0,
+                uptime: 0
+            },
+            
+            // Sensor specifications
+            sensorSpecs: {
+                temperature: {
+                    name: 'Temperature',
+                    unit: '°C',
+                    min: -40,
+                    max: 125,
+                    icon: 'fa-thermometer-half',
+                    color: '#f56565'
+                },
+                humidity: {
+                    name: 'Humidity',
+                    unit: '%',
+                    min: 0,
+                    max: 100,
+                    icon: 'fa-tint',
+                    color: '#4299e1'
+                },
+                motion: {
+                    name: 'Motion',
+                    unit: '',
+                    min: 0,
+                    max: 1,
+                    icon: 'fa-running',
+                    color: '#ed8936'
+                },
+                door: {
+                    name: 'Door',
+                    unit: '',
+                    min: 0,
+                    max: 1,
+                    icon: 'fa-door-closed',
+                    color: '#48bb78'
+                },
+                light: {
+                    name: 'Light',
+                    unit: 'lux',
+                    min: 0,
+                    max: 65535,
+                    icon: 'fa-lightbulb',
+                    color: '#ecc94b'
+                },
+                pressure: {
+                    name: 'Pressure',
+                    unit: 'hPa',
+                    min: 300,
+                    max: 1100,
+                    icon: 'fa-tachometer-alt',
+                    color: '#9f7aea'
+                },
+                unknown: {
+                    name: 'Unknown',
+                    unit: '',
+                    min: 0,
+                    max: 100,
+                    icon: 'fa-question-circle',
+                    color: '#a0aec0'
+                }
+            }
+        };
+        
+        // ====================================================================
+        // INITIALIZATION
+        // ====================================================================
+        
+        function initCompleteSystem() {
+            console.log("🔧 Initializing Complete IoT System...");
+            
+            // Load saved configuration
+            loadConfiguration();
+            
+            // Initialize UI
+            initUI();
+            
+            // Initialize MQTT
+            initMQTT();
+            
+            // Initialize Charts
+            initCharts();
+            
+            // Load saved sensors
+            loadSensors();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Start background tasks
+            startBackgroundTasks();
+            
+            console.log("✅ Complete IoT System initialized!");
+            showAlert('System ready! Connect to MQTT broker to start.', 'success');
+        }
+        
+        function initUI() {
+            // Update connection status
+            updateConnectionStatus(false);
+            
+            // Setup navigation
+            setupNavigation();
+            
+            // Setup tabs
+            setupTabs();
+            
+            // Show dashboard by default
+            showPage('dashboard');
+        }
+        
+        function setupNavigation() {
+            const navBtns = document.querySelectorAll('.nav-btn');
+            navBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = this.getAttribute('data-page');
+                    showPage(page);
+                    
+                    // Update active button
+                    navBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Close any open modals
+                    document.querySelectorAll('.modal.active').forEach(modal => {
+                        modal.classList.remove('active');
+                    });
+                });
+            });
+        }
+        
+        function setupTabs() {
+            // Setup sensor management tabs
+            const sensorTabs = document.querySelectorAll('#sensors .tab');
+            sensorTabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Update active tab
+                    sensorTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show appropriate content
+                    showSensorTab(tabId);
+                });
+            });
+            
+            // Setup settings tabs
+            const settingsTabs = document.querySelectorAll('#settings .tab');
+            settingsTabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Update active tab
+                    settingsTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show appropriate content
+                    showSettingsTab(tabId);
+                });
+            });
+        }
+        
+        // ====================================================================
+        // MQTT MANAGEMENT
+        // ====================================================================
+        
+        function initMQTT() {
+            console.log("📡 Initializing MQTT...");
+            
+            // Check if MQTT library is available
+            if (typeof mqtt === 'undefined') {
+                console.error('MQTT library not loaded!');
+                showAlert('MQTT library not available. Please check internet connection.', 'danger');
+                return;
+            }
+        }
+        
+        function connectMQTT() {
+            const broker = document.getElementById('mqttBroker')?.value || RealIoT.config.broker;
+            const clientId = document.getElementById('clientId')?.value || RealIoT.config.clientId;
+            
+            console.log(`🔌 Connecting to MQTT broker: ${broker}`);
+            
+            // Disconnect existing connection
+            if (RealIoT.mqttClient) {
+                RealIoT.mqttClient.end();
+            }
+            
+            try {
+                // Create MQTT client
+                RealIoT.mqttClient = mqtt.connect(broker, {
+                    clientId: clientId,
+                    clean: true,
+                    reconnectPeriod: 5000,
+                    connectTimeout: 30000
+                });
+                
+                // Setup event handlers
+                setupMQTTEventHandlers();
+                
+                // Save configuration
+                RealIoT.config.broker = broker;
+                RealIoT.config.clientId = clientId;
+                saveConfiguration();
+                
+            } catch (error) {
+                console.error('Failed to create MQTT client:', error);
+                showAlert(`Failed to connect: ${error.message}`, 'danger');
+                updateConnectionStatus(false);
+            }
+        }
+        
+        function setupMQTTEventHandlers() {
+            if (!RealIoT.mqttClient) return;
+            
+            RealIoT.mqttClient.on('connect', function() {
+                console.log('✅ MQTT Connected successfully!');
+                RealIoT.isConnected = true;
+                
+                // Subscribe to topics
+                subscribeToTopics();
+                
+                // Update UI
+                updateConnectionStatus(true);
+                showAlert('Connected to MQTT broker!', 'success');
+                
+                // Add to data stream
+                addDataToStream('Connected to MQTT broker', 'system');
+            });
+            
+            RealIoT.mqttClient.on('message', function(topic, message) {
+                handleMQTTMessage(topic, message);
+            });
+            
+            RealIoT.mqttClient.on('error', function(error) {
+                console.error('MQTT error:', error);
+                showAlert(`MQTT error: ${error.message}`, 'danger');
+                updateConnectionStatus(false);
+            });
+            
+            RealIoT.mqttClient.on('close', function() {
+                console.log('🔌 MQTT connection closed');
+                RealIoT.isConnected = false;
+                updateConnectionStatus(false);
+                showAlert('Disconnected from MQTT broker', 'warning');
+            });
+            
+            RealIoT.mqttClient.on('reconnect', function() {
+                console.log('🔄 MQTT reconnecting...');
+                showAlert('Reconnecting to MQTT broker...', 'info');
+            });
+        }
+        
+        function subscribeToTopics() {
+            if (!RealIoT.mqttClient || !RealIoT.isConnected) return;
+            
+            // Subscribe to base topics
+            const topics = [
+                RealIoT.config.baseTopic + '#',
+                'sensors/#',
+                'devices/#',
+                'iot/#'
+            ];
+            
+            topics.forEach(topic => {
+                RealIoT.mqttClient.subscribe(topic, function(err) {
+                    if (!err) {
+                        console.log(`🔔 Subscribed to: ${topic}`);
+                    } else {
+                        console.error(`Failed to subscribe to ${topic}:`, err);
+                    }
+                });
+            });
+            
+            // Subscribe to specific sensor topics
+            RealIoT.sensors.forEach(sensor => {
+                if (sensor.topic) {
+                    RealIoT.mqttClient.subscribe(sensor.topic, function(err) {
+                        if (!err) {
+                            console.log(`🔔 Subscribed to sensor topic: ${sensor.topic}`);
+                        }
+                    });
+                }
+            });
+        }
+        
+        function handleMQTTMessage(topic, message) {
+            RealIoT.stats.messagesReceived++;
+            
+            try {
+                // Try to parse as JSON
+                const data = JSON.parse(message.toString());
+                processSensorData(topic, data);
+                
+                // Add to data stream
+                addDataToStream(`${topic}: ${JSON.stringify(data).substring(0, 100)}`, 'sensor');
+                
+            } catch (error) {
+                // Handle non-JSON messages
+                const text = message.toString();
+                console.log(`📩 Raw message on ${topic}: ${text}`);
+                
+                // Try to extract sensor data from text
+                processTextSensorData(topic, text);
+                
+                addDataToStream(`${topic}: ${text.substring(0, 100)}`, 'sensor');
+            }
+            
+            // Update message count
+            updateStats();
+        }
+        
+        function processSensorData(topic, data) {
+            // Extract sensor ID from topic or data
+            let sensorId = data.deviceId || data.sensorId || extractSensorId(topic);
+            
+            if (!sensorId) {
+                console.warn('No sensor ID found in message:', data);
+                return;
+            }
+            
+            // Get or create sensor
+            let sensor = RealIoT.sensors.get(sensorId);
+            
+            if (!sensor) {
+                // Auto-discover new sensor
+                sensor = autoDiscoverSensor(sensorId, data, topic);
+                RealIoT.sensors.set(sensorId, sensor);
+                saveSensors();
+                
+                console.log(`🆕 Auto-discovered new sensor: ${sensor.name}`);
+                showAlert(`New sensor discovered: ${sensor.name}`, 'success');
+            }
+            
+            // Update sensor data
+            updateSensorData(sensorId, data);
+            
+            // Update dashboard
+            updateDashboardWithSensorData(sensorId, data);
+            
+            // Update charts
+            updateChartsWithData(sensorId, data);
+            
+            // Check thresholds
+            checkThresholds(sensorId, data);
+        }
+        
+        function processTextSensorData(topic, text) {
+            // Try to extract key-value pairs from text
+            const pairs = text.split(/[,;]/);
+            const data = {};
+            
+            pairs.forEach(pair => {
+                const [key, value] = pair.split(/[:=]/);
+                if (key && value) {
+                    const cleanKey = key.trim().toLowerCase();
+                    const cleanValue = value.trim();
+                    
+                    // Try to convert to number if possible
+                    const numValue = parseFloat(cleanValue);
+                    data[cleanKey] = isNaN(numValue) ? cleanValue : numValue;
+                }
+            });
+            
+            if (Object.keys(data).length > 0) {
+                processSensorData(topic, data);
+            }
+        }
+        
+        function extractSensorId(topic) {
+            const parts = topic.split('/');
+            return parts[parts.length - 1] || parts[parts.length - 2] || 'unknown';
+        }
+        
+        function autoDiscoverSensor(sensorId, data, topic) {
+            const sensorName = data.deviceName || data.name || `Sensor ${sensorId}`;
+            const sensorType = detectSensorType(data);
+            const location = data.location || 'Unknown';
+            
+            return {
+                id: sensorId,
+                name: sensorName,
+                type: sensorType,
+                location: location,
+                topic: topic,
+                hardware: data.hardware || 'Unknown',
+                status: 'online',
+                lastSeen: new Date().toISOString(),
+                data: {},
+                readings: [],
+                config: {
+                    calibration: { offset: 0, factor: 1 },
+                    thresholds: RealIoT.config.thresholds[sensorType] || {}
+                }
+            };
+        }
+        
+        function detectSensorType(data) {
+            if (data.temperature !== undefined) return 'temperature';
+            if (data.humidity !== undefined) return 'humidity';
+            if (data.pressure !== undefined) return 'pressure';
+            if (data.light !== undefined || data.lux !== undefined) return 'light';
+            if (data.motion !== undefined) return 'motion';
+            if (data.door !== undefined || data.contact !== undefined) return 'door';
+            if (data.air_quality !== undefined) return 'air_quality';
+            return 'unknown';
+        }
+        
+        // ====================================================================
+        // SENSOR MANAGEMENT
+        // ====================================================================
+        
+        function updateSensorData(sensorId, newData) {
+            const sensor = RealIoT.sensors.get(sensorId);
+            if (!sensor) return;
+            
+            // Update sensor status
+            sensor.status = 'online';
+            sensor.lastSeen = new Date().toISOString();
+            
+            // Merge new data
+            sensor.data = { ...sensor.data, ...newData };
+            
+            // Store reading
+            const reading = {
+                timestamp: new Date().toISOString(),
+                data: { ...newData }
+            };
+            
+            sensor.readings.push(reading);
+            
+            // Keep only last 100 readings
+            if (sensor.readings.length > 100) {
+                sensor.readings = sensor.readings.slice(-100);
+            }
+            
+            // Update UI
+            updateSensorCard(sensor);
+            updateSensorList();
+            
+            // Save to storage
+            saveSensors();
+        }
+        
+        function updateSensorCard(sensor) {
+            const sensorCard = document.querySelector(`[data-sensor-id="${sensor.id}"]`);
+            if (!sensorCard) return;
+            
+            // Update sensor values
+            const valueElement = sensorCard.querySelector('.sensor-value');
+            const metaElement = sensorCard.querySelector('.sensor-meta');
+            
+            if (valueElement && sensor.data) {
+                const spec = RealIoT.sensorSpecs[sensor.type] || RealIoT.sensorSpecs.unknown;
+                if (spec && sensor.data[sensor.type] !== undefined) {
+                    const value = sensor.data[sensor.type];
+                    valueElement.innerHTML = `${value.toFixed(1)}<span class="sensor-unit">${spec.unit}</span>`;
+                    
+                    // Set color based on value
+                    if (sensor.type === 'temperature') {
+                        valueElement.className = `sensor-value ${getTemperatureClass(value)}`;
+                    } else if (sensor.type === 'humidity') {
+                        valueElement.className = `sensor-value ${getHumidityClass(value)}`;
+                    }
+                }
+            }
+            
+            if (metaElement) {
+                const lastSeen = new Date(sensor.lastSeen);
+                const timeAgo = Math.floor((Date.now() - lastSeen.getTime()) / 1000);
+                metaElement.innerHTML = `
+                    <span>${sensor.location}</span>
+                    <span>${formatTimeAgo(timeAgo)} ago</span>
+                `;
+            }
+            
+            // Update status indicator
+            const timeAgo = Math.floor((Date.now() - new Date(sensor.lastSeen).getTime()) / 1000);
+            sensorCard.classList.toggle('active', timeAgo < 60);
+        }
+        
+        function updateSensorList() {
+            const container = document.getElementById('sensorsList');
+            if (!container) return;
+            
+            if (RealIoT.sensors.size === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #a0aec0;">
+                        <i class="fas fa-microchip" style="font-size: 2.5rem; margin-bottom: 15px;"></i>
+                        <h4>No Sensors Found</h4>
+                        <p>Connect to MQTT broker to discover sensors</p>
+                        <button onclick="scanForSensors()" class="btn btn-outline" style="margin-top: 15px;">
+                            <i class="fas fa-search"></i> Scan for Sensors
+                        </button>
+                    </div>`;
+                return;
+            }
+            
+            let html = '';
+            RealIoT.sensors.forEach(sensor => {
+                const spec = RealIoT.sensorSpecs[sensor.type] || RealIoT.sensorSpecs.unknown;
+                const timeAgo = Math.floor((Date.now() - new Date(sensor.lastSeen).getTime()) / 1000);
+                const isOnline = timeAgo < 120; // 2 minutes
+                
+                html += `
+                    <div class="sensor-card ${isOnline ? 'active' : ''}" data-sensor-id="${sensor.id}">
+                        <div class="sensor-header">
+                            <div class="sensor-name">
+                                <i class="fas ${spec.icon}"></i>
+                                ${sensor.name}
+                            </div>
+                            <div class="badge ${isOnline ? 'badge-success' : 'badge-danger'}">
+                                ${isOnline ? 'Online' : 'Offline'}
+                            </div>
+                        </div>
+                        
+                        <div class="sensor-value value-normal">
+                            ${sensor.data[sensor.type] !== undefined ? 
+                                `${sensor.data[sensor.type].toFixed(1)}<span class="sensor-unit">${spec.unit}</span>` : 
+                                '--'}
+                        </div>
+                        
+                        <div class="sensor-details">
+                            <div><small>Type:</small> ${sensor.type}</div>
+                            <div><small>Location:</small> ${sensor.location}</div>
+                            <div><small>ID:</small> <code>${sensor.id.substring(0, 8)}...</code></div>
+                            <div><small>Last seen:</small> ${formatTimeAgo(timeAgo)} ago</div>
+                        </div>
+                        
+                        <div class="sensor-actions">
+                            <button onclick="showSensorDetails('${sensor.id}')" class="btn btn-outline btn-sm">
+                                <i class="fas fa-info-circle"></i> Details
+                            </button>
+                            <button onclick="calibrateSensor('${sensor.id}')" class="btn btn-outline btn-sm">
+                                <i class="fas fa-ruler"></i> Calibrate
+                            </button>
+                        </div>
+                    </div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function showSensorTab(tabId) {
+            const container = document.getElementById('sensorsManagement');
+            
+            switch(tabId) {
+                case 'connected':
+                    showConnectedSensors();
+                    break;
+                case 'discovered':
+                    showDiscoveredSensors();
+                    break;
+                case 'templates':
+                    showSensorTemplates();
+                    break;
+            }
+        }
+        
+        function showConnectedSensors() {
+            const container = document.getElementById('sensorsManagement');
+            
+            if (RealIoT.sensors.size === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #a0aec0;">
+                        <i class="fas fa-microchip" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                        <h3>No Connected Sensors</h3>
+                        <p>Connect to MQTT broker to discover sensors</p>
+                        <button onclick="scanForSensors()" class="btn btn-primary" style="margin-top: 15px;">
+                            <i class="fas fa-search"></i> Scan for Sensors
+                        </button>
+                    </div>`;
+                return;
+            }
+            
+            let html = '<div class="sensor-management">';
+            RealIoT.sensors.forEach(sensor => {
+                const spec = RealIoT.sensorSpecs[sensor.type] || RealIoT.sensorSpecs.unknown;
+                const timeAgo = Math.floor((Date.now() - new Date(sensor.lastSeen).getTime()) / 1000);
+                const isOnline = timeAgo < 120;
+                
+                html += `
+                    <div class="sensor-detail-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4 style="color: var(--primary); font-size: 1rem;">
+                                <i class="fas ${spec.icon}"></i> ${sensor.name}
+                            </h4>
+                            <div class="badge ${isOnline ? 'badge-success' : 'badge-danger'}">
+                                ${isOnline ? 'Online' : 'Offline'}
+                            </div>
+                        </div>
+                        
+                        <div class="sensor-details">
+                            <div><strong>Type:</strong> ${sensor.type}</div>
+                            <div><strong>Location:</strong> ${sensor.location}</div>
+                            <div><strong>ID:</strong> <code>${sensor.id}</code></div>
+                            <div><strong>Topic:</strong> <code style="font-size: 0.7rem;">${sensor.topic}</code></div>
+                            <div><strong>Hardware:</strong> ${sensor.hardware}</div>
+                            <div><strong>Last seen:</strong> ${new Date(sensor.lastSeen).toLocaleTimeString()}</div>
+                        </div>
+                        
+                        ${sensor.data.temperature !== undefined ? `
+                            <div style="margin-top: 10px;">
+                                <strong>Temperature:</strong> ${sensor.data.temperature.toFixed(1)}°C
+                            </div>
+                        ` : ''}
+                        
+                        ${sensor.data.humidity !== undefined ? `
+                            <div>
+                                <strong>Humidity:</strong> ${sensor.data.humidity.toFixed(1)}%
+                            </div>
+                        ` : ''}
+                        
+                        <div class="sensor-actions" style="margin-top: 15px;">
+                            <button onclick="showSensorDetails('${sensor.id}')" class="btn btn-outline">
+                                <i class="fas fa-chart-line"></i> Charts
+                            </button>
+                            <button onclick="calibrateSensor('${sensor.id}')" class="btn btn-outline">
+                                <i class="fas fa-ruler"></i> Calibrate
+                            </button>
+                            <button onclick="removeSensor('${sensor.id}')" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>`;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+        
+        function showDiscoveredSensors() {
+            const container = document.getElementById('sensorsManagement');
+            container.innerHTML = `
+                <div style="text-align: center; padding: 30px; color: #a0aec0;">
+                    <i class="fas fa-wifi" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                    <h3>Sensor Discovery</h3>
+                    <p>Click scan to discover sensors on your network</p>
+                    <button onclick="scanForSensors()" class="btn btn-primary" style="margin-top: 15px;">
+                        <i class="fas fa-search"></i> Start Scanning
+                    </button>
+                    
+                    <div style="margin-top: 20px; text-align: left;">
+                        <h4>Discovery Methods:</h4>
+                        <ul style="text-align: left; margin-top: 10px; padding-left: 20px;">
+                            <li>MQTT Topic Discovery</li>
+                            <li>Network Scanning</li>
+                            <li>Serial Port Detection</li>
+                            <li>Bluetooth Discovery</li>
+                        </ul>
+                    </div>
+                </div>`;
+        }
+        
+        function showSensorTemplates() {
+            const container = document.getElementById('sensorsManagement');
+            
+            const templates = [
+                { id: 'temp', name: 'Temperature Sensor', type: 'temperature', icon: 'fa-thermometer-half', hardware: 'DHT22/DS18B20' },
+                { id: 'humid', name: 'Humidity Sensor', type: 'humidity', icon: 'fa-tint', hardware: 'DHT22/BME280' },
+                { id: 'motion', name: 'Motion Sensor', type: 'motion', icon: 'fa-running', hardware: 'PIR Sensor' },
+                { id: 'door', name: 'Door Sensor', type: 'door', icon: 'fa-door-closed', hardware: 'Reed Switch' },
+                { id: 'light', name: 'Light Sensor', type: 'light', icon: 'fa-lightbulb', hardware: 'LDR/BH1750' },
+                { id: 'air', name: 'Air Quality Sensor', type: 'air_quality', icon: 'fa-wind', hardware: 'MQ-135' }
+            ];
+            
+            let html = '<div class="sensor-management">';
+            templates.forEach(template => {
+                html += `
+                    <div class="sensor-detail-card" style="text-align: center;">
+                        <i class="fas ${template.icon}" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 15px;"></i>
+                        <h4 style="font-size: 1rem;">${template.name}</h4>
+                        <p><small>Hardware: ${template.hardware}</small></p>
+                        <button onclick="addSensorFromTemplate('${template.id}')" class="btn btn-primary" style="margin-top: 15px;">
+                            <i class="fas fa-plus"></i> Add This Sensor
+                        </button>
+                    </div>`;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+        
+        // ====================================================================
+        // DASHBOARD FUNCTIONS
+        // ====================================================================
+        
+        function updateDashboardWithSensorData(sensorId, data) {
+            // Update temperature if present
+            if (data.temperature !== undefined) {
+                const tempElement = document.getElementById('dashboardTemp');
+                const tempStatus = document.getElementById('tempStatus');
+                const tempTime = document.getElementById('tempTime');
+                const tempProgress = document.getElementById('tempProgress');
+                
+                if (tempElement) {
+                    tempElement.innerHTML = `${data.temperature.toFixed(1)}<span class="sensor-unit">°C</span>`;
+                    tempElement.className = `sensor-value ${getTemperatureClass(data.temperature)}`;
+                }
+                if (tempTime) tempTime.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // Update status
+                if (tempStatus) {
+                    if (data.temperature < 15) {
+                        tempStatus.textContent = 'Cold';
+                        tempStatus.style.color = 'var(--primary)';
+                    } else if (data.temperature > 30) {
+                        tempStatus.textContent = 'Hot';
+                        tempStatus.style.color = 'var(--danger)';
+                    } else {
+                        tempStatus.textContent = 'Normal';
+                        tempStatus.style.color = 'var(--success)';
+                    }
+                }
+                
+                // Update progress bar (0-50°C range)
+                if (tempProgress) {
+                    const tempPercent = ((data.temperature + 10) / 60) * 100;
+                    tempProgress.style.width = `${Math.min(Math.max(tempPercent, 0), 100)}%`;
+                }
+                
+                // Update indicator
+                const tempIndicator = document.getElementById('tempIndicator');
+                if (tempIndicator) {
+                    tempIndicator.className = 'sensor-indicator sensor-active';
+                    tempIndicator.innerHTML = `<i class="fas fa-thermometer-half"></i><span>${data.temperature.toFixed(1)}°C</span>`;
+                }
+            }
+            
+            // Update humidity if present
+            if (data.humidity !== undefined) {
+                const humidElement = document.getElementById('dashboardHumidity');
+                const humidityStatus = document.getElementById('humidityStatus');
+                const humidityTime = document.getElementById('humidityTime');
+                const humidityProgress = document.getElementById('humidityProgress');
+                
+                if (humidElement) {
+                    humidElement.innerHTML = `${data.humidity.toFixed(1)}<span class="sensor-unit">%</span>`;
+                    humidElement.className = `sensor-value ${getHumidityClass(data.humidity)}`;
+                }
+                if (humidityTime) humidityTime.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // Update status
+                if (humidityStatus) {
+                    if (data.humidity < 30) {
+                        humidityStatus.textContent = 'Dry';
+                        humidityStatus.style.color = 'var(--warning)';
+                    } else if (data.humidity > 70) {
+                        humidityStatus.textContent = 'Humid';
+                        humidityStatus.style.color = 'var(--warning)';
+                    } else {
+                        humidityStatus.textContent = 'Normal';
+                        humidityStatus.style.color = 'var(--success)';
+                    }
+                }
+                
+                // Update progress bar
+                if (humidityProgress) {
+                    humidityProgress.style.width = `${data.humidity}%`;
+                }
+                
+                // Update indicator
+                const humidityIndicator = document.getElementById('humidityIndicator');
+                if (humidityIndicator) {
+                    humidityIndicator.className = 'sensor-indicator sensor-active';
+                    humidityIndicator.innerHTML = `<i class="fas fa-tint"></i><span>${data.humidity.toFixed(1)}%</span>`;
+                }
+            }
+            
+            // Update motion if present
+            if (data.motion !== undefined) {
+                const motionElement = document.getElementById('dashboardMotion');
+                const motionStatus = document.getElementById('motionStatus');
+                const lastMotionTime = document.getElementById('lastMotionTime');
+                
+                if (motionElement) {
+                    if (data.motion) {
+                        motionElement.textContent = 'MOTION DETECTED';
+                        motionElement.className = 'sensor-value value-danger';
+                        if (motionStatus) {
+                            motionStatus.textContent = 'Motion Active';
+                            motionStatus.className = 'badge badge-danger';
+                        }
+                        if (lastMotionTime) lastMotionTime.textContent = new Date().toLocaleTimeString();
+                        
+                        // Update indicator
+                        const motionIndicator = document.getElementById('motionIndicator');
+                        if (motionIndicator) {
+                            motionIndicator.className = 'sensor-indicator sensor-active';
+                            motionIndicator.innerHTML = `<i class="fas fa-running"></i><span>Motion!</span>`;
+                        }
+                        
+                        // Show alert
+                        showAlert('Motion detected!', 'warning');
+                    } else {
+                        motionElement.textContent = 'NO MOTION';
+                        motionElement.className = 'sensor-value value-success';
+                        if (motionStatus) {
+                            motionStatus.textContent = 'No Motion';
+                            motionStatus.className = 'badge badge-success';
+                        }
+                    }
+                }
+            }
+            
+            // Update door if present
+            if (data.door !== undefined) {
+                const doorElement = document.getElementById('dashboardDoor');
+                const doorStatus = document.getElementById('doorStatus');
+                const lastDoorTime = document.getElementById('lastDoorTime');
+                
+                if (doorElement) {
+                    if (data.door) {
+                        doorElement.textContent = 'OPEN';
+                        doorElement.className = 'sensor-value value-danger';
+                        if (doorStatus) {
+                            doorStatus.textContent = 'Open';
+                            doorStatus.className = 'badge badge-danger';
+                        }
+                        if (lastDoorTime) lastDoorTime.textContent = new Date().toLocaleTimeString();
+                        
+                        // Show alert
+                        showAlert('Door opened!', 'danger');
+                    } else {
+                        doorElement.textContent = 'CLOSED';
+                        doorElement.className = 'sensor-value value-success';
+                        if (doorStatus) {
+                            doorStatus.textContent = 'Closed';
+                            doorStatus.className = 'badge badge-success';
+                        }
+                    }
+                }
+            }
+        }
+        
+        function getTemperatureClass(temp) {
+            if (temp < 10) return 'value-warning';
+            if (temp < 15) return 'value-normal';
+            if (temp < 30) return 'value-normal';
+            if (temp < 35) return 'value-warning';
+            return 'value-danger';
+        }
+        
+        function getHumidityClass(humid) {
+            if (humid < 20) return 'value-warning';
+            if (humid < 30) return 'value-normal';
+            if (humid < 70) return 'value-normal';
+            if (humid < 80) return 'value-warning';
+            return 'value-danger';
+        }
+        
+        // ====================================================================
+        // CHART FUNCTIONS
+        // ====================================================================
+        
+        function initCharts() {
+            // Mini Temperature Chart
+            const miniTempCtx = document.getElementById('miniTemperatureChart')?.getContext('2d');
+            if (miniTempCtx) {
+                RealIoT.charts.miniTemp = new Chart(miniTempCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Temperature',
+                            data: [],
+                            borderColor: '#f56565',
+                            backgroundColor: 'rgba(245, 101, 101, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            },
+                            x: {
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Main Temperature Chart
+            const tempCtx = document.getElementById('temperatureChart')?.getContext('2d');
+            if (tempCtx) {
+                RealIoT.charts.temperature = new Chart(tempCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Temperature (°C)',
+                            data: [],
+                            borderColor: '#f56565',
+                            backgroundColor: 'rgba(245, 101, 101, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: { display: true, text: 'Temperature (°C)' },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Time' },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Humidity Chart
+            const humidCtx = document.getElementById('humidityChart')?.getContext('2d');
+            if (humidCtx) {
+                RealIoT.charts.humidity = new Chart(humidCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Humidity (%)',
+                            data: [],
+                            borderColor: '#4299e1',
+                            backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                min: 0,
+                                max: 100,
+                                title: { display: true, text: 'Humidity (%)' },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Time' },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Light Chart
+            const lightCtx = document.getElementById('lightChart')?.getContext('2d');
+            if (lightCtx) {
+                RealIoT.charts.light = new Chart(lightCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Light (lux)',
+                            data: [],
+                            borderColor: '#ecc94b',
+                            backgroundColor: 'rgba(236, 201, 75, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Light Level (lux)' },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Time' },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function updateChartsWithData(sensorId, data) {
+            const now = new Date();
+            const timeLabel = now.getHours().toString().padStart(2, '0') + ':' + 
+                             now.getMinutes().toString().padStart(2, '0');
+            
+            // Update mini temperature chart
+            if (data.temperature !== undefined && RealIoT.charts.miniTemp) {
+                updateChartData(RealIoT.charts.miniTemp, timeLabel, data.temperature, 20);
+            }
+            
+            // Update main charts
+            if (data.temperature !== undefined && RealIoT.charts.temperature) {
+                updateChartData(RealIoT.charts.temperature, timeLabel, data.temperature, 50);
+            }
+            
+            if (data.humidity !== undefined && RealIoT.charts.humidity) {
+                updateChartData(RealIoT.charts.humidity, timeLabel, data.humidity, 50);
+            }
+            
+            if (data.light !== undefined && RealIoT.charts.light) {
+                updateChartData(RealIoT.charts.light, timeLabel, data.light, 50);
+            }
+        }
+        
+        function updateChartData(chart, label, value, maxPoints = 50) {
+            if (!chart) return;
+            
+            chart.data.labels.push(label);
+            chart.data.datasets[0].data.push(value);
+            
+            // Keep only specified number of points
+            if (chart.data.labels.length > maxPoints) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+            
+            chart.update('none');
+        }
+        
+        function updateCharts() {
+            // This function updates charts based on selected period
+            console.log("Updating charts with selected period");
+            
+            // Get selected period
+            const period = document.getElementById('chartPeriod')?.value || '24h';
+            
+            // In a real implementation, this would fetch data for the selected period
+            // For now, we'll just update the existing charts
+            Object.values(RealIoT.charts).forEach(chart => {
+                if (chart) {
+                    chart.update();
+                }
+            });
+        }
+        
+        // ====================================================================
+        // DATA STREAM
+        // ====================================================================
+        
+        function addDataToStream(message, type = 'system') {
+            if (RealIoT.isStreamPaused) return;
+            
+            const container = document.getElementById('dataStream');
+            if (!container) return;
+            
+            const entry = document.createElement('div');
+            entry.className = `data-entry ${type}`;
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            entry.innerHTML = `
+                <span style="color: #a0aec0; font-weight: 600;">[${time}]</span>
+                <span>${message}</span>`;
+            
+            container.appendChild(entry);
+            
+            // Auto-scroll to bottom
+            container.scrollTop = container.scrollHeight;
+            
+            // Keep only last 100 entries
+            if (container.children.length > 100) {
+                container.removeChild(container.firstChild);
+            }
+        }
+        
+        // ====================================================================
+        // ALERTS AND THRESHOLDS
+        // ====================================================================
+        
+        function checkThresholds(sensorId, data) {
+            const sensor = RealIoT.sensors.get(sensorId);
+            if (!sensor) return;
+            
+            // Check temperature thresholds
+            if (data.temperature !== undefined) {
+                const thresholds = sensor.config.thresholds.temperature || RealIoT.config.thresholds.temperature;
+                
+                if (thresholds) {
+                    if (data.temperature < thresholds.min) {
+                        triggerAlert(sensorId, 'temperature', 'below_minimum', 
+                                   data.temperature, thresholds.min, '°C');
+                    }
+                    if (data.temperature > thresholds.max) {
+                        triggerAlert(sensorId, 'temperature', 'above_maximum', 
+                                   data.temperature, thresholds.max, '°C');
+                    }
+                }
+            }
+            
+            // Check humidity thresholds
+            if (data.humidity !== undefined) {
+                const thresholds = sensor.config.thresholds.humidity || RealIoT.config.thresholds.humidity;
+                
+                if (thresholds) {
+                    if (data.humidity < thresholds.min) {
+                        triggerAlert(sensorId, 'humidity', 'below_minimum', 
+                                   data.humidity, thresholds.min, '%');
+                    }
+                    if (data.humidity > thresholds.max) {
+                        triggerAlert(sensorId, 'humidity', 'above_maximum', 
+                                   data.humidity, thresholds.max, '%');
+                    }
+                }
+            }
+        }
+        
+        function triggerAlert(sensorId, type, alertType, value, threshold, unit) {
+            const sensor = RealIoT.sensors.get(sensorId);
+            if (!sensor) return;
+            
+            const messages = {
+                'below_minimum': `${sensor.name} ${type} below minimum`,
+                'above_maximum': `${sensor.name} ${type} above maximum`
+            };
+            
+            const alert = {
+                id: `alert-${Date.now()}`,
+                sensorId: sensorId,
+                sensorName: sensor.name,
+                type: type,
+                alertType: alertType,
+                value: value,
+                threshold: threshold,
+                unit: unit,
+                message: `${messages[alertType]} (${value.toFixed(1)}${unit} ${alertType === 'below_minimum' ? '<' : '>'} ${threshold}${unit})`,
+                timestamp: new Date().toISOString(),
+                severity: alertType === 'below_minimum' ? 'warning' : 'danger'
+            };
+            
+            // Show alert
+            showAlert(alert.message, alert.severity);
+            
+            // Add to data stream
+            addDataToStream(`ALERT: ${alert.message}`, 'alert');
+            
+            // Update stats
+            RealIoT.stats.alertsTriggered++;
+            
+            console.log(`🚨 ALERT: ${alert.message}`);
+        }
+        
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alertsContainer');
+            if (!container) return;
+            
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <div class="alert-content">
+                    <i class="fas fa-${getAlertIcon(type)}"></i>
+                    <span>${message}</span>
+                </div>
+                <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; cursor: pointer; padding: 0; font-size: 1.2rem;">
+                    &times;
+                </button>
+            `;
+            
+            container.appendChild(alert);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+            
+            // Play sound if enabled
+            if (RealIoT.config.alerts.sound && type !== 'info') {
+                playAlertSound();
+            }
+        }
+        
+        function getAlertIcon(type) {
+            const icons = {
+                success: 'check-circle',
+                warning: 'exclamation-triangle',
+                danger: 'exclamation-circle',
+                info: 'info-circle'
+            };
+            return icons[type] || 'info-circle';
+        }
+        
+        function playAlertSound() {
+            // Create a simple beep sound
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+        
+        // ====================================================================
+        // COMMAND FUNCTIONS
+        // ====================================================================
+        
+        function sendControlCommand(device, action) {
+            if (!RealIoT.isConnected) {
+                showAlert('Not connected to MQTT', 'danger');
+                return;
+            }
+            
+            const payload = {
+                command: device,
+                action: action,
+                timestamp: new Date().toISOString()
+            };
+            
+            const topic = RealIoT.config.baseTopic + 'control';
+            publishMQTT(topic, payload);
+            
+            showAlert(`Command sent: ${device} ${action}`, 'success');
+            addDataToStream(`Control: ${device} ${action}`, 'command');
+        }
+        
+        function sendManualCommand() {
+            const device = document.getElementById('commandDevice')?.value;
+            const command = document.getElementById('commandInput')?.value;
+            const params = document.getElementById('commandParams')?.value;
+            
+            if (!command) {
+                showAlert('Please enter a command', 'warning');
+                return;
+            }
+            
+            if (!RealIoT.isConnected) {
+                showAlert('Not connected to MQTT', 'danger');
+                return;
+            }
+            
+            let payload = {
+                command: command,
+                timestamp: new Date().toISOString()
+            };
+            
+            if (device) {
+                payload.device = device;
+            }
+            
+            if (params) {
+                try {
+                    payload.params = JSON.parse(params);
+                } catch (e) {
+                    payload.params = params;
+                }
+            }
+            
+            const topic = RealIoT.config.baseTopic + 'command';
+            publishMQTT(topic, payload);
+            
+            showAlert(`Command sent: ${command}`, 'success');
+            addDataToStream(`Command: ${command}`, 'command');
+            
+            // Clear inputs
+            if (document.getElementById('commandInput')) {
+                document.getElementById('commandInput').value = '';
+            }
+        }
+        
+        function testCommand() {
+            const commands = [
+                'led:on',
+                'led:off',
+                'relay:toggle',
+                'buzzer:beep',
+                'status'
+            ];
+            
+            const randomCommand = commands[Math.floor(Math.random() * commands.length)];
+            const commandInput = document.getElementById('commandInput');
+            if (commandInput) {
+                commandInput.value = randomCommand;
+            }
+            
+            showAlert('Test command loaded. Click Send to test.', 'info');
+        }
+        
+        // ====================================================================
+        // MQTT PUBLISH
+        // ====================================================================
+        
+        function publishMQTT(topic, message) {
+            if (!RealIoT.mqttClient || !RealIoT.isConnected) {
+                console.warn('Cannot publish - MQTT not connected');
+                return false;
+            }
+            
+            const payload = typeof message === 'string' ? message : JSON.stringify(message);
+            
+            RealIoT.mqttClient.publish(topic, payload, function(err) {
+                if (err) {
+                    console.error('Failed to publish:', err);
+                    showAlert(`Failed to publish: ${err.message}`, 'danger');
+                } else {
+                    RealIoT.stats.messagesSent++;
+                    updateStats();
+                    console.log(`📤 Published to ${topic}:`, message);
+                }
+            });
+            
+            return true;
+        }
+        
+        // ====================================================================
+        // UTILITY FUNCTIONS
+        // ====================================================================
+        
+        function showPage(pageId) {
+            // Hide all pages
+            const pages = ['dashboard', 'sensors', 'charts', 'control', 'settings'];
+            pages.forEach(page => {
+                const element = document.getElementById(page);
+                if (element) {
+                    element.style.display = page === pageId ? 'block' : 'none';
+                }
+            });
+            
+            // Show/hide sidebar based on page
+            const sidebar = document.getElementById('sidebar');
+            const mainGrid = document.querySelector('.main-grid');
+            
+            if (window.innerWidth < 768) {
+                // Mobile: hide sidebar on all pages except dashboard
+                if (sidebar) {
+                    sidebar.style.display = pageId === 'dashboard' ? 'block' : 'none';
+                }
+                if (mainGrid) {
+                    mainGrid.style.display = 'block';
+                }
+            } else {
+                // Desktop: show sidebar on dashboard and sensors pages
+                if (sidebar) {
+                    sidebar.style.display = (pageId === 'dashboard' || pageId === 'sensors') ? 'block' : 'none';
+                }
+                if (mainGrid) {
+                    if (pageId === 'dashboard' || pageId === 'sensors') {
+                        mainGrid.style.gridTemplateColumns = '300px 1fr';
+                    } else {
+                        mainGrid.style.gridTemplateColumns = '1fr';
+                    }
+                }
+            }
+            
+            // Update page-specific content
+            if (pageId === 'sensors') {
+                showSensorTab('connected');
+            } else if (pageId === 'settings') {
+                showSettingsTab('mqtt');
+            } else if (pageId === 'charts') {
+                updateCharts();
+            }
+            
+            addDataToStream(`Switched to ${pageId} page`, 'system');
+        }
+        
+        function showSettingsTab(tabId) {
+            const container = document.getElementById('settingsContent');
+            
+            switch(tabId) {
+                case 'mqtt':
+                    showMQTTSettings();
+                    break;
+                case 'sensor':
+                    showSensorSettings();
+                    break;
+                case 'alert':
+                    showAlertSettings();
+                    break;
+                case 'system':
+                    showSystemInfo();
+                    break;
+            }
+        }
+        
+        function showMQTTSettings() {
+            const container = document.getElementById('settingsContent');
+            
+            container.innerHTML = `
+                <div class="form-group">
+                    <label>MQTT Broker URL</label>
+                    <input type="text" id="settingsBroker" class="form-control" value="${RealIoT.config.broker}">
+                </div>
+                
+                <div class="form-group">
+                    <label>Client ID</label>
+                    <input type="text" id="settingsClientId" class="form-control" value="${RealIoT.config.clientId}">
+                </div>
+                
+                <div class="form-group">
+                    <label>Base Topic</label>
+                    <input type="text" id="settingsBaseTopic" class="form-control" value="${RealIoT.config.baseTopic}">
+                </div>
+                
+                <div class="form-group">
+                    <label>Auto-reconnect</label>
+                    <select id="settingsAutoReconnect" class="form-control">
+                        <option value="true" selected>Enabled</option>
+                        <option value="false">Disabled</option>
+                    </select>
+                </div>
+                
+                <button onclick="saveSettings()" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>`;
+        }
+        
+        function showSensorSettings() {
+            const container = document.getElementById('settingsContent');
+            
+            container.innerHTML = `
+                <h4 style="margin-bottom: 15px;">Temperature Thresholds</h4>
+                <div class="form-group">
+                    <label>Minimum (°C)</label>
+                    <input type="number" id="tempMin" class="form-control" value="${RealIoT.config.thresholds.temperature.min}" step="0.5">
+                </div>
+                
+                <div class="form-group">
+                    <label>Maximum (°C)</label>
+                    <input type="number" id="tempMax" class="form-control" value="${RealIoT.config.thresholds.temperature.max}" step="0.5">
+                </div>
+                
+                <h4 style="margin-bottom: 15px;">Humidity Thresholds</h4>
+                <div class="form-group">
+                    <label>Minimum (%)</label>
+                    <input type="number" id="humidityMin" class="form-control" value="${RealIoT.config.thresholds.humidity.min}" step="1">
+                </div>
+                
+                <div class="form-group">
+                    <label>Maximum (%)</label>
+                    <input type="number" id="humidityMax" class="form-control" value="${RealIoT.config.thresholds.humidity.max}" step="1">
+                </div>
+                
+                <button onclick="saveThresholds()" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Thresholds
+                </button>`;
+        }
+        
+        function showAlertSettings() {
+            const container = document.getElementById('settingsContent');
+            
+            container.innerHTML = `
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="alertEnabled" ${RealIoT.config.alerts.enabled ? 'checked' : ''}>
+                        Enable Alerts
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="alertSound" ${RealIoT.config.alerts.sound ? 'checked' : ''}>
+                        Play Alert Sound
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="alertNotification" ${RealIoT.config.alerts.notification ? 'checked' : ''}>
+                        Show Browser Notifications
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>Alert Cooldown (seconds)</label>
+                    <input type="number" id="alertCooldown" class="form-control" value="60" min="10" max="3600">
+                </div>
+                
+                <button onclick="saveAlertSettings()" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Alert Settings
+                </button>`;
+        }
+        
+        function showSystemInfo() {
+            const container = document.getElementById('settingsContent');
+            
+            const uptime = Math.floor((Date.now() - RealIoT.systemStartTime) / 1000);
+            const hours = Math.floor(uptime / 3600);
+            const minutes = Math.floor((uptime % 3600) / 60);
+            const seconds = uptime % 60;
+            
+            container.innerHTML = `
+                <div class="sensor-details">
+                    <div><strong>System Uptime:</strong> ${hours}h ${minutes}m ${seconds}s</div>
+                    <div><strong>Messages Received:</strong> ${RealIoT.stats.messagesReceived}</div>
+                    <div><strong>Messages Sent:</strong> ${RealIoT.stats.messagesSent}</div>
+                    <div><strong>Sensors Connected:</strong> ${RealIoT.sensors.size}</div>
+                    <div><strong>Alerts Triggered:</strong> ${RealIoT.stats.alertsTriggered}</div>
+                    <div><strong>Browser:</strong> ${navigator.userAgent.split(' ')[0]}</div>
+                    <div><strong>Screen Resolution:</strong> ${window.screen.width}x${window.screen.height}</div>
+                    <div><strong>Local Storage:</strong> ${(JSON.stringify(localStorage).length / 1024).toFixed(2)} KB</div>
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="exportAllData()" class="btn btn-outline">
+                        <i class="fas fa-download"></i> Export All Data
+                    </button>
+                    
+                    <button onclick="clearAllData()" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Clear All Data
+                    </button>
+                </div>`;
+        }
+        
+        function updateConnectionStatus(connected) {
+            RealIoT.isConnected = connected;
+            
+            const statusDot = document.getElementById('mqttStatusDot');
+            const statusText = document.getElementById('mqttStatusText');
+            const connectionStatus = document.getElementById('connectionStatus');
+            const connectBtn = document.getElementById('connectBtn');
+            const brokerUrl = document.getElementById('brokerUrl');
+            
+            if (connected) {
+                if (statusDot) statusDot.className = 'status-dot connected';
+                if (statusText) statusText.textContent = 'Connected';
+                if (connectionStatus) {
+                    connectionStatus.textContent = 'Connected';
+                    connectionStatus.style.color = 'var(--success)';
+                }
+                if (connectBtn) {
+                    connectBtn.disabled = true;
+                    connectBtn.innerHTML = '<i class="fas fa-check"></i> Connected';
+                }
+                if (brokerUrl) brokerUrl.textContent = RealIoT.config.broker;
+            } else {
+                if (statusDot) statusDot.className = 'status-dot';
+                if (statusText) statusText.textContent = 'Disconnected';
+                if (connectionStatus) {
+                    connectionStatus.textContent = 'Disconnected';
+                    connectionStatus.style.color = 'var(--danger)';
+                }
+                if (connectBtn) {
+                    connectBtn.disabled = false;
+                    connectBtn.innerHTML = '<i class="fas fa-plug"></i> Connect';
+                }
+                if (brokerUrl) brokerUrl.textContent = 'Not connected';
+            }
+        }
+        
+        function updateStats() {
+            // Update message count
+            const messageCountEl = document.getElementById('messageCount');
+            if (messageCountEl) messageCountEl.textContent = RealIoT.stats.messagesReceived;
+            
+            // Update uptime
+            const uptimeEl = document.getElementById('uptime');
+            if (uptimeEl) {
+                const uptime = Math.floor((Date.now() - RealIoT.systemStartTime) / 1000);
+                const hours = Math.floor(uptime / 3600);
+                const minutes = Math.floor((uptime % 3600) / 60);
+                const seconds = uptime % 60;
+                
+                let uptimeText = '';
+                if (hours > 0) uptimeText += `${hours}h `;
+                if (minutes > 0 || hours > 0) uptimeText += `${minutes}m `;
+                uptimeText += `${seconds}s`;
+                
+                uptimeEl.textContent = uptimeText;
+            }
+        }
+        
+        function formatTimeAgo(seconds) {
+            if (seconds < 60) return `${seconds}s`;
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+            return `${Math.floor(seconds / 3600)}h`;
+        }
+        
+        // ====================================================================
+        // STORAGE FUNCTIONS
+        // ====================================================================
+        
+        function saveConfiguration() {
+            try {
+                localStorage.setItem(RealIoT.config.storageKey, JSON.stringify({
+                    config: RealIoT.config,
+                    sensors: Array.from(RealIoT.sensors.entries()),
+                    stats: RealIoT.stats,
+                    version: '3.0',
+                    savedAt: new Date().toISOString()
+                }));
+            } catch (error) {
+                console.error('Failed to save configuration:', error);
+            }
+        }
+        
+        function loadConfiguration() {
+            try {
+                const data = JSON.parse(localStorage.getItem(RealIoT.config.storageKey));
+                if (data) {
+                    if (data.config) RealIoT.config = { ...RealIoT.config, ...data.config };
+                    if (data.sensors) RealIoT.sensors = new Map(data.sensors);
+                    if (data.stats) RealIoT.stats = { ...RealIoT.stats, ...data.stats };
+                    
+                    console.log(`📂 Loaded ${RealIoT.sensors.size} sensors from storage`);
+                }
+            } catch (error) {
+                console.error('Failed to load configuration:', error);
+            }
+        }
+        
+        function saveSensors() {
+            try {
+                const data = {
+                    sensors: Array.from(RealIoT.sensors.entries()),
+                    savedAt: new Date().toISOString()
+                };
+                localStorage.setItem('iot-sensors', JSON.stringify(data));
+            } catch (error) {
+                console.error('Failed to save sensors:', error);
+            }
+        }
+        
+        function loadSensors() {
+            try {
+                const data = JSON.parse(localStorage.getItem('iot-sensors'));
+                if (data && data.sensors) {
+                    RealIoT.sensors = new Map(data.sensors);
+                    updateSensorList();
+                    console.log(`📂 Loaded ${RealIoT.sensors.size} sensors`);
+                }
+            } catch (error) {
+                console.error('Failed to load sensors:', error);
+                // Initialize with empty sensors if loading fails
+                RealIoT.sensors = new Map();
+                updateSensorList();
+            }
+        }
+        
+        // ====================================================================
+        // EVENT LISTENERS SETUP
+        // ====================================================================
+        
+        function setupEventListeners() {
+            // Connection buttons
+            const connectBtn = document.getElementById('connectBtn');
+            if (connectBtn) {
+                connectBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    connectMQTT();
+                });
+            }
+            
+            const configBtn = document.getElementById('configBtn');
+            if (configBtn) {
+                configBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showModal('configModal');
+                });
+            }
+            
+            // Dashboard buttons
+            const refreshDashboardBtn = document.getElementById('refreshDashboard');
+            if (refreshDashboardBtn) {
+                refreshDashboardBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    refreshDashboard();
+                });
+            }
+            
+            const pauseStreamBtn = document.getElementById('pauseStream');
+            if (pauseStreamBtn) {
+                pauseStreamBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    toggleStream();
+                });
+            }
+            
+            const clearStreamBtn = document.getElementById('clearStream');
+            if (clearStreamBtn) {
+                clearStreamBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    clearStream();
+                });
+            }
+            
+            // Sensor buttons
+            const addSensorBtn = document.getElementById('addSensorBtn');
+            if (addSensorBtn) {
+                addSensorBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showModal('sensorModal');
+                });
+            }
+            
+            const scanSensorsBtn = document.getElementById('scanSensorsBtn');
+            if (scanSensorsBtn) {
+                scanSensorsBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    scanForSensors();
+                });
+            }
+            
+            const calibrateBtn = document.getElementById('calibrateBtn');
+            if (calibrateBtn) {
+                calibrateBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    calibrateAllSensors();
+                });
+            }
+            
+            const exportDataBtn = document.getElementById('exportDataBtn');
+            if (exportDataBtn) {
+                exportDataBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    exportData();
+                });
+            }
+            
+            const resetBtn = document.getElementById('resetBtn');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    resetSystem();
+                });
+            }
+            
+            // Chart period selector
+            const chartPeriodSelect = document.getElementById('chartPeriod');
+            if (chartPeriodSelect) {
+                chartPeriodSelect.addEventListener('change', updateCharts);
+            }
+            
+            // Close modal on background click
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+                    }
+                });
+            });
+            
+            // Handle window resize for responsive layout
+            window.addEventListener('resize', handleResize);
+            
+            // Add touch event listeners for mobile
+            setupTouchEvents();
+        }
+        
+        function setupTouchEvents() {
+            // Make buttons more responsive on touch devices
+            document.querySelectorAll('.btn, .control-card, .sensor-card').forEach(element => {
+                element.addEventListener('touchstart', function() {
+                    this.classList.add('active');
+                });
+                
+                element.addEventListener('touchend', function() {
+                    this.classList.remove('active');
+                });
+            });
+        }
+        
+        function handleResize() {
+            // Reapply page layout on resize
+            const activePage = document.querySelector('.nav-btn.active')?.getAttribute('data-page') || 'dashboard';
+            showPage(activePage);
+        }
+        
+        // ====================================================================
+        // MODAL FUNCTIONS
+        // ====================================================================
+        
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('active');
+            }
+        }
+        
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+        
+        function saveMQTTConfig() {
+            const mqttBroker = document.getElementById('mqttBroker');
+            const clientId = document.getElementById('clientId');
+            const mqttUsername = document.getElementById('mqttUsername');
+            const mqttPassword = document.getElementById('mqttPassword');
+            const baseTopic = document.getElementById('baseTopic');
+            
+            if (!mqttBroker || !mqttBroker.value) {
+                showAlert('Please enter a broker URL', 'warning');
+                return;
+            }
+            
+            RealIoT.config.broker = mqttBroker.value;
+            RealIoT.config.clientId = clientId ? clientId.value : RealIoT.config.clientId;
+            RealIoT.config.baseTopic = baseTopic ? (baseTopic.value.endsWith('/') ? baseTopic.value : baseTopic.value + '/') : 'iot/';
+            
+            // Save username/password (in real app, encrypt this!)
+            if (mqttUsername && mqttUsername.value) RealIoT.config.username = mqttUsername.value;
+            if (mqttPassword && mqttPassword.value) RealIoT.config.password = mqttPassword.value;
+            
+            saveConfiguration();
+            closeModal('configModal');
+            connectMQTT();
+        }
+        
+        function saveSensor() {
+            const sensorName = document.getElementById('sensorName');
+            const sensorType = document.getElementById('sensorType');
+            const sensorId = document.getElementById('sensorId');
+            const sensorLocation = document.getElementById('sensorLocation');
+            const sensorTopic = document.getElementById('sensorTopic');
+            const sensorHardware = document.getElementById('sensorHardware');
+            
+            if (!sensorName || !sensorName.value || !sensorTopic || !sensorTopic.value) {
+                showAlert('Please enter sensor name and topic', 'warning');
+                return;
+            }
+            
+            const sensor = {
+                id: sensorId && sensorId.value ? sensorId.value : `sensor-${Date.now()}`,
+                name: sensorName.value,
+                type: sensorType ? sensorType.value : 'temperature',
+                location: sensorLocation ? sensorLocation.value : 'Unknown',
+                topic: sensorTopic.value,
+                hardware: sensorHardware ? sensorHardware.value : 'Unknown',
+                status: 'offline',
+                lastSeen: null,
+                data: {},
+                readings: [],
+                config: {
+                    calibration: { offset: 0, factor: 1 },
+                    thresholds: RealIoT.config.thresholds[sensorType ? sensorType.value : 'temperature'] || {}
+                }
+            };
+            
+            RealIoT.sensors.set(sensor.id, sensor);
+            saveSensors();
+            updateSensorList();
+            closeModal('sensorModal');
+            
+            showAlert(`Sensor "${sensor.name}" added successfully!`, 'success');
+            
+            // Subscribe to topic if connected
+            if (RealIoT.isConnected && RealIoT.mqttClient) {
+                RealIoT.mqttClient.subscribe(sensor.topic);
+            }
+        }
+        
+        // ====================================================================
+        // ACTION FUNCTIONS
+        // ====================================================================
+        
+        function scanForSensors() {
+            showAlert('Scanning for sensors...', 'info');
+            
+            // Simulate scanning
+            setTimeout(() => {
+                // In real implementation, this would scan MQTT topics or network
+                const discovered = [
+                    { id: 'esp32-01', name: 'ESP32 Sensor', type: 'temperature', topic: 'iot/esp32/sensor' },
+                    { id: 'arduino-01', name: 'Arduino Sensor', type: 'humidity', topic: 'sensors/arduino/data' },
+                    { id: 'pi-01', name: 'Raspberry Pi Sensor', type: 'temperature', topic: 'home/sensors/temperature' }
+                ];
+                
+                discovered.forEach(sensor => {
+                    if (!RealIoT.sensors.has(sensor.id)) {
+                        RealIoT.sensors.set(sensor.id, {
+                            ...sensor,
+                            status: 'offline',
+                            lastSeen: null,
+                            data: {},
+                            readings: []
+                        });
+                    }
+                });
+                
+                saveSensors();
+                updateSensorList();
+                showAlert(`Found ${discovered.length} potential sensors`, 'success');
+            }, 2000);
+        }
+        
+        function calibrateSensor(sensorId) {
+            showModal('calibrationModal');
+            
+            const sensor = RealIoT.sensors.get(sensorId);
+            if (!sensor) return;
+            
+            const content = document.getElementById('calibrationContent');
+            if (!content) return;
+            
+            content.innerHTML = `
+                <h4>Calibrate ${sensor.name}</h4>
+                <p>Enter known values to calibrate this sensor</p>
+                
+                ${sensor.data.temperature !== undefined ? `
+                    <div class="form-group">
+                        <label>Known Temperature (°C)</label>
+                        <input type="number" id="calTemp" class="form-control" step="0.1" placeholder="Enter actual temperature">
+                    </div>
+                ` : ''}
+                
+                ${sensor.data.humidity !== undefined ? `
+                    <div class="form-group">
+                        <label>Known Humidity (%)</label>
+                        <input type="number" id="calHumid" class="form-control" step="1" placeholder="Enter actual humidity">
+                    </div>
+                ` : ''}
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                    <button onclick="performCalibration('${sensorId}')" class="btn btn-primary" style="flex: 1; min-width: 120px;">
+                        <i class="fas fa-ruler"></i> Calibrate
+                    </button>
+                    <button onclick="closeModal('calibrationModal')" class="btn btn-outline" style="flex: 1; min-width: 120px;">
+                        Cancel
+                    </button>
+                </div>`;
+        }
+        
+        function performCalibration(sensorId) {
+            const sensor = RealIoT.sensors.get(sensorId);
+            if (!sensor) return;
+            
+            let calibrated = false;
+            
+            // Calibrate temperature
+            const tempInput = document.getElementById('calTemp');
+            if (tempInput && tempInput.value && sensor.data.temperature !== undefined) {
+                const knownTemp = parseFloat(tempInput.value);
+                const measuredTemp = sensor.data.temperature;
+                
+                sensor.config.calibration.temperature = {
+                    offset: knownTemp - measuredTemp,
+                    factor: knownTemp / measuredTemp,
+                    calibratedAt: new Date().toISOString()
+                };
+                
+                calibrated = true;
+            }
+            
+            // Calibrate humidity
+            const humidInput = document.getElementById('calHumid');
+            if (humidInput && humidInput.value && sensor.data.humidity !== undefined) {
+                const knownHumid = parseFloat(humidInput.value);
+                const measuredHumid = sensor.data.humidity;
+                
+                sensor.config.calibration.humidity = {
+                    offset: knownHumid - measuredHumid,
+                    factor: knownHumid / measuredHumid,
+                    calibratedAt: new Date().toISOString()
+                };
+                
+                calibrated = true;
+            }
+            
+            if (calibrated) {
+                RealIoT.sensors.set(sensorId, sensor);
+                saveSensors();
+                closeModal('calibrationModal');
+                showAlert('Sensor calibrated successfully!', 'success');
+            } else {
+                showAlert('Please enter calibration values', 'warning');
+            }
+        }
+        
+        function calibrateAllSensors() {
+            showAlert('Calibrating all sensors...', 'info');
+            
+            // In real implementation, this would send calibration commands
+            setTimeout(() => {
+                showAlert('Calibration complete!', 'success');
+            }, 3000);
+        }
+        
+        function removeSensor(sensorId) {
+            if (confirm(`Remove sensor ${sensorId}?`)) {
+                RealIoT.sensors.delete(sensorId);
+                saveSensors();
+                updateSensorList();
+                showAlert('Sensor removed', 'success');
+            }
+        }
+        
+        function showSensorDetails(sensorId) {
+            showPage('charts');
+            // In full implementation, this would show detailed charts for that sensor
+            showAlert(`Showing details for sensor ${sensorId}`, 'info');
+        }
+        
+        function addSensorFromTemplate(templateId) {
+            const templates = {
+                temp: { name: 'Temperature Sensor', type: 'temperature', topic: 'sensors/temperature/room1' },
+                humid: { name: 'Humidity Sensor', type: 'humidity', topic: 'sensors/humidity/room1' },
+                motion: { name: 'Motion Sensor', type: 'motion', topic: 'sensors/motion/hallway' },
+                door: { name: 'Door Sensor', type: 'door', topic: 'sensors/door/front' },
+                light: { name: 'Light Sensor', type: 'light', topic: 'sensors/light/livingroom' },
+                air: { name: 'Air Quality Sensor', type: 'air_quality', topic: 'sensors/airquality/livingroom' }
+            };
+            
+            const template = templates[templateId];
+            if (template) {
+                const sensorName = document.getElementById('sensorName');
+                const sensorType = document.getElementById('sensorType');
+                const sensorTopic = document.getElementById('sensorTopic');
+                
+                if (sensorName) sensorName.value = template.name;
+                if (sensorType) sensorType.value = template.type;
+                if (sensorTopic) sensorTopic.value = template.topic;
+                
+                showModal('sensorModal');
+            }
+        }
+        
+        function refreshDashboard() {
+            showAlert('Refreshing dashboard...', 'info');
+            
+            // Request fresh data from all sensors
+            RealIoT.sensors.forEach(sensor => {
+                if (RealIoT.isConnected && sensor.topic) {
+                    const command = { command: 'update', timestamp: new Date().toISOString() };
+                    publishMQTT(`${sensor.topic}/get`, command);
+                }
+            });
+        }
+        
+        function toggleStream() {
+            RealIoT.isStreamPaused = !RealIoT.isStreamPaused;
+            const button = document.getElementById('pauseStream');
+            
+            if (RealIoT.isStreamPaused) {
+                if (button) button.innerHTML = '<i class="fas fa-play"></i> Resume';
+                showAlert('Data stream paused', 'warning');
+            } else {
+                if (button) button.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                showAlert('Data stream resumed', 'success');
+            }
+        }
+        
+        function clearStream() {
+            const dataStream = document.getElementById('dataStream');
+            if (dataStream) {
+                dataStream.innerHTML = '';
+                showAlert('Data stream cleared', 'success');
+            }
+        }
+        
+        function exportData() {
+            const data = {
+                sensors: Array.from(RealIoT.sensors.entries()),
+                stats: RealIoT.stats,
+                config: RealIoT.config,
+                exportDate: new Date().toISOString(),
+                version: '3.0'
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `iot-data-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showAlert('Data exported successfully!', 'success');
+        }
+        
+        function exportAllData() {
+            exportData();
+        }
+        
+        function clearAllData() {
+            if (confirm('Clear ALL data including sensors and settings?')) {
+                localStorage.clear();
+                RealIoT.sensors.clear();
+                updateSensorList();
+                showAlert('All data cleared', 'success');
+            }
+        }
+        
+        function resetSystem() {
+            if (confirm('Reset the entire system? This will disconnect from MQTT and clear all data.')) {
+                if (RealIoT.mqttClient) {
+                    RealIoT.mqttClient.end();
+                }
+                
+                RealIoT.sensors.clear();
+                RealIoT.isConnected = false;
+                updateConnectionStatus(false);
+                updateSensorList();
+                
+                // Reset charts
+                Object.values(RealIoT.charts).forEach(chart => {
+                    if (chart) {
+                        chart.data.labels = [];
+                        chart.data.datasets[0].data = [];
+                        chart.update();
+                    }
+                });
+                
+                // Clear data stream
+                const dataStream = document.getElementById('dataStream');
+                if (dataStream) {
+                    dataStream.innerHTML = '';
+                }
+                
+                showAlert('System reset complete', 'success');
+            }
+        }
+        
+        function saveSettings() {
+            const settingsBroker = document.getElementById('settingsBroker');
+            const settingsClientId = document.getElementById('settingsClientId');
+            const settingsBaseTopic = document.getElementById('settingsBaseTopic');
+            
+            if (settingsBroker) RealIoT.config.broker = settingsBroker.value;
+            if (settingsClientId) RealIoT.config.clientId = settingsClientId.value;
+            if (settingsBaseTopic) RealIoT.config.baseTopic = settingsBaseTopic.value;
+            
+            saveConfiguration();
+            showAlert('Settings saved!', 'success');
+        }
+        
+        function saveThresholds() {
+            const tempMin = document.getElementById('tempMin');
+            const tempMax = document.getElementById('tempMax');
+            const humidityMin = document.getElementById('humidityMin');
+            const humidityMax = document.getElementById('humidityMax');
+            
+            if (tempMin) RealIoT.config.thresholds.temperature.min = parseFloat(tempMin.value);
+            if (tempMax) RealIoT.config.thresholds.temperature.max = parseFloat(tempMax.value);
+            if (humidityMin) RealIoT.config.thresholds.humidity.min = parseFloat(humidityMin.value);
+            if (humidityMax) RealIoT.config.thresholds.humidity.max = parseFloat(humidityMax.value);
+            
+            // Update all sensors with new thresholds
+            RealIoT.sensors.forEach(sensor => {
+                if (sensor.type === 'temperature') {
+                    sensor.config.thresholds = RealIoT.config.thresholds.temperature;
+                } else if (sensor.type === 'humidity') {
+                    sensor.config.thresholds = RealIoT.config.thresholds.humidity;
+                }
+            });
+            
+            saveConfiguration();
+            saveSensors();
+            showAlert('Thresholds saved!', 'success');
+        }
+        
+        function saveAlertSettings() {
+            const alertEnabled = document.getElementById('alertEnabled');
+            const alertSound = document.getElementById('alertSound');
+            const alertNotification = document.getElementById('alertNotification');
+            
+            if (alertEnabled) RealIoT.config.alerts.enabled = alertEnabled.checked;
+            if (alertSound) RealIoT.config.alerts.sound = alertSound.checked;
+            if (alertNotification) RealIoT.config.alerts.notification = alertNotification.checked;
+            
+            saveConfiguration();
+            showAlert('Alert settings saved!', 'success');
+        }
+        
+        // ====================================================================
+        // BACKGROUND TASKS
+        // ====================================================================
+        
+        function startBackgroundTasks() {
+            // Update stats every second
+            setInterval(updateStats, 1000);
+            
+            // Check for offline sensors every 30 seconds
+            setInterval(checkOfflineSensors, 30000);
+            
+            // Auto-save every minute
+            setInterval(saveConfiguration, 60000);
+            
+            // Simulate sensor data for testing (if no real sensors)
+            setInterval(simulateSensorData, 10000);
+        }
+        
+        function checkOfflineSensors() {
+            const now = Date.now();
+            let offlineCount = 0;
+            
+            RealIoT.sensors.forEach(sensor => {
+                if (sensor.lastSeen) {
+                    const timeSince = now - new Date(sensor.lastSeen).getTime();
+                    if (timeSince > 120000) { // 2 minutes
+                        sensor.status = 'offline';
+                        offlineCount++;
+                    }
+                }
+            });
+            
+            if (offlineCount > 0) {
+                updateSensorList();
+            }
+        }
+        
+        function simulateSensorData() {
+            // Only simulate if no real data is coming in
+            if (RealIoT.sensors.size === 0 || !RealIoT.isConnected) {
+                const mockData = {
+                    deviceId: 'sim-sensor-01',
+                    deviceName: 'M-USD Sensor',
+                    temperature: 22 + Math.random() * 3,
+                    humidity: 60 + Math.random() * 10,
+                    motion: Math.random() > 0.9,
+                    door: Math.random() > 0.95,
+                    light: 500 + Math.random() * 1000,
+                    timestamp: new Date().toISOString()
+                };
+                
+                processSensorData('M-USD/sensor', mockData);
+            }
+        }
+        
+        
+// Handle browser back button
+window.addEventListener('load', function() {
+// Store initial page
+const initialPage = document.querySelector('.nav-btn.active')?.getAttribute('data-page') || 'dashboard';
+
+// Add to history
+window.history.replaceState({
+page: initialPage,
+fromHome: false
+}, '', '');
+
+// Add a new state
+window.history.pushState({
+page: initialPage,
+fromHome: false
+}, '', '');
+});
+
+// Intercept back button
+window.addEventListener('popstate', function(event) {
+console.log('Back button pressed, state:', event.state);
+
+// Check if we're going back to home
+if (!event.state || !event.state.fromHome) {
+// Show confirmation
+const userConfirmed = confirm('Go back to home page?');
+
+if (userConfirmed) {
+// Navigate to home
+window.location.href = 'homee.html';
+} else {
+// Stay on current page
+const currentPage = document.querySelector('.nav-btn.active')?.getAttribute('data-page') || 'dashboard';
+window.history.pushState({
+page: currentPage,
+fromHome: false
+}, '', '');
+}
+}
+});
+
+// Also add this to prevent accidental navigation
+window.onbeforeunload = function(e) {
+// Save any data before leaving
+saveConfiguration();
+
+// Optional: Show confirmation
+// const message = 'Changes you made may not be saved.';
+// e.returnValue = message;
+// return message;
+};
+
+
+
+// Simple back button setup
+function setupSimpleBackButton() {
+const homePageUrl = 'homee.html';
+
+// Create and add back button
+const backBtn = document.createElement('button');
+backBtn.id = 'simpleBackBtn';
+backBtn.className = 'btn btn-outline';
+backBtn.innerHTML = '<i class="fas fa-home"></i> Main page';
+backBtn.style.marginLeft = 'auto';
+backBtn.style.display = 'none'; // Hidden by default
+
+// Add click handler
+backBtn.addEventListener('click', function() {
+window.location.href = homePageUrl;
+});
+
+// Add to navbar
+const navbar = document.querySelector('.navbar');
+if (navbar) {
+navbar.appendChild(backBtn);
+}
+
+// Show button on all pages except dashboard
+const showPageOriginal = window.showPage;
+window.showPage = function(pageId) {
+showPageOriginal(pageId);
+
+// Show back button on all pages except dashboard
+if (backBtn) {
+backBtn.style.display = pageId === 'dashboard' ? 'none' : 'flex';
+}
+};
+
+// Initialize
+setTimeout(() => {
+const currentPage = document.querySelector('.nav-btn.active')?.getAttribute('data-page') || 'dashboard';
+backBtn.style.display = currentPage === 'dashboard' ? 'none' : 'flex';
+}, 100);
+}
+
+// Add to your initialization
+document.addEventListener('DOMContentLoaded', function() {
+// ... your existing code ...
+setupSimpleBackButton();
+});
+
+
+
+
+        
+        // ====================================================================
+        // GLOBAL FUNCTIONS
+        // ====================================================================
+        
+        // Make functions available globally
+        window.sendControlCommand = sendControlCommand;
+        window.sendManualCommand = sendManualCommand;
+        window.testCommand = testCommand;
+        window.scanForSensors = scanForSensors;
+        window.calibrateSensor = calibrateSensor;
+        window.removeSensor = removeSensor;
+        window.showSensorDetails = showSensorDetails;
+        window.addSensorFromTemplate = addSensorFromTemplate;
+        window.showModal = showModal;
+        window.closeModal = closeModal;
+        window.performCalibration = performCalibration;
+        window.updateCharts = updateCharts;
+        
+        console.log("✅ M-USD Real IoT Sensor Dashboard COMPLETE and READY!");
+        console.log("📊 Features:");
+        console.log("  • Real-time MQTT communication");
+        console.log("  • Sensor auto-discovery");
+        console.log("  • Real-time charts and dashboard");
+        console.log("  • Threshold-based alerts");
+        console.log("  • Sensor calibration");
+        console.log("  • Data export");
+        console.log("  • Mobile responsive");
+        console.log("  • Local storage");
+        console.log("");
+        console.log("🚀 Connect to MQTT broker to start receiving sensor data!");
+    </script>
+</body>
+</html>
