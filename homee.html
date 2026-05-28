@@ -7716,7 +7716,311 @@ ${JSON.stringify(vcData.credentialSubject, null, 2)}
             console.error("Error initializing admin account:", error);
         }
     });
+
+
+
+
+
+// Add these functions INSIDE the main script block (where database and usersRef are already defined)
+
+// ============================================================
+// ADMIN PROMOTION FUNCTIONS - ADD THESE TO MAIN SCRIPT
+// ============================================================
+
+// Function to handle promotion to admin
+async function handlePromoteToAdmin(phone) {
+    if (!confirm(`Are you sure you want to promote user ${phone} to Admin?`)) {
+        return;
+    }
+    
+    showNotification('Promoting user to admin...', 'info');
+    
+    try {
+        // Use the existing usersRef and database
+        const snapshot = await get(usersRef);
+        
+        if (!snapshot.exists()) {
+            throw new Error('No users found in database');
+        }
+        
+        const usersData = snapshot.val();
+        let userFound = false;
+        let userIdFound = null;
+        
+        // Find the user by phone
+        for (const userId in usersData) {
+            const user = usersData[userId];
+            const userPhone = String(user.phone).replace(/[^0-9]/g, '');
+            const targetPhone = String(phone).replace(/[^0-9]/g, '');
+            
+            if (userPhone === targetPhone || user.phone === phone) {
+                userFound = true;
+                userIdFound = userId;
+                break;
+            }
+        }
+        
+        if (!userFound) {
+            throw new Error(`User ${phone} not found in database`);
+        }
+        
+        // Update user to be admin
+        await update(ref(database, `users/${userIdFound}`), {
+            isAdmin: true
+        });
+        
+        showNotification(`✅ User ${phone} is now an Admin!`, 'success');
+        
+        // Update local users array
+        const localUser = users.find(u => String(u.phone).replace(/[^0-9]/g, '') === String(phone).replace(/[^0-9]/g, ''));
+        if (localUser) {
+            localUser.isAdmin = true;
+        }
+        
+        // Refresh the users list
+        if (typeof displayAllUsers === 'function') {
+            await displayAllUsers();
+        }
+        
+    } catch (error) {
+        console.error('Error promoting user:', error);
+        showNotification('❌ Failed to promote user: ' + (error.message || 'Unknown error'), 'error');
+    }
+}
+
+// Function to add promote buttons to user items
+function addPromoteButtonsToUsers() {
+    const userItems = document.querySelectorAll('#users-list .user-item');
+    userItems.forEach(function(item) {
+        // Check if promote button already exists
+        if (item.querySelector('.action-btn.promote')) return;
+        
+        // Get user phone
+        const phoneElement = item.querySelector('.user-phone');
+        if (!phoneElement) return;
+        
+        let phone = phoneElement.textContent;
+        phone = phone.replace(/\*/g, '').replace(/[^0-9]/g, '').trim();
+        if (!phone) return;
+        
+        // Check if user is already admin
+        const statusBadge = item.querySelector('.status-badge');
+        const isAdmin = statusBadge && (statusBadge.textContent.includes('Admin') || statusBadge.textContent.includes('admin'));
+        
+        // Skip default admin and existing admins
+        if (!isAdmin && phone !== '0700000000') {
+            const userActions = item.querySelector('.user-actions');
+            if (userActions) {
+                const promoteBtn = document.createElement('button');
+                promoteBtn.className = 'action-btn promote';
+                promoteBtn.textContent = 'Promote to Admin';
+                promoteBtn.style.backgroundColor = '#00a651';
+                promoteBtn.style.color = 'white';
+                promoteBtn.style.border = 'none';
+                promoteBtn.style.borderRadius = '4px';
+                promoteBtn.style.padding = '5px 10px';
+                promoteBtn.style.cursor = 'pointer';
+                promoteBtn.style.fontSize = '12px';
+                promoteBtn.setAttribute('data-phone', phone);
+                promoteBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    handlePromoteToAdmin(phone);
+                };
+                userActions.appendChild(promoteBtn);
+            }
+        }
+    });
+}
+
+// Function to show manage admins modal
+async function showManageAdminsModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:10000;';
+    modal.innerHTML = `
+        <div style="background:white;border-radius:12px;max-width:500px;width:90%;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:20px;border-bottom:1px solid #eee;">
+                <h2 style="margin:0;color:#00a651;">Manage Administrators</h2>
+                <span style="font-size:24px;cursor:pointer;color:#666;" onclick="this.closest('.modal').remove()">&times;</span>
+            </div>
+            <div style="padding:20px;">
+                <div id="admins-list-container" style="max-height:400px;overflow-y:auto;">
+                    <div style="text-align:center;padding:20px;"><div class="spinner"></div><p>Loading admins...</p></div>
+                </div>
+                <div style="margin-top:20px;text-align:center;">
+                    <button class="btn btn-outline" onclick="this.closest('.modal').remove()">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    await displayAdminsList();
+}
+
+// Function to display admins list
+async function displayAdminsList() {
+    const container = document.getElementById('admins-list-container');
+    if (!container) return;
+    
+    try {
+        const snapshot = await get(usersRef);
+        
+        if (snapshot.exists()) {
+            const usersData = snapshot.val();
+            const admins = [];
+            
+            for (const userId in usersData) {
+                const user = usersData[userId];
+                if (user.isAdmin === true) {
+                    admins.push({ id: userId, ...user });
+                }
+            }
+            
+            if (admins.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#666;">No admin users found</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            admins.forEach(admin => {
+                const adminEl = document.createElement('div');
+                adminEl.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:15px;border-bottom:1px solid #eee;background:white;margin-bottom:8px;border-radius:8px;';
+                adminEl.innerHTML = `
+                    <div style="flex:1;">
+                        <div style="font-weight:600;margin-bottom:4px;">${admin.phone} <span style="background:#2ecc71;color:white;padding:3px 8px;border-radius:12px;font-size:12px;margin-left:8px;">Admin</span></div>
+                        <div style="font-size:12px;color:#666;">Balance: $${(admin.balance || 0).toFixed(2)}</div>
+                        <div style="font-size:12px;color:#666;">Registered: ${new Date(admin.dateCreated).toLocaleDateString()}</div>
+                    </div>
+                    <div>
+                        <button class="demote-admin-btn" data-phone="${admin.phone}" data-id="${admin.id}" style="background:#e74c3c;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;">Demote</button>
+                    </div>
+                `;
+                container.appendChild(adminEl);
+            });
+            
+            // Add demote event listeners
+            document.querySelectorAll('.demote-admin-btn').forEach(btn => {
+                btn.onclick = async function(e) {
+                    e.stopPropagation();
+                    const phone = this.dataset.phone;
+                    const userId = this.dataset.id;
+                    
+                    if (currentUser && currentUser.phone === phone) {
+                        showNotification('You cannot demote yourself!', 'error');
+                        return;
+                    }
+                    
+                    if (confirm(`Remove admin privileges from ${phone}?`)) {
+                        try {
+                            await update(ref(database, `users/${userId}`), {
+                                isAdmin: false
+                            });
+                            showNotification(`${phone} is no longer an admin.`, 'success');
+                            await displayAdminsList();
+                            if (typeof displayAllUsers === 'function') {
+                                await displayAllUsers();
+                            }
+                            setTimeout(addPromoteButtonsToUsers, 100);
+                        } catch (error) {
+                            console.error('Error demoting user:', error);
+                            showNotification('Failed to demote user', 'error');
+                        }
+                    }
+                };
+            });
+        } else {
+            container.innerHTML = '<p style="text-align:center;color:#666;">No users found</p>';
+        }
+    } catch (error) {
+        console.error('Error loading admins:', error);
+        container.innerHTML = '<p style="text-align:center;color:#666;">Error loading admins</p>';
+    }
+}
+
+// Function to add manage admins button
+function addManageAdminsButton() {
+    const adminControls = document.querySelector('.admin-controls');
+    if (adminControls && !adminControls.querySelector('.manage-admins-btn')) {
+        const btn = document.createElement('button');
+        btn.className = 'admin-control-btn manage-admins-btn';
+        btn.innerHTML = '<i class="fas fa-user-shield"></i> Manage Admins';
+        btn.style.backgroundColor = '#00a651';
+        btn.style.color = 'white';
+        btn.onclick = function() {
+            showManageAdminsModal();
+        };
+        adminControls.appendChild(btn);
+    }
+}
+
+// Initialize promotion system
+function initPromotionSystem() {
+    // Override displayAllUsers to add promote buttons
+    if (typeof displayAllUsers === 'function') {
+        const originalDisplayAllUsers = displayAllUsers;
+        window.displayAllUsers = async function() {
+            await originalDisplayAllUsers();
+            setTimeout(addPromoteButtonsToUsers, 200);
+        };
+    }
+    
+    addManageAdminsButton();
+    addPromoteButtonsToUsers();
+    
+    // Watch for user list changes
+    const usersList = document.getElementById('users-list');
+    if (usersList) {
+        const observer = new MutationObserver(function() {
+            addPromoteButtonsToUsers();
+        });
+        observer.observe(usersList, { childList: true, subtree: true });
+    }
+    
+    // Periodic check
+    setInterval(addPromoteButtonsToUsers, 2000);
+    setInterval(addManageAdminsButton, 3000);
+}
+
+// Call this after DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(initPromotionSystem, 2000);
+    });
+} else {
+    setTimeout(initPromotionSystem, 2000);
+}
+
+
+
+
+
 </script>
+
+
+
+
+
+    <script>
+        // Show splash screen for 5 seconds, then fade out and show main content
+        setTimeout(function() {
+            var splash = document.getElementById('splash-screen');
+            var mainContent = document.getElementById('main-content');
+            
+            // Fade out splash screen
+            splash.style.opacity = '0';
+            
+            // After fade out, remove splash screen and show main content
+            setTimeout(function() {
+                splash.style.display = 'none';
+                mainContent.style.display = 'block';
+            }, 500);
+        }, 5000); // 5000 milliseconds = 5 seconds
+        
+        
+    </script>
+
+
+
 
 
 <!-- ========== SOURCE CODE HIDING & PROTECTION MODULE ========== -->
@@ -8131,22 +8435,6 @@ ${JSON.stringify(vcData.credentialSubject, null, 2)}
 -->
 
 
-    <script>
-        // Show splash screen for 5 seconds, then fade out and show main content
-        setTimeout(function() {
-            var splash = document.getElementById('splash-screen');
-            var mainContent = document.getElementById('main-content');
-            
-            // Fade out splash screen
-            splash.style.opacity = '0';
-            
-            // After fade out, remove splash screen and show main content
-            setTimeout(function() {
-                splash.style.display = 'none';
-                mainContent.style.display = 'block';
-            }, 500);
-        }, 5000); // 5000 milliseconds = 5 seconds
-    </script>
 
 
 
