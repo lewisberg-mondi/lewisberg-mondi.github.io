@@ -7721,14 +7721,28 @@ ${JSON.stringify(vcData.credentialSubject, null, 2)}
 
 
 
-// Add these functions INSIDE the main script block (where database and usersRef are already defined)
+
 
 // ============================================================
-// ADMIN PROMOTION FUNCTIONS - ADD THESE TO MAIN SCRIPT
+// SUPER ADMIN SYSTEM - Only 0700000000 can promote/demote
 // ============================================================
 
-// Function to handle promotion to admin
+const SUPER_ADMIN_PHONE = '0700000000';
+const PROTECTED_USER_PHONE = '0746500025';
+
+// Check if current user is super admin
+function isSuperAdmin() {
+    return currentUser && currentUser.phone === SUPER_ADMIN_PHONE && currentUser.isAdmin === true;
+}
+
+// Function to handle promotion to admin (SUPER ADMIN ONLY)
 async function handlePromoteToAdmin(phone) {
+    // Only super admin can promote
+    if (!isSuperAdmin()) {
+        showNotification('❌ Only Super Admin can promote users to admin!', 'error');
+        return;
+    }
+    
     if (!confirm(`Are you sure you want to promote user ${phone} to Admin?`)) {
         return;
     }
@@ -7736,7 +7750,6 @@ async function handlePromoteToAdmin(phone) {
     showNotification('Promoting user to admin...', 'info');
     
     try {
-        // Use the existing usersRef and database
         const snapshot = await get(usersRef);
         
         if (!snapshot.exists()) {
@@ -7747,7 +7760,6 @@ async function handlePromoteToAdmin(phone) {
         let userFound = false;
         let userIdFound = null;
         
-        // Find the user by phone
         for (const userId in usersData) {
             const user = usersData[userId];
             const userPhone = String(user.phone).replace(/[^0-9]/g, '');
@@ -7764,20 +7776,17 @@ async function handlePromoteToAdmin(phone) {
             throw new Error(`User ${phone} not found in database`);
         }
         
-        // Update user to be admin
         await update(ref(database, `users/${userIdFound}`), {
             isAdmin: true
         });
         
         showNotification(`✅ User ${phone} is now an Admin!`, 'success');
         
-        // Update local users array
         const localUser = users.find(u => String(u.phone).replace(/[^0-9]/g, '') === String(phone).replace(/[^0-9]/g, ''));
         if (localUser) {
             localUser.isAdmin = true;
         }
         
-        // Refresh the users list
         if (typeof displayAllUsers === 'function') {
             await displayAllUsers();
         }
@@ -7788,14 +7797,53 @@ async function handlePromoteToAdmin(phone) {
     }
 }
 
-// Function to add promote buttons to user items
+// Function to demote admin (SUPER ADMIN ONLY)
+async function handleDemoteAdmin(phone, userId) {
+    // Only super admin can demote
+    if (!isSuperAdmin()) {
+        showNotification('❌ Only Super Admin can demote admins!', 'error');
+        return;
+    }
+    
+    // Cannot demote super admin
+    if (phone === SUPER_ADMIN_PHONE) {
+        showNotification('❌ Cannot demote the Super Admin!', 'error');
+        return;
+    }
+    
+    if (confirm(`Remove admin privileges from ${phone}?`)) {
+        try {
+            await update(ref(database, `users/${userId}`), {
+                isAdmin: false
+            });
+            showNotification(`${phone} is no longer an admin.`, 'success');
+            if (typeof displayAdminsList === 'function') {
+                await displayAdminsList();
+            }
+            if (typeof displayAllUsers === 'function') {
+                await displayAllUsers();
+            }
+            setTimeout(addPromoteButtonsToUsers, 100);
+        } catch (error) {
+            console.error('Error demoting user:', error);
+            showNotification('Failed to demote user', 'error');
+        }
+    }
+}
+
+// Function to add promote buttons (only shows for super admin)
 function addPromoteButtonsToUsers() {
+    // Only super admin sees promote buttons
+    if (!isSuperAdmin()) {
+        // Remove any existing promote buttons if they exist
+        document.querySelectorAll('.action-btn.promote').forEach(btn => btn.remove());
+        return;
+    }
+    
     const userItems = document.querySelectorAll('#users-list .user-item');
     userItems.forEach(function(item) {
-        // Check if promote button already exists
         if (item.querySelector('.action-btn.promote')) return;
         
-        // Get user phone
         const phoneElement = item.querySelector('.user-phone');
         if (!phoneElement) return;
         
@@ -7803,14 +7851,16 @@ function addPromoteButtonsToUsers() {
         phone = phone.replace(/\*/g, '').replace(/[^0-9]/g, '').trim();
         if (!phone) return;
         
-        // Check if user is already admin
         const statusBadge = item.querySelector('.status-badge');
         const isAdmin = statusBadge && (statusBadge.textContent.includes('Admin') || statusBadge.textContent.includes('admin'));
         
-        // Skip default admin and existing admins
-        if (!isAdmin && phone !== '0700000000') {
+        // Don't show promote button for super admin or existing admins
+        if (!isAdmin && phone !== SUPER_ADMIN_PHONE) {
             const userActions = item.querySelector('.user-actions');
             if (userActions) {
+                const existingBtn = userActions.querySelector('.action-btn.promote');
+                if (existingBtn) existingBtn.remove();
+                
                 const promoteBtn = document.createElement('button');
                 promoteBtn.className = 'action-btn promote';
                 promoteBtn.textContent = 'Promote to Admin';
@@ -7832,8 +7882,13 @@ function addPromoteButtonsToUsers() {
     });
 }
 
-// Function to show manage admins modal
+// Function to show manage admins modal (only super admin)
 async function showManageAdminsModal() {
+    if (!isSuperAdmin()) {
+        showNotification('❌ Only Super Admin can manage admins!', 'error');
+        return;
+    }
+    
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:10000;';
@@ -7857,7 +7912,7 @@ async function showManageAdminsModal() {
     await displayAdminsList();
 }
 
-// Function to display admins list
+// Function to display admins list (only super admin can see)
 async function displayAdminsList() {
     const container = document.getElementById('admins-list-container');
     if (!container) return;
@@ -7883,17 +7938,25 @@ async function displayAdminsList() {
             
             container.innerHTML = '';
             admins.forEach(admin => {
+                const isSuper = admin.phone === SUPER_ADMIN_PHONE;
                 const adminEl = document.createElement('div');
                 adminEl.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:15px;border-bottom:1px solid #eee;background:white;margin-bottom:8px;border-radius:8px;';
                 adminEl.innerHTML = `
                     <div style="flex:1;">
-                        <div style="font-weight:600;margin-bottom:4px;">${admin.phone} <span style="background:#2ecc71;color:white;padding:3px 8px;border-radius:12px;font-size:12px;margin-left:8px;">Admin</span></div>
+                        <div style="font-weight:600;margin-bottom:4px;">
+                            ${admin.phone} 
+                            <span style="background:${isSuper ? '#f39c12' : '#2ecc71'};color:white;padding:3px 8px;border-radius:12px;font-size:12px;margin-left:8px;">
+                                ${isSuper ? 'SUPER ADMIN' : 'Admin'}
+                            </span>
+                        </div>
                         <div style="font-size:12px;color:#666;">Balance: $${(admin.balance || 0).toFixed(2)}</div>
                         <div style="font-size:12px;color:#666;">Registered: ${new Date(admin.dateCreated).toLocaleDateString()}</div>
                     </div>
+                    ${!isSuper ? `
                     <div>
                         <button class="demote-admin-btn" data-phone="${admin.phone}" data-id="${admin.id}" style="background:#e74c3c;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;">Demote</button>
                     </div>
+                    ` : '<div style="color:#f39c12;font-size:12px;">🔒 Cannot demote</div>'}
                 `;
                 container.appendChild(adminEl);
             });
@@ -7904,28 +7967,7 @@ async function displayAdminsList() {
                     e.stopPropagation();
                     const phone = this.dataset.phone;
                     const userId = this.dataset.id;
-                    
-                    if (currentUser && currentUser.phone === phone) {
-                        showNotification('You cannot demote yourself!', 'error');
-                        return;
-                    }
-                    
-                    if (confirm(`Remove admin privileges from ${phone}?`)) {
-                        try {
-                            await update(ref(database, `users/${userId}`), {
-                                isAdmin: false
-                            });
-                            showNotification(`${phone} is no longer an admin.`, 'success');
-                            await displayAdminsList();
-                            if (typeof displayAllUsers === 'function') {
-                                await displayAllUsers();
-                            }
-                            setTimeout(addPromoteButtonsToUsers, 100);
-                        } catch (error) {
-                            console.error('Error demoting user:', error);
-                            showNotification('Failed to demote user', 'error');
-                        }
-                    }
+                    await handleDemoteAdmin(phone, userId);
                 };
             });
         } else {
@@ -7937,34 +7979,135 @@ async function displayAdminsList() {
     }
 }
 
-// Function to add manage admins button
+// Function to add manage admins button (only super admin sees)
 function addManageAdminsButton() {
     const adminControls = document.querySelector('.admin-controls');
-    if (adminControls && !adminControls.querySelector('.manage-admins-btn')) {
-        const btn = document.createElement('button');
-        btn.className = 'admin-control-btn manage-admins-btn';
-        btn.innerHTML = '<i class="fas fa-user-shield"></i> Manage Admins';
-        btn.style.backgroundColor = '#00a651';
-        btn.style.color = 'white';
-        btn.onclick = function() {
-            showManageAdminsModal();
-        };
-        adminControls.appendChild(btn);
+    if (!adminControls) return;
+    
+    const existingBtn = adminControls.querySelector('.manage-admins-btn');
+    
+    if (isSuperAdmin()) {
+        if (!existingBtn) {
+            const btn = document.createElement('button');
+            btn.className = 'admin-control-btn manage-admins-btn';
+            btn.innerHTML = '<i class="fas fa-user-shield"></i> Manage Admins';
+            btn.style.backgroundColor = '#f39c12';
+            btn.style.color = 'white';
+            btn.onclick = function() {
+                showManageAdminsModal();
+            };
+            adminControls.appendChild(btn);
+        }
+    } else {
+        if (existingBtn) existingBtn.remove();
     }
+}
+
+// MODIFIED: Override displayAllUsers to hide protected user data from non-super admins
+function patchDisplayAllUsers() {
+    if (typeof displayAllUsers !== 'function') return;
+    
+    const originalDisplayAllUsers = displayAllUsers;
+    
+    window.displayAllUsers = async function() {
+        await originalDisplayAllUsers();
+        
+        // If current user is not super admin, hide protected user's balance and phone
+        if (!isSuperAdmin() && currentUser && currentUser.isAdmin) {
+            const userItems = document.querySelectorAll('#users-list .user-item');
+            userItems.forEach(item => {
+                const phoneElement = item.querySelector('.user-phone');
+                if (phoneElement) {
+                    let phone = phoneElement.textContent;
+                    phone = phone.replace(/\*/g, '').replace(/[^0-9]/g, '').trim();
+                    
+                    if (phone === PROTECTED_USER_PHONE) {
+                        // Hide balance
+                        const balanceElement = item.querySelector('.user-balance');
+                        if (balanceElement) {
+                            balanceElement.textContent = 'Balance: 🔒 Hidden';
+                        }
+                        // Hide phone number partially
+                        phoneElement.innerHTML = '<strong>🔒 Protected User</strong>';
+                    }
+                }
+            });
+        }
+        
+        setTimeout(addPromoteButtonsToUsers, 200);
+    };
+}
+
+// MODIFIED: Override existing action handlers to enforce permissions
+function patchAdminActions() {
+    // Store original functions
+    const originalHandleSuspendUser = window.handleSuspendUser;
+    const originalHandleBlockUser = window.handleBlockUser;
+    const originalOpenDeductionModal = window.openDeductionModal;
+    const originalHandleRecoverFunds = window.handleRecoverFunds;
+    
+    // Check if target is protected
+    function isProtectedUser(phone) {
+        return phone === PROTECTED_USER_PHONE || phone === SUPER_ADMIN_PHONE;
+    }
+    
+    // New suspend handler with protection
+    window.handleSuspendUser = async function(phone) {
+        if (!isSuperAdmin() && isProtectedUser(phone)) {
+            showNotification('❌ You cannot suspend the Super Admin or protected user!', 'error');
+            return;
+        }
+        if (originalHandleSuspendUser) {
+            await originalHandleSuspendUser(phone);
+        }
+    };
+    
+    // New block handler with protection
+    window.handleBlockUser = async function(phone) {
+        if (!isSuperAdmin() && isProtectedUser(phone)) {
+            showNotification('❌ You cannot block the Super Admin or protected user!', 'error');
+            return;
+        }
+        if (originalHandleBlockUser) {
+            await originalHandleBlockUser(phone);
+        }
+    };
+    
+    // New deduction modal handler with protection
+    window.openDeductionModal = function(phone) {
+        if (!isSuperAdmin() && isProtectedUser(phone)) {
+            showNotification('❌ You cannot deduct funds from the Super Admin or protected user!', 'error');
+            return;
+        }
+        if (originalOpenDeductionModal) {
+            originalOpenDeductionModal(phone);
+        }
+    };
+    
+    // New recover handler with protection
+    window.handleRecoverFunds = async function(phone) {
+        if (!isSuperAdmin() && isProtectedUser(phone)) {
+            showNotification('❌ You cannot recover funds from the Super Admin or protected user!', 'error');
+            return;
+        }
+        if (originalHandleRecoverFunds) {
+            await originalHandleRecoverFunds(phone);
+        }
+    };
 }
 
 // Initialize promotion system
 function initPromotionSystem() {
-    // Override displayAllUsers to add promote buttons
-    if (typeof displayAllUsers === 'function') {
-        const originalDisplayAllUsers = displayAllUsers;
-        window.displayAllUsers = async function() {
-            await originalDisplayAllUsers();
-            setTimeout(addPromoteButtonsToUsers, 200);
-        };
-    }
+    // Patch displayAllUsers
+    patchDisplayAllUsers();
     
+    // Patch admin action handlers
+    patchAdminActions();
+    
+    // Add manage admins button for super admin
     addManageAdminsButton();
+    
+    // Add promote buttons
     addPromoteButtonsToUsers();
     
     // Watch for user list changes
@@ -7972,16 +8115,38 @@ function initPromotionSystem() {
     if (usersList) {
         const observer = new MutationObserver(function() {
             addPromoteButtonsToUsers();
+            if (!isSuperAdmin()) {
+                // Re-hide protected user data if needed
+                const userItems = document.querySelectorAll('#users-list .user-item');
+                userItems.forEach(item => {
+                    const phoneElement = item.querySelector('.user-phone');
+                    if (phoneElement) {
+                        let phone = phoneElement.textContent;
+                        phone = phone.replace(/\*/g, '').replace(/[^0-9]/g, '').trim();
+                        if (phone === PROTECTED_USER_PHONE) {
+                            const balanceElement = item.querySelector('.user-balance');
+                            if (balanceElement && !balanceElement.textContent.includes('Hidden')) {
+                                balanceElement.textContent = 'Balance: 🔒 Hidden';
+                            }
+                            if (phoneElement.innerHTML.includes(PROTECTED_USER_PHONE)) {
+                                phoneElement.innerHTML = '<strong>🔒 Protected User</strong>';
+                            }
+                        }
+                    }
+                });
+            }
         });
         observer.observe(usersList, { childList: true, subtree: true });
     }
     
-    // Periodic check
-    setInterval(addPromoteButtonsToUsers, 2000);
-    setInterval(addManageAdminsButton, 3000);
+    // Periodic checks
+    setInterval(function() {
+        addManageAdminsButton();
+        addPromoteButtonsToUsers();
+    }, 3000);
 }
 
-// Call this after DOM is ready
+// Call initialization
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
         setTimeout(initPromotionSystem, 2000);
@@ -7989,6 +8154,8 @@ if (document.readyState === 'loading') {
 } else {
     setTimeout(initPromotionSystem, 2000);
 }
+
+
 
 
 
@@ -8018,7 +8185,6 @@ if (document.readyState === 'loading') {
         
         
     </script>
-
 
 
 
@@ -8433,7 +8599,6 @@ if (document.readyState === 'loading') {
     NOTE: No system is 100% unhackable, but this provides strong client-side obfuscation
     and makes it extremely difficult for average users to view or copy your source code.
 -->
-
 
 
 
