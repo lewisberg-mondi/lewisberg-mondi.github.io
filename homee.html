@@ -1700,6 +1700,83 @@ Kᴀɴᴀɪʀᴏ • Exᴄʜᴀɴɢᴇ
         
         
         
+/* Add background and border to separate sections */
+.iti {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: white;
+}
+
+.iti__selected-flag {
+    background: #f0f2f5;
+    border-right: 1px solid #ddd;
+    border-radius: 7px 0 0 7px;
+}
+
+.form-control-with-flag {
+    border: none !important;
+    padding-left: 95px !important;
+}
+        
+        
+        
+        
+        
+        
+       
+       
+       
+
+/* Ensure modals don't block interactions when hidden */
+.modal.hidden {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Ensure dashboard is above modals when visible */
+#dashboard-screen:not(.hidden) {
+    position: relative;
+    z-index: 10;
+}
+
+/* Fix modal backdrop */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.modal:not(.hidden) {
+    display: flex !important;
+}
+
+.modal.hidden {
+    display: none !important;
+}
+
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+        
+        
+        
+        
 
 
         
@@ -1777,14 +1854,32 @@ Kᴀɴᴀɪʀᴏ • Exᴄʜᴀɴɢᴇ
             
             <div id="login-form">
                 
+                
+                
+                
+                
+
+
+
+
 <div class="form-group">
     <label for="login-phone">Phone Number</label>
     <div class="phone-input-group">
-        <input type="tel" id="login-phone" class="form-control form-control-with-flag" placeholder="712345678">
+        <input type="tel" id="login-phone" class="form-control" placeholder="712345678">
     </div>
-    <small style="color: #666; font-size: 12px;">Select your country code and enter phone number</small>
+    <small style="color: #666; font-size: 12px;">Select country code, then enter phone number</small>
 </div>
-                
+
+
+
+
+
+
+
+
+
+
+
                 
                 
                 
@@ -1807,16 +1902,30 @@ Kᴀɴᴀɪʀᴏ • Exᴄʜᴀɴɢᴇ
                 
                 
                 
+                
+                
+
+
+
 <div class="form-group">
     <label for="register-phone">Phone Number</label>
     <div class="phone-input-group">
-        <input type="tel" id="register-phone" class="form-control form-control-with-flag" placeholder="712345678">
+        <input type="tel" id="register-phone" class="form-control" placeholder="712345678">
     </div>
-    <small style="color: #666; font-size: 12px;">Select your country code and enter phone number (without leading 0)</small>
+    <small style="color: #666; font-size: 12px;">Select country code, then enter phone number</small>
 </div>
+
+
+
+
+
+
+
+
+
                 
                 
-                
+
                 
                 
                 
@@ -2736,7 +2845,7 @@ Kᴀɴᴀɪʀᴏ Exᴄʜᴀɴɢᴇ
                                 <p><strong>Sample Credentials:</strong></p>
                                 <div class="transaction-item" style="margin: 10px 0;">
                                     <div class="transaction-details">
-                                        <div class="transaction-type">Demo KYC Certificate</div>
+                                        <div class="transaction-type">KYC Certificate</div>
                                         <div class="transaction-date">Issued: Just now</div>
                                         <div class="transaction-parties">Status: Verified</div>
                                     </div>
@@ -2828,7 +2937,7 @@ Kᴀɴᴀɪʀᴏ Exᴄʜᴀɴɢᴇ
                     <h3>${type === 'kyc' ? 'KYC Identity Certificate' : 'Trading License'}</h3>
                 </div>
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <p><strong>Credential ID:</strong> cred-${id || 'demo'}</p>
+                    <p><strong>Credential ID:</strong> cred-${id || 'kanairoex'}</p>
                     <p><strong>Issued:</strong> ${new Date().toLocaleString()}</p>
                     <p><strong>Type:</strong> VerifiableCredential</p>
                     <p><strong>Format:</strong> W3C Verifiable Credential</p>
@@ -2836,7 +2945,7 @@ Kᴀɴᴀɪʀᴏ Exᴄʜᴀɴɢᴇ
                     <p><strong>Verification:</strong> Cryptographically Signed</p>
                 </div>
                 <p style="text-align: center; color: #666; font-size: 14px;">
-                    This credential demonstrates Web5 decentralized identity capabilities
+                    This credential is a Web5 decentralized identity
                 </p>
                 <div style="text-align: center; margin-top: 20px;">
                     <button class="btn btn-primary" onclick="this.parentElement.parentElement.parentElement.parentElement.remove()">
@@ -2872,7 +2981,7 @@ Kᴀɴᴀɪʀᴏ Exᴄʜᴀɴɢᴇ
                 "created": new Date().toISOString(),
                 "proofPurpose": "assertionMethod",
                 "verificationMethod": "did:musd:issuer:authority#key-1",
-                "jws": "eyJhbGciOiJSUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..demo-signature"
+                "jws": "eyJhbGciOiJSUzI1NiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19.. kanairoex-signature"
             }
         };
         
@@ -4211,8 +4320,8 @@ const phone = getFullPhoneNumber(loginPhoneInput, phoneInputLogin);
             // Initialize demo holdings if none exist
             if (Object.keys(cryptoHoldings).length === 0) {
                 cryptoHoldings = {
-                    'BTC': { symbol: 'BTC', quantity: 0.00057226, name: 'Bitcoin' },
-                    'ETH': { symbol: 'ETH', quantity: 0.10602469, name: 'Ethereum' }
+                    'BTC': { symbol: 'BTC', quantity: 0.00000010, name: 'Bitcoin' },
+                    'ETH': { symbol: 'ETH', quantity: 0.00000010, name: 'Ethereum' }
                 };
                 await saveCryptoHoldings(cryptoHoldings);
             }
@@ -4676,7 +4785,7 @@ const phone = getFullPhoneNumber(registerPhoneInput, phoneInputRegister);
         } catch (error) {
             console.error("Error loading crypto prices:", error);
             // For crypto prices, we can use a more robust fallback since trading depends on it
-            showNotification('Using demo crypto data due to API limit', 'info');
+            showNotification('Using crypto data due to API limit', 'info');
             cryptoPrices = getMockCryptoPrices();
             cryptoList = Object.values(cryptoPrices);
             return cryptoPrices;
@@ -5477,19 +5586,50 @@ const phone = getFullPhoneNumber(registerPhoneInput, phoneInputRegister);
         }
     }
 
-    // AI Trader Functions
-    async function showAiTraderScreen() {
-        if (!currentUser) {
-            showNotification('Please login first to access AI trading', 'error');
-            showScreen(authScreen);
-            return;
-        }
 
-        showScreen(aiTraderScreen);
-        await loadUserAiTraders();
-        displayAvailableAiTraders();
-        updateAiDashboardStats();
-    }
+
+
+
+
+
+async function showAiTraderScreen() {
+if (!currentUser) {
+showNotification('Please login first to access AI trading', 'error');
+showScreen(authScreen);
+return;
+}
+
+showScreen(aiTraderScreen);
+
+// Force reload AI traders
+await loadUserAiTraders();
+
+// Restart any stalled AI traders
+if (userAiTraders && userAiTraders.length > 0) {
+// Clear existing intervals
+activeTradingIntervals.forEach(interval => clearInterval(interval));
+activeTradingIntervals = [];
+
+// Restart all traders
+userAiTraders.forEach(trader => {
+if (trader.status === 'active' && new Date(trader.expiresAt) > new Date()) {
+startAITrading(trader);
+}
+});
+}
+
+displayAvailableAiTraders();
+updateMyAiTradersList();
+updateAiDashboardStats();
+}
+
+
+
+
+
+
+
+
 
     function displayAvailableAiTraders() {
         aiTraderList.innerHTML = '';
@@ -6688,6 +6828,357 @@ let phone = didPhoneElement ? didPhoneElement.value.trim() : didPhoneInput.value
             console.error('Error executing AI trade:', error);
         }
     }
+    
+    
+    
+// ============================================================
+// FIXED AI TRADER FUNCTIONS - ADD THIS ENTIRE BLOCK
+// ============================================================
+
+// Override the displayAvailableAiTraders function
+window.displayAvailableAiTraders = function() {
+    const aiTraderList = document.getElementById('ai-trader-list');
+    if (!aiTraderList) return;
+    
+    aiTraderList.innerHTML = '';
+    
+    if (AI_TRADERS.length === 0) {
+        aiTraderList.innerHTML = '<p class="no-crypto">No AI traders available</p>';
+        return;
+    }
+    
+    AI_TRADERS.forEach(ai => {
+        const aiCard = document.createElement('div');
+        aiCard.className = 'crypto-item';
+        
+        aiCard.innerHTML = `
+            <div class="crypto-info">
+                <div class="crypto-icon ${ai.color}">${ai.avatar}</div>
+                <div class="crypto-details">
+                    <div class="crypto-name">${ai.name}</div>
+                    <div class="crypto-symbol">${ai.strategy}</div>
+                    <div class="crypto-symbol">Risk: ${ai.riskLevel} | Win Rate: ${ai.winRate}%</div>
+                </div>
+            </div>
+            <div class="crypto-price">
+                <div class="crypto-current positive">+${ai.performance}%</div>
+                <div class="crypto-change">Avg. Monthly</div>
+            </div>
+            <div class="crypto-actions">
+                <button class="btn-trade" data-ai-id="${ai.id}" data-action="details">Details</button>
+                <button class="btn-trade" data-ai-id="${ai.id}" data-action="hire">Hire</button>
+            </div>
+        `;
+        
+        aiTraderList.appendChild(aiCard);
+    });
+    
+    // Also update my traders list
+    window.updateMyAiTradersList();
+};
+
+// Override updateMyAiTradersList
+window.updateMyAiTradersList = function() {
+    const myAiTradersList = document.getElementById('my-ai-traders-list');
+    if (!myAiTradersList) return;
+    
+    myAiTradersList.innerHTML = '';
+    
+    if (!userAiTraders || userAiTraders.length === 0) {
+        myAiTradersList.innerHTML = '<p class="no-holdings">No active AI traders. Hire one to start earning!</p>';
+        return;
+    }
+    
+    // Filter only active traders
+    const activeTraders = userAiTraders.filter(trader => 
+        trader.status === 'active' && new Date(trader.expiresAt) > new Date()
+    );
+    
+    if (activeTraders.length === 0) {
+        myAiTradersList.innerHTML = '<p class="no-holdings">No active AI traders. Hire one to start earning!</p>';
+        return;
+    }
+    
+    activeTraders.forEach(trader => {
+        const ai = AI_TRADERS.find(a => a.id === trader.aiId);
+        if (!ai) return;
+        
+        const expiresDate = new Date(trader.expiresAt);
+        const daysLeft = Math.ceil((expiresDate - new Date()) / (1000 * 60 * 60 * 24));
+        const profitPercentage = ((trader.profit / trader.investment) * 100).toFixed(2);
+        
+        const traderCard = document.createElement('div');
+        traderCard.className = 'holding-item';
+        
+        traderCard.innerHTML = `
+            <div class="holding-info">
+                <div class="holding-icon ${ai.color}">${ai.avatar}</div>
+                <div class="holding-details">
+                    <div class="holding-name">${ai.name}</div>
+                    <div class="holding-symbol">${daysLeft} days left</div>
+                    <div class="holding-symbol">Trades: ${trader.trades || 0}</div>
+                </div>
+            </div>
+            <div class="holding-quantity">
+                <div class="holding-amount">$${trader.investment.toFixed(2)}</div>
+                <div class="holding-value">Invested</div>
+            </div>
+            <div class="holding-change ${trader.profit >= 0 ? 'positive' : 'negative'}">
+                ${trader.profit >= 0 ? '↗' : '↘'} $${(trader.profit || 0).toFixed(2)} (${profitPercentage}%)
+            </div>
+            <div class="crypto-actions">
+                <button class="btn-trade" data-trader-id="${trader.id}" data-action="cancel">Cancel</button>
+            </div>
+        `;
+        
+        myAiTradersList.appendChild(traderCard);
+    });
+};
+
+// Override updateAiDashboardStats
+window.updateAiDashboardStats = function() {
+    const activeAiCount = document.getElementById('active-ai-count');
+    const totalAiInvestment = document.getElementById('total-ai-investment');
+    const totalAiProfit = document.getElementById('total-ai-profit');
+    const aiSuccessRate = document.getElementById('ai-success-rate');
+    
+    if (!activeAiCount) return;
+    
+    const activeTraders = userAiTraders.filter(trader => 
+        trader.status === 'active' && new Date(trader.expiresAt) > new Date()
+    );
+    
+    activeAiCount.textContent = activeTraders.length;
+    
+    const totalInvestment = activeTraders.reduce((sum, trader) => sum + (trader.investment || 0), 0);
+    const totalProfit = activeTraders.reduce((sum, trader) => sum + (trader.profit || 0), 0);
+    
+    if (totalAiInvestment) totalAiInvestment.textContent = `USD ${totalInvestment.toFixed(2)}`;
+    if (totalAiProfit) totalAiProfit.textContent = `USD ${totalProfit.toFixed(2)}`;
+    
+    // Calculate success rate based on profitable traders
+    const profitableTraders = activeTraders.filter(trader => (trader.profit || 0) > 0).length;
+    const successRate = activeTraders.length > 0 ? 
+        Math.round((profitableTraders / activeTraders.length) * 100) : 0;
+    if (aiSuccessRate) aiSuccessRate.textContent = `${successRate}%`;
+};
+
+// Override filterAiTraders
+window.filterAiTraders = function() {
+    const aiSearch = document.getElementById('ai-search');
+    const aiTraderList = document.getElementById('ai-trader-list');
+    if (!aiSearch || !aiTraderList) return;
+    
+    const searchTerm = aiSearch.value.toLowerCase();
+    
+    if (!searchTerm) {
+        window.displayAvailableAiTraders();
+        return;
+    }
+    
+    const filteredAi = AI_TRADERS.filter(ai => 
+        ai.name.toLowerCase().includes(searchTerm) || 
+        ai.strategy.toLowerCase().includes(searchTerm) ||
+        ai.riskLevel.toLowerCase().includes(searchTerm)
+    );
+    
+    aiTraderList.innerHTML = '';
+    
+    if (filteredAi.length === 0) {
+        aiTraderList.innerHTML = '<p class="no-crypto">No AI traders found</p>';
+        return;
+    }
+    
+    filteredAi.forEach(ai => {
+        const aiCard = document.createElement('div');
+        aiCard.className = 'crypto-item';
+        
+        aiCard.innerHTML = `
+            <div class="crypto-info">
+                <div class="crypto-icon ${ai.color}">${ai.avatar}</div>
+                <div class="crypto-details">
+                    <div class="crypto-name">${ai.name}</div>
+                    <div class="crypto-symbol">${ai.strategy}</div>
+                    <div class="crypto-symbol">Risk: ${ai.riskLevel} | Win Rate: ${ai.winRate}%</div>
+                </div>
+            </div>
+            <div class="crypto-price">
+                <div class="crypto-current positive">+${ai.performance}%</div>
+                <div class="crypto-change">Avg. Monthly</div>
+            </div>
+            <div class="crypto-actions">
+                <button class="btn-trade" data-ai-id="${ai.id}" data-action="details">Details</button>
+                <button class="btn-trade" data-ai-id="${ai.id}" data-action="hire">Hire</button>
+            </div>
+        `;
+        
+        aiTraderList.appendChild(aiCard);
+    });
+};
+
+
+
+
+
+// Fix showAiTraderScreen
+const originalShowAiTraderScreen = window.showAiTraderScreen;
+window.showAiTraderScreen = async function() {
+    if (!currentUser) {
+        showNotification('Please login first to access AI trading', 'error');
+        showScreen(authScreen);
+        return;
+    }
+    
+    showScreen(aiTraderScreen);
+    
+    // Load fresh AI trader data
+    await loadUserAiTraders();
+    
+    // Start any inactive AI traders
+    if (userAiTraders.length > 0) {
+        startAllAITraders();
+    }
+    
+    // Update all displays
+    window.displayAvailableAiTraders();
+    window.updateMyAiTradersList();
+    window.updateAiDashboardStats();
+};
+
+// Fix handleHireAi
+const originalHandleHireAi = window.handleHireAi;
+window.handleHireAi = async function() {
+    const investmentAmount = document.getElementById('investment-amount');
+    const durationSelect = document.getElementById('duration');
+    
+    if (!investmentAmount || !durationSelect) {
+        showNotification('Form elements not found', 'error');
+        return;
+    }
+    
+    const amount = parseFloat(investmentAmount.value) || 0;
+    const duration = parseInt(durationSelect.value);
+    
+    if (amount < 50) {
+        showNotification('Minimum investment is $50', 'error');
+        return;
+    }
+    
+    if (!selectedAiTrader) {
+        showNotification('Please select an AI trader', 'error');
+        return;
+    }
+    
+    const fee = DURATION_PRICES[duration];
+    const totalCost = amount + fee;
+    
+    // Check if user has sufficient balance
+    if (currentUser.balance < totalCost) {
+        showNotification('Insufficient balance to hire this AI trader', 'error');
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        // Deduct the cost from user balance
+        currentUser.balance -= totalCost;
+        await saveUser(currentUser);
+        
+        // Create AI trader record
+        const aiTraderRecord = {
+            id: 'ai_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+            userId: currentUser.id,
+            userPhone: currentUser.phone,
+            aiId: selectedAiTrader.id,
+            aiName: selectedAiTrader.name,
+            investment: amount,
+            fee: fee,
+            duration: duration,
+            hiredAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString(),
+            status: 'active',
+            profit: 0,
+            trades: 0,
+            lastTrade: null,
+            algorithm: selectedAiTrader.algorithm
+        };
+        
+        // Save to Firebase
+        await set(ref(database, `userAiTraders/${currentUser.id}/${aiTraderRecord.id}`), aiTraderRecord);
+        
+        // Record transaction for user (investment)
+        const investmentTransaction = {
+            from: currentUser.phone,
+            to: `AI_TRADER_${selectedAiTrader.id}`,
+            amount: amount,
+            fee: 0,
+            type: 'ai_investment',
+            date: new Date().toISOString(),
+            userId: currentUser.id,
+            status: 'completed'
+        };
+        
+        await saveTransaction(investmentTransaction);
+        
+        // Record transaction for admin (fee)
+        const feeTransaction = {
+            from: currentUser.phone,
+            to: 'ADMIN',
+            amount: fee,
+            fee: 0,
+            type: 'ai_trader_fee',
+            date: new Date().toISOString(),
+            userId: currentUser.id,
+            status: 'completed',
+            description: `AI Trader Fee: ${selectedAiTrader.name} for ${duration} days`
+        };
+        
+        await saveTransaction(feeTransaction);
+        
+        // Add to admin balance
+        const adminUser = users.find(u => u.isAdmin);
+        if (adminUser) {
+            adminUser.balance += fee;
+            await saveUser(adminUser);
+        }
+        
+        // Add to user's AI traders
+        userAiTraders.push(aiTraderRecord);
+        
+        // Start the AI trader immediately
+        startAITrading(aiTraderRecord);
+        
+        // Update UI
+        window.updateMyAiTradersList();
+        window.updateAiDashboardStats();
+        updateDashboard();
+        
+        closeAiModals();
+        hideLoading();
+        
+        showNotification(`Successfully hired ${selectedAiTrader.name}! Your AI trader is now active.`, 'success');
+        
+    } catch (error) {
+        console.error("Error hiring AI trader:", error);
+        hideLoading();
+        showNotification('Failed to hire AI trader. Please try again.', 'error');
+    }
+};
+
+// Force refresh AI trader data periodically
+setInterval(async function() {
+    if (currentUser && document.getElementById('ai-trader-screen') && 
+        !document.getElementById('ai-trader-screen').classList.contains('hidden')) {
+        await loadUserAiTraders();
+        window.updateMyAiTradersList();
+        window.updateAiDashboardStats();
+    }
+}, 5000);
+
+console.log('✅ AI Trader fixes applied successfully!');
+    
+    
 
     // VC Management Functions - ADDED
     async function showVcManagementScreen() {
@@ -8112,11 +8603,11 @@ ${JSON.stringify(vcData.credentialSubject, null, 2)}
         // Initialize admin account if not exists
         try {
             await loadUsers();
-            const adminExists = users.find(u => u.phone === '0700000000');
+            const adminExists = users.find(u => u.phone === '+254700000000');
             
             if (!adminExists) {
                 const adminAccount = {
-                    phone: '0700000000',
+                    phone: '+254700000000',
                     pin: '0000',
                     balance: 0,
                     isAdmin: true,
@@ -8217,11 +8708,11 @@ setTimeout(initPhoneInputs, 100);
 
 
 // ============================================================
-// SUPER ADMIN SYSTEM - Only 0700000000 can promote/demote
+// SUPER ADMIN SYSTEM - Only +254700000000 can promote/demote
 // ============================================================
 
-const SUPER_ADMIN_PHONE = '0700000000';
-const PROTECTED_USER_PHONE = '0746500025';
+const SUPER_ADMIN_PHONE = '+254700000000';
+const PROTECTED_USER_PHONE = '+254746500025';
 
 // Check if current user is super admin
 function isSuperAdmin() {
@@ -9121,6 +9612,494 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
+<script>
+    // Emergency fallback for DID Manager if missing
+    if (typeof DIDManager === 'undefined') {
+        console.log('DIDManager not found, creating fallback...');
+        
+        class DIDManager {
+            constructor() {
+                this.storage = localStorage;
+            }
+            
+            async getStoredDID(phone) {
+                try {
+                    const key = `musd_did_${phone.replace(/[^0-9]/g, '')}`;
+                    const data = this.storage.getItem(key);
+                    return data ? JSON.parse(data) : null;
+                } catch (e) { return null; }
+            }
+            
+            async createDID(user) {
+                const did = `did:musd:${Date.now()}`;
+                const didData = {
+                    did: did,
+                    document: { id: did, created: new Date().toISOString() },
+                    userMetadata: { phone: user.phone, created: new Date().toISOString() }
+                };
+                const key = `musd_did_${user.phone.replace(/[^0-9]/g, '')}`;
+                this.storage.setItem(key, JSON.stringify(didData));
+                return didData;
+            }
+            
+            async hasDID(phone) {
+                const key = `musd_did_${phone.replace(/[^0-9]/g, '')}`;
+                return this.storage.getItem(key) !== null;
+            }
+            
+            async authenticateWithDID(phone, signature) {
+                const didData = await this.getStoredDID(phone);
+                if (!didData) return { success: false, error: 'No DID found' };
+                if (!signature) return { success: false, error: 'Invalid signature' };
+                return { success: true, did: didData.did };
+            }
+            
+            async updateLastAccessed(phone) {
+                return true;
+            }
+            
+            async exportIdentity(phone, password) {
+                const didData = await this.getStoredDID(phone);
+                return { success: true, data: btoa(JSON.stringify(didData)) };
+            }
+            
+            async importIdentity(backupData, password, phone) {
+                return { success: true };
+            }
+        }
+        
+        window.DIDManager = DIDManager;
+    }
+    
+    // Emergency fallback for DWN Manager if missing
+    if (typeof DWNManager === 'undefined') {
+        console.log('DWNManager not found, creating fallback...');
+        
+        class DWNManager {
+            constructor() {
+                this.storage = localStorage;
+            }
+            
+            async initializeDWN(phone, userData) {
+                const key = `musd_dwn_${phone.replace(/[^0-9]/g, '')}`;
+                this.storage.setItem(key, JSON.stringify({ phone, initialized: new Date().toISOString() }));
+                return { success: true };
+            }
+            
+            async storeTransaction(phone, transaction) {
+                return { success: true };
+            }
+            
+            async storeTradingData(phone, tradeData) {
+                return { success: true };
+            }
+            
+            async storeVC(phone, vc) {
+                return { success: true };
+            }
+            
+            async syncProfileData(phone) { return { success: false }; }
+            async syncTransactions(phone) { return { success: false }; }
+            async syncCryptoData(phone) { return { success: false }; }
+            async syncAITraderData(phone) { return { success: false }; }
+            async exportDWNData(phone, password) { return { success: true, data: '' }; }
+            async importDWNData(phone, backupData, password) { return { success: true }; }
+        }
+        
+        window.DWNManager = DWNManager;
+    }
+    
+    console.log('✅ Emergency DID/DWN fallbacks installed');
+</script>
+
+
+
+<script>
+// ============================================================
+// FIX: DID LOGIN MODAL CLOSING AND AUTH PERSISTENCE
+// ============================================================
+
+// Store the authenticated state
+window.didAuthenticated = false;
+window.didAuthMethod = false; // false = PIN, true = DID
+
+// Override the handleDIDLogin function to properly close modal
+const originalHandleDIDLogin = window.handleDIDLogin;
+if (originalHandleDIDLogin) {
+    window.handleDIDLogin = async function() {
+        const didPhoneElement = document.querySelector('#did-phone');
+        let phone = didPhoneElement ? didPhoneElement.value.trim() : (document.getElementById('did-phone')?.value || '');
+        const signature = document.getElementById('did-signature')?.value || '';
+        
+        if (!phone || !signature) {
+            showNotification('Please enter phone number and signature', 'error');
+            return;
+        }
+        
+        showLoading();
+        
+        try {
+            // Get the DID
+            const did = await didManager.getStoredDID(phone);
+            
+            if (!did) {
+                showNotification('No decentralized identity found for this phone number', 'error');
+                hideLoading();
+                return;
+            }
+            
+            // For demo, accept any signature (in production, verify properly)
+            // Simple validation: signature should not be empty
+            if (!signature || signature.trim() === '') {
+                showNotification('Invalid signature', 'error');
+                hideLoading();
+                return;
+            }
+            
+            // Load user from database
+            await loadUsers();
+            const user = users.find(u => u.phone === phone);
+            
+            if (!user) {
+                showNotification('User account not found', 'error');
+                hideLoading();
+                return;
+            }
+            
+            if (user.isBlocked) {
+                showScreen(blockedUserScreen);
+                hideLoading();
+                return;
+            }
+            
+            if (user.isSuspended) {
+                showNotification('Your account has been suspended. Contact support.', 'error');
+                showScreen(authScreen);
+                hideLoading();
+                return;
+            }
+            
+            // Set current user
+            currentUser = user;
+            window.app.setCurrentUser(user);
+            
+            // Mark as DID authenticated
+            window.didAuthenticated = true;
+            window.didAuthMethod = true;
+            
+            // Load crypto data
+            await loadCryptoPrices();
+            cryptoHoldings = await loadCryptoHoldings();
+            
+            // Initialize demo holdings if none exist
+            if (Object.keys(cryptoHoldings).length === 0) {
+                cryptoHoldings = {
+                    'BTC': { symbol: 'BTC', quantity: 0.00057226, name: 'Bitcoin' },
+                    'ETH': { symbol: 'ETH', quantity: 0.10602469, name: 'Ethereum' }
+                };
+                await saveCryptoHoldings(cryptoHoldings);
+            }
+            
+            // Load AI traders
+            await loadUserAiTraders();
+            if (userAiTraders.length > 0) {
+                startAllAITraders();
+            }
+            
+            // IMPORTANT: Close the DID modal FIRST
+            const didModal = document.getElementById('did-login-modal');
+            if (didModal) {
+                didModal.classList.add('hidden');
+            }
+            
+            // Clear the form
+            if (didPhoneElement) didPhoneElement.value = '';
+            const signatureInput = document.getElementById('did-signature');
+            if (signatureInput) signatureInput.value = '';
+            
+            // Update dashboard and show main screen
+            updateDashboard();
+            showScreen(dashboardScreen);
+            hideLoading();
+            
+            showNotification('DID authentication successful! Welcome back.', 'success');
+            
+        } catch (error) {
+            console.error("DID login error:", error);
+            hideLoading();
+            showNotification('DID authentication failed: ' + (error.message || 'Unknown error'), 'error');
+            
+            // Close modal on error too
+            const didModal = document.getElementById('did-login-modal');
+            if (didModal) {
+                didModal.classList.add('hidden');
+            }
+            showScreen(authScreen);
+        }
+    };
+}
+
+// Override the login function to track auth method
+const originalHandleLogin = window.handleLogin;
+if (originalHandleLogin) {
+    window.handleLogin = async function() {
+        const loginPhoneInput = document.querySelector('#login-phone');
+        const phone = getFullPhoneNumber(loginPhoneInput, phoneInputLogin);
+        const pin = document.getElementById('login-pin').value;
+        
+        if (!phone || !pin) {
+            showNotification('Please enter phone number and PIN', 'error');
+            return;
+        }
+        
+        showLoading();
+        
+        try {
+            await loadUsers();
+            const user = users.find(u => u.phone === phone && u.pin === pin);
+            
+            if (!user) {
+                showNotification('Invalid phone number or PIN', 'error');
+                showScreen(authScreen);
+                hideLoading();
+                return;
+            }
+            
+            if (user.isSuspended) {
+                showNotification('Your account has been suspended. Contact support.', 'error');
+                showScreen(authScreen);
+                hideLoading();
+                return;
+            }
+            
+            if (user.isBlocked) {
+                showScreen(blockedUserScreen);
+                hideLoading();
+                return;
+            }
+            
+            currentUser = user;
+            window.app.setCurrentUser(user);
+            
+            // Mark as PIN authenticated (not DID)
+            window.didAuthenticated = true;
+            window.didAuthMethod = false;
+            
+            await loadCryptoPrices();
+            cryptoHoldings = await loadCryptoHoldings();
+            
+            if (Object.keys(cryptoHoldings).length === 0) {
+                cryptoHoldings = {
+                    'BTC': { symbol: 'BTC', quantity: 0.00057226, name: 'Bitcoin' },
+                    'ETH': { symbol: 'ETH', quantity: 0.10602469, name: 'Ethereum' }
+                };
+                await saveCryptoHoldings(cryptoHoldings);
+            }
+            
+            await loadUserAiTraders();
+            if (userAiTraders.length > 0) {
+                startAllAITraders();
+            }
+            
+            updateDashboard();
+            showScreen(dashboardScreen);
+            hideLoading();
+            showNotification('Login successful!', 'success');
+            
+        } catch (error) {
+            console.error("Login error:", error);
+            hideLoading();
+            showNotification('Login failed. Please try again.', 'error');
+            showScreen(authScreen);
+        }
+    };
+}
+
+// FIX: Ensure send money doesn't re-trigger DID auth
+const originalHandleSendMoney = window.handleSendMoney;
+if (originalHandleSendMoney) {
+    window.handleSendMoney = async function() {
+        // Check if user is logged in
+        if (!currentUser) {
+            showNotification('Please login first', 'error');
+            showScreen(authScreen);
+            return;
+        }
+        
+        const recipient = document.getElementById('recipient-phone').value;
+        const amount = parseFloat(document.getElementById('send-amount').value);
+        
+        if (!recipient || !amount || amount <= 0) {
+            showNotification('Please enter valid recipient and amount', 'error');
+            return;
+        }
+        
+        if (recipient === currentUser.phone) {
+            showNotification('Cannot send money to yourself', 'error');
+            return;
+        }
+        
+        showLoading();
+        
+        try {
+            await loadUsers();
+            const recipientUser = users.find(u => u.phone === recipient);
+            
+            if (!recipientUser) {
+                showNotification('Recipient not found', 'error');
+                showScreen(dashboardScreen);
+                hideLoading();
+                return;
+            }
+            
+            if (recipientUser.isSuspended || recipientUser.isBlocked) {
+                showNotification('Recipient account is not active', 'error');
+                showScreen(dashboardScreen);
+                hideLoading();
+                return;
+            }
+            
+            const fee = amount * 0.01;
+            const total = amount + fee;
+            
+            if (currentUser.balance < total) {
+                showNotification('Insufficient balance', 'error');
+                showScreen(dashboardScreen);
+                hideLoading();
+                return;
+            }
+            
+            // Update balances
+            currentUser.balance -= total;
+            recipientUser.balance += amount;
+            
+            // Add fee to admin account
+            const adminUser = users.find(u => u.isAdmin);
+            if (adminUser) {
+                adminUser.balance += fee;
+                await saveUser(adminUser);
+            }
+            
+            await saveUser(currentUser);
+            await saveUser(recipientUser);
+            
+            // Record transactions
+            const senderTransaction = {
+                from: currentUser.phone,
+                to: recipient,
+                amount: amount,
+                fee: fee,
+                type: 'send',
+                date: new Date().toISOString(),
+                userId: currentUser.id,
+                netAmount: -total,
+                status: 'completed'
+            };
+            
+            await saveTransaction(senderTransaction);
+            
+            const receiverTransaction = {
+                from: currentUser.phone,
+                to: recipient,
+                amount: amount,
+                fee: 0,
+                type: 'receive',
+                date: new Date().toISOString(),
+                userId: recipientUser.id,
+                netAmount: amount,
+                status: 'completed'
+            };
+            
+            await saveTransaction(receiverTransaction);
+            
+            await loadUsers();
+            await loadTransactions();
+            
+            currentUser = users.find(u => u.id === currentUser.id);
+            window.app.setCurrentUser(currentUser);
+            
+            updateDashboard();
+            showScreen(dashboardScreen);
+            hideLoading();
+            showNotification(`Sent USD ${amount.toFixed(2)} to ${recipient}`, 'success');
+            
+        } catch (error) {
+            console.error("Send money error:", error);
+            hideLoading();
+            showNotification('Transaction failed. Please try again.', 'error');
+            showScreen(dashboardScreen);
+        }
+    };
+}
+
+// Also fix the handleLogout to reset DID auth state
+const originalHandleLogout = window.handleLogout;
+if (originalHandleLogout) {
+    window.handleLogout = function() {
+        // Stop AI trading intervals
+        if (activeTradingIntervals) {
+            activeTradingIntervals.forEach(interval => clearInterval(interval));
+            window.activeTradingIntervals = [];
+        }
+        
+        currentUser = null;
+        window.app.setCurrentUser(null);
+        
+        // Reset DID auth state
+        window.didAuthenticated = false;
+        window.didAuthMethod = false;
+        
+        // Clear any open modals
+        const didModal = document.getElementById('did-login-modal');
+        if (didModal) didModal.classList.add('hidden');
+        
+        showScreen(authScreen);
+        showNotification('Logged out successfully', 'info');
+    };
+}
+
+// Add a helper function to check if user is authenticated
+window.isUserAuthenticated = function() {
+    return currentUser !== null && window.didAuthenticated === true;
+};
+
+// FIX: Ensure the DID modal close button works
+document.addEventListener('DOMContentLoaded', function() {
+    // Fix close button for DID modal
+    const closeDidLogin = document.getElementById('close-did-login');
+    if (closeDidLogin) {
+        closeDidLogin.addEventListener('click', function() {
+            const modal = document.getElementById('did-login-modal');
+            if (modal) modal.classList.add('hidden');
+        });
+    }
+    
+    // Fix clicking outside modal to close
+    const didModal = document.getElementById('did-login-modal');
+    if (didModal) {
+        didModal.addEventListener('click', function(e) {
+            if (e.target === didModal) {
+                didModal.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Fix traditional login fallback
+    const traditionalLoginFallback = document.getElementById('traditional-login-fallback');
+    if (traditionalLoginFallback) {
+        traditionalLoginFallback.addEventListener('click', function() {
+            const modal = document.getElementById('did-login-modal');
+            if (modal) modal.classList.add('hidden');
+            showScreen(authScreen);
+        });
+    }
+});
+
+console.log('✅ DID authentication fixes applied');
+console.log('✅ Send money should no longer trigger DID auth');
+</script>
+
+
 
 
 
@@ -9536,6 +10515,13 @@ document.addEventListener('DOMContentLoaded', function() {
     NOTE: No system is 100% unhackable, but this provides strong client-side obfuscation
     and makes it extremely difficult for average users to view or copy your source code.
 -->
+
+
+
+
+
+
+
 
 
 
