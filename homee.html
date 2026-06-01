@@ -1347,59 +1347,362 @@ Kᴀɴᴀɪʀᴏ • Exᴄʜᴀɴɢᴇ
             color: #666;
         }
         
-        /* Splash screen styles */
-        #splash-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease;
-        }
+        
+        
+        
+/* Splash screen styles */
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #EDF2FF 0%, #D0DCF5 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+}
 
-        /* Logo styling */
-        .logo {
-            max-width: 300px;
-            width: 80%;
-            animation: fadeIn 1s ease;
-        }
+.splash-container {
+    text-align: center;
+    padding: 10px;
+}
 
-        /* Fade in animation for logo */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
+.logo-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 40px;
+}
 
-        /* Main content (initially hidden) */
-        #main-content {
-            display: none;
-        }
+/* Round logo */
+.logo {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    display: block;
+    position: relative;
+    z-index: 3;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    object-fit: cover;
+    background: #0a0f1e;
+}
+
+/* Professional Rainbow Snake Border - Main ring */
+.rainbow-snake {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120px;
+    height: 120px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    z-index: 2;
+}
+
+.rainbow-snake::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border-radius: 50%;
+    background: linear-gradient(0deg, 
+        #ff0000, #ff7700, #ffff00, 
+        #00ff00, #0000ff, #4b0082, #9400d3, #ff0000);
+    background-size: 200% 200%;
+    animation: rainbowRotate 2s linear infinite;
+    z-index: 1;
+}
+
+/* Inner glow ring */
+.rainbow-snake::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: linear-gradient(0deg, 
+        rgba(255,0,0,0.3), rgba(255,119,0,0.3), rgba(255,255,0,0.3), 
+        rgba(0,255,0,0.3), rgba(0,0,255,0.3), rgba(75,0,130,0.3), rgba(148,0,211,0.3));
+    background-size: 200% 200%;
+    animation: rainbowRotate 2s linear infinite reverse;
+    filter: blur(8px);
+    z-index: 0;
+}
+
+/* Second snake layer for thickness and depth */
+.rainbow-snake-inner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 128px;
+    height: 128px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.rainbow-snake-inner::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, 
+        #ff0000, #ff7700, #ffff00, 
+        #00ff00, #00ffff, #0000ff, #9400d3, #ff0000);
+    background-size: 300% 100%;
+    animation: rainbowSlide 1.5s linear infinite;
+    opacity: 0.7;
+    z-index: 1;
+}
+
+.rainbow-snake-inner::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    border-radius: 50%;
+    background: #0a0f1e;
+    z-index: 2;
+}
+
+/* Professional rotating animation */
+@keyframes rainbowRotate {
+    0% {
+        background-position: 0% 0%;
+        transform: rotate(0deg);
+    }
+    100% {
+        background-position: 100% 100%;
+        transform: rotate(360deg);
+    }
+}
+
+/* Sliding rainbow effect */
+@keyframes rainbowSlide {
+    0% {
+        background-position: 0% 0%;
+    }
+    100% {
+        background-position: 300% 0%;
+    }
+}
+
+/* Animated text words - Professional styling */
+.splash-text {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 40px 0 30px;
+}
+
+.word {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    padding: 10px 20px;
+    border-radius: 40px;
+    opacity: 0;
+    animation: wordFadeIn 0.6s ease forwards;
+    text-transform: uppercase;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+
+.word:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.1);
+}
+
+.word.fast {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 166, 81, 0.05));
+    color: #202C26;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    animation-delay: 0.2s;
+}
+
+.word.secure {
+    background: linear-gradient(135deg, rgba(52, 152, 219, 0.15), rgba(52, 152, 219, 0.05));
+    color: #21262A;
+    border: 1px solid rgba(52, 152, 219, 0.3);
+    animation-delay: 0.5s;
+}
+
+.word.transparent {
+    background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(241, 196, 15, 0.05));
+    color: #1B1A19;
+    border: 1px solid rgba(241, 196, 15, 0.3);
+    animation-delay: 0.8s;
+}
+
+.word.unhackable {
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.15), rgba(231, 76, 60, 0.05));
+    color: #0F0E0E;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    animation-delay: 1.1s;
+}
+
+@keyframes wordFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Professional Loading Dots */
+.loading-dots {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 30px;
+}
+
+.loading-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00a651, #00ff88);
+    animation: dotPulse 1.4s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(1) {
+    animation-delay: 0s;
+    background: #ff0000;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+    background: #ff7700;
+}
+
+.loading-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+    background: #ffff00;
+}
+
+@keyframes dotPulse {
+    0%, 80%, 100% {
+        transform: scale(0.6);
+        opacity: 0.3;
+        box-shadow: 0 0 0px rgba(0,166,81,0);
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 10px rgba(0,166,81,0.5);
+    }
+}
+
+/* Logo entrance animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Optional: Add a subtle pulse to the logo */
+.logo {
+    animation: fadeIn 0.8s ease, logoPulse 3s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+    0%, 100% {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+    50% {
+        box-shadow: 0 20px 50px rgba(0, 166, 81, 0.2);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .logo {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .rainbow-snake {
+        width: 170px;
+        height: 170px;
+    }
+    
+    .rainbow-snake-inner {
+        width: 178px;
+        height: 178px;
+    }
+    
+    .word {
+        font-size: 11px;
+        padding: 6px 12px;
+    }
+    
+    .splash-text {
+        gap: 10px;
+    }
+}
+        
+        
+        
+        
+
+
         
     </style>
 </head>
 <body>
     
-    <!-- Splash Screen with Logo -->
-    <div id="splash-screen">
-        <img src="kanairopng.png" alt="Logo" class="logo">
-    </div>
     
-    <div class="app-header">
-        <div class="container">
-            <div class="logo">
-                
-<img class="header-image" src="khg.jpg" alt="Karensi Exchange Logo">
+
+<!-- Splash Screen with Logo -->
+<div id="splash-screen">
+    <div class="splash-container">
+        <div class="logo-wrapper">
+            <div class="rainbow-snake"></div>
+            <div class="rainbow-snake-inner"></div>
+            <img src="kanairoex.jpg" alt="Logo" class="logo">
+        </div>
+        <div class="splash-text">
+            <span class="word fast">⚡ FAST</span>
+            <span class="word secure">🔒 SECURE</span>
+            <span class="word transparent">👁️ TRANSPARENT</span>
+            <span class="word unhackable">🛡️ UNHACKABLE</span>
+        </div>
+        <div class="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+    
+
+    
+
                 
                 
                 <h1>
@@ -1415,8 +1718,21 @@ Kᴀɴᴀɪʀᴏ Exᴄʜᴀɴɢᴇ
             
 <h2 style="text-align: center;">Kᴀɴᴀɪʀᴏ Exᴄʜᴀɴɢᴇ</h2>
 <div style="text-align: center;">
+    
+<div style="text-align: center;">
     <img class="header-image" src="khg.jpg" alt="Karensi Exchange Logo">
 </div>
+            
+            
+    
+      
+            
+        </div>
+    
+    
+    
+    
+    
             
             
             
@@ -8164,27 +8480,471 @@ if (document.readyState === 'loading') {
 </script>
 
 
+<script>
+
+// Show splash screen for 5 seconds, then fade out and show main content
+setTimeout(function() {
+var splash = document.getElementById('splash-screen');
+var mainContent = document.getElementById('main-content');
+
+// Fade out splash screen
+splash.style.opacity = '0';
+
+// After fade out, remove splash screen and show main content
+setTimeout(function() {
+splash.style.display = 'none';
+mainContent.style.display = 'block';
+}, 500);
+}, 5000); // 5000 milliseconds = 5 seconds
+
+
+</script>
 
 
 
-    <script>
-        // Show splash screen for 5 seconds, then fade out and show main content
-        setTimeout(function() {
-            var splash = document.getElementById('splash-screen');
-            var mainContent = document.getElementById('main-content');
+
+
+
+
+
+<style>
+/* Scrolling Ticker Styles - Add to existing CSS */
+.ticker-container {
+    background: linear-gradient(135deg, #1a1f2e 0%, #0f1119 100%);
+    border-radius: 12px;
+    padding: 12px 0;
+    margin-bottom: 20px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    border: 1px solid rgba(0,166,81,0.2);
+}
+
+.ticker-wrapper {
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+}
+
+.ticker-content {
+    display: inline-flex;
+    animation: scrollTicker 30s linear infinite;
+    white-space: nowrap;
+}
+
+.ticker-content:hover {
+    animation-play-state: paused;
+}
+
+@keyframes scrollTicker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 20px;
+    margin: 0 5px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 40px;
+    font-family: 'Segoe UI', monospace;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+
+.ticker-item:hover {
+    background: rgba(0,166,81,0.15);
+    transform: translateY(-2px);
+}
+
+.ticker-symbol {
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+.ticker-price {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.ticker-change {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.ticker-change.positive {
+    color: #00ff88;
+    background: rgba(0,255,136,0.1);
+}
+
+.ticker-change.negative {
+    color: #ff4444;
+    background: rgba(255,68,68,0.1);
+}
+
+.ticker-volume {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+}
+
+.ticker-update-badge {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,166,81,0.3);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    color: #00a651;
+    z-index: 2;
+    backdrop-filter: blur(4px);
+    font-weight: 600;
+}
+
+.ticker-update-badge i {
+    margin-right: 4px;
+}
+
+/* Add loading placeholder for ticker */
+.ticker-loading {
+    padding: 12px 20px;
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .ticker-item {
+        padding: 5px 12px;
+        gap: 6px;
+    }
+    .ticker-symbol { font-size: 12px; }
+    .ticker-price { font-size: 11px; }
+    .ticker-change { font-size: 10px; }
+    .ticker-volume { display: none; }
+}
+</style>
+
+<script>
+// ============================================================
+// CRYPTO PRICE TICKER - REAL-TIME SCROLLING PRICES
+// Fetches from CoinGecko API and updates every 30 seconds
+// ============================================================
+
+class CryptoTicker {
+    constructor() {
+        this.prices = [];
+        this.updateInterval = null;
+        this.tickerElement = null;
+        this.isUpdating = false;
+    }
+
+    async init() {
+        console.log('Initializing crypto ticker...');
+        await this.fetchPrices();
+        this.startAutoUpdate();
+    }
+
+    async fetchPrices() {
+        if (this.isUpdating) return;
+        this.isUpdating = true;
+
+        try {
+            // Fetch top 15 cryptocurrencies by market cap
+            const response = await fetch(
+                'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=15&page=1&sparkline=false&price_change_percentage=24h&precision=2'
+            );
             
-            // Fade out splash screen
-            splash.style.opacity = '0';
+            if (!response.ok) throw new Error(`API error: ${response.status}`);
             
-            // After fade out, remove splash screen and show main content
-            setTimeout(function() {
-                splash.style.display = 'none';
-                mainContent.style.display = 'block';
-            }, 500);
-        }, 5000); // 5000 milliseconds = 5 seconds
+            const data = await response.json();
+            this.prices = data.map(coin => ({
+                symbol: coin.symbol.toUpperCase(),
+                name: coin.name,
+                price: coin.current_price,
+                change24h: coin.price_change_percentage_24h || 0,
+                volume: coin.total_volume,
+                marketCap: coin.market_cap,
+                icon: this.getIcon(coin.symbol)
+            }));
+            
+            this.renderTicker();
+            this.updateLastUpdateTime();
+            console.log(`Ticker updated: ${this.prices.length} cryptocurrencies loaded`);
+            
+        } catch (error) {
+            console.error('Ticker fetch error:', error);
+            this.showFallbackData();
+        } finally {
+            this.isUpdating = false;
+        }
+    }
+
+    getIcon(symbol) {
+        const icons = {
+            btc: '₿',
+            eth: 'Ξ',
+            usdt: '₮',
+            bnb: 'ⓑ',
+            sol: '◎',
+            xrp: '✕',
+            ada: 'A',
+            doge: 'Ð',
+            dot: '●',
+            avax: '⛰️',
+            link: '🔗',
+            matic: '◆',
+            ltc: 'Ł',
+            trx: 'TRX',
+            shib: '🐕'
+        };
+        return icons[symbol.toLowerCase()] || symbol.substring(0, 2).toUpperCase();
+    }
+
+    renderTicker() {
+        const tickerContainer = document.getElementById('crypto-ticker-container');
+        if (!tickerContainer) return;
+
+        if (this.prices.length === 0) {
+            tickerContainer.innerHTML = '<div class="ticker-loading"><i class="fas fa-chart-line"></i> Loading crypto prices...</div>';
+            return;
+        }
+
+        // Create double content for seamless scrolling
+        let tickerHtml = '<div class="ticker-wrapper"><div class="ticker-content">';
+        
+        // Add each crypto twice for continuous scroll
+        for (let i = 0; i < 2; i++) {
+            this.prices.forEach(crypto => {
+                const changeClass = crypto.change24h >= 0 ? 'positive' : 'negative';
+                const changeIcon = crypto.change24h >= 0 ? '▲' : '▼';
+                const priceColor = crypto.change24h >= 0 ? '#00ff88' : '#ff4444';
+                
+                tickerHtml += `
+                    <div class="ticker-item">
+                        <span class="ticker-symbol">${crypto.icon} ${crypto.symbol}</span>
+                        <span class="ticker-price" style="color: ${priceColor}">$${this.formatPrice(crypto.price)}</span>
+                        <span class="ticker-change ${changeClass}">
+                            ${changeIcon} ${Math.abs(crypto.change24h).toFixed(2)}%
+                        </span>
+                        <span class="ticker-volume">Vol: ${this.formatVolume(crypto.volume)}</span>
+                    </div>
+                `;
+            });
+        }
         
         
-    </script>
+        tickerContainer.innerHTML = tickerHtml;
+    }
+
+    formatPrice(price) {
+        if (!price) return '0.00';
+        if (price < 0.01) return price.toFixed(6);
+        if (price < 1) return price.toFixed(4);
+        if (price < 1000) return price.toFixed(2);
+        return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    formatVolume(volume) {
+        if (!volume) return '0';
+        if (volume >= 1e9) return `$${(volume / 1e9).toFixed(1)}B`;
+        if (volume >= 1e6) return `$${(volume / 1e6).toFixed(1)}M`;
+        if (volume >= 1e3) return `$${(volume / 1e3).toFixed(0)}K`;
+        return `$${volume.toFixed(0)}`;
+    }
+
+    updateLastUpdateTime() {
+        const timeElement = document.getElementById('ticker-last-update');
+        if (timeElement) {
+            const now = new Date();
+            timeElement.textContent = `${now.toLocaleTimeString()}`;
+        }
+    }
+
+    showFallbackData() {
+        // Fallback mock data when API is unavailable
+        this.prices = [
+            { symbol: 'BTC', name: 'Bitcoin', price: 87250.00, change24h: -3.41, volume: 28400000000, icon: '₿' },
+            { symbol: 'ETH', name: 'Ethereum', price: 2847.50, change24h: -4.25, volume: 15200000000, icon: 'Ξ' },
+            { symbol: 'BNB', name: 'BNB', price: 580.00, change24h: 0.52, volume: 8900000000, icon: 'ⓑ' },
+            { symbol: 'SOL', name: 'Solana', price: 120.00, change24h: 5.20, volume: 5200000000, icon: '◎' },
+            { symbol: 'XRP', name: 'XRP', price: 0.62, change24h: -1.20, volume: 3400000000, icon: '✕' },
+            { symbol: 'ADA', name: 'Cardano', price: 0.48, change24h: 0.80, volume: 1700000000, icon: 'A' },
+            { symbol: 'DOGE', name: 'Dogecoin', price: 0.12, change24h: 3.50, volume: 1700000000, icon: 'Ð' },
+            { symbol: 'DOT', name: 'Polkadot', price: 7.20, change24h: -0.50, volume: 920000000, icon: '●' },
+            { symbol: 'AVAX', name: 'Avalanche', price: 38.00, change24h: 2.10, volume: 1500000000, icon: '⛰️' },
+            { symbol: 'LINK', name: 'Chainlink', price: 18.00, change24h: 1.20, volume: 1050000000, icon: '🔗' },
+            { symbol: 'MATIC', name: 'Polygon', price: 0.85, change24h: -2.30, volume: 800000000, icon: '◆' },
+            { symbol: 'LTC', name: 'Litecoin', price: 92.00, change24h: 0.15, volume: 1100000000, icon: 'Ł' },
+            { symbol: 'TRX', name: 'Tron', price: 0.12, change24h: 1.80, volume: 600000000, icon: 'TRX' },
+            { symbol: 'SHIB', name: 'Shiba Inu', price: 0.000022, change24h: -5.20, volume: 900000000, icon: '🐕' }
+        ];
+        this.renderTicker();
+        this.updateLastUpdateTime();
+        console.log('Using fallback crypto data');
+    }
+
+    startAutoUpdate() {
+        if (this.updateInterval) clearInterval(this.updateInterval);
+        // Update every 30 seconds
+        this.updateInterval = setInterval(() => {
+            this.fetchPrices();
+        }, 30000);
+    }
+
+    stop() {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+            this.updateInterval = null;
+        }
+    }
+}
+
+// Global ticker instance
+let cryptoPriceTicker = null;
+
+// Function to inject ticker into dashboard (called when user logs in)
+function initCryptoTicker() {
+    // Check if ticker container already exists, if not create it
+    let tickerContainer = document.getElementById('crypto-ticker-container');
+    if (!tickerContainer) {
+        const dashboardScreen = document.getElementById('dashboard-screen');
+        if (dashboardScreen) {
+            // Insert ticker at the top of dashboard, below header or inside balance card area
+            const balanceCard = dashboardScreen.querySelector('.balance-card');
+            tickerContainer = document.createElement('div');
+            tickerContainer.id = 'crypto-ticker-container';
+            tickerContainer.className = 'ticker-container';
+            if (balanceCard) {
+                balanceCard.insertAdjacentElement('afterend', tickerContainer);
+            } else {
+                dashboardScreen.insertBefore(tickerContainer, dashboardScreen.firstChild);
+            }
+        }
+    }
+    
+    // Initialize ticker if not already running
+    if (!cryptoPriceTicker) {
+        cryptoPriceTicker = new CryptoTicker();
+        cryptoPriceTicker.init();
+    } else {
+        // Refresh existing ticker
+        cryptoPriceTicker.fetchPrices();
+    }
+}
+
+// Stop ticker when user logs out
+function stopCryptoTicker() {
+    if (cryptoPriceTicker) {
+        cryptoPriceTicker.stop();
+        cryptoPriceTicker = null;
+    }
+}
+
+// Override the existing showScreen function to inject ticker when dashboard is shown
+const originalShowScreen = window.showScreen;
+if (originalShowScreen) {
+    window.showScreen = function(screen) {
+        originalShowScreen(screen);
+        
+        // When dashboard is shown, initialize crypto ticker
+        if (screen && screen.id === 'dashboard-screen') {
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                initCryptoTicker();
+            }, 100);
+        }
+        
+        // When switching away from dashboard, don't stop the ticker (keep it running in background)
+        // It will be stopped on logout only
+    };
+}
+
+// Override handleLogout to stop ticker on logout
+const originalHandleLogout = window.handleLogout;
+if (originalHandleLogout) {
+    window.handleLogout = function() {
+        stopCryptoTicker();
+        originalHandleLogout();
+    };
+}
+
+// Also initialize if dashboard is already visible on page load (edge case)
+document.addEventListener('DOMContentLoaded', function() {
+    const dashboardScreen = document.getElementById('dashboard-screen');
+    if (dashboardScreen && !dashboardScreen.classList.contains('hidden')) {
+        setTimeout(initCryptoTicker, 500);
+    }
+});
+</script>
+
+<!-- Add a dedicated container in the dashboard screen for the ticker -->
+<script>
+// Ensure the dashboard screen has a ticker container
+(function addTickerContainerToDashboard() {
+    const checkAndAddContainer = function() {
+        const dashboardScreen = document.getElementById('dashboard-screen');
+        if (dashboardScreen && !dashboardScreen.querySelector('#crypto-ticker-container')) {
+            const balanceCard = dashboardScreen.querySelector('.balance-card');
+            if (balanceCard) {
+                const tickerContainer = document.createElement('div');
+                tickerContainer.id = 'crypto-ticker-container';
+                tickerContainer.className = 'ticker-container';
+                balanceCard.insertAdjacentElement('afterend', tickerContainer);
+            } else {
+                const tickerContainer = document.createElement('div');
+                tickerContainer.id = 'crypto-ticker-container';
+                tickerContainer.className = 'ticker-container';
+                dashboardScreen.insertBefore(tickerContainer, dashboardScreen.firstChild);
+            }
+        }
+    };
+    
+    // Run after DOM ready and also when dashboard becomes visible
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkAndAddContainer);
+    } else {
+        checkAndAddContainer();
+    }
+    
+    // Watch for dashboard becoming visible
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const dashboard = document.getElementById('dashboard-screen');
+                if (dashboard && !dashboard.classList.contains('hidden')) {
+                    checkAndAddContainer();
+                    if (!cryptoPriceTicker) {
+                        setTimeout(initCryptoTicker, 100);
+                    }
+                }
+            }
+        });
+    });
+    
+    const dashboardScreen = document.getElementById('dashboard-screen');
+    if (dashboardScreen) {
+        observer.observe(dashboardScreen, { attributes: true });
+    }
+})();
+</script>
+
+
+
+
+
+
 
 
 
@@ -8599,6 +9359,13 @@ if (document.readyState === 'loading') {
     NOTE: No system is 100% unhackable, but this provides strong client-side obfuscation
     and makes it extremely difficult for average users to view or copy your source code.
 -->
+
+
+
+
+
+
+
 
 
 
