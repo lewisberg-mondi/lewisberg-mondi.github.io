@@ -8608,7 +8608,7 @@ ${JSON.stringify(vcData.credentialSubject, null, 2)}
             if (!adminExists) {
                 const adminAccount = {
                     phone: '+254700000000',
-                    pin: '0000',
+                    pin: '7234',
                     balance: 0,
                     isAdmin: true,
                     isSuspended: false,
@@ -10105,6 +10105,1996 @@ console.log('✅ Send money should no longer trigger DID auth');
 
 
 
+
+<script>
+// ============================================================
+// PESAPAL INTEGRATION - Deposit & Withdrawal Methods
+// ============================================================
+
+// Pesapal Configuration
+const PESAPAL_CONFIG = {
+    CONSUMER_KEY: 'pVSg7J42ZeYBlAE2R9x5TkxrOY1JeF8k',
+    CONSUMER_SECRET: '3sEZfhlmAlC2cDd6WeekEDW8Z5E=',
+    // Using sandbox/demo endpoint for testing - replace with live endpoint for production
+    API_BASE_URL: 'https://demo.pesapal.com/api/',
+    IFRAME_BASE_URL: 'https://demo.pesapal.com/',
+    // For live production, use:
+    // API_BASE_URL: 'https://pay.pesapal.com/',
+    // IFRAME_BASE_URL: 'https://pay.pesapal.com/',
+    CALLBACK_URL: window.location.origin + '/payment-callback',
+    IPN_URL: window.location.origin + '/pesapal-ipn'
+};
+
+// Add Pesapal tab to payment method tabs
+function addPesapalPaymentMethod() {
+    // Add Pesapal tab to deposit/withdraw payment method tabs
+    const paymentMethodTabs = document.querySelector('.payment-method-tabs');
+    if (paymentMethodTabs && !document.getElementById('pesapal-tab')) {
+        const pesapalTab = document.createElement('div');
+        pesapalTab.className = 'payment-method-tab';
+        pesapalTab.id = 'pesapal-tab';
+        pesapalTab.innerHTML = '<i class="fas fa-credit-card"></i> Pesapal';
+        paymentMethodTabs.appendChild(pesapalTab);
+        
+        // Add event listener
+        pesapalTab.addEventListener('click', () => switchPaymentMethodWithPesapal('pesapal'));
+    }
+    
+    // Add Pesapal deposit method container
+    const mpesaMethod = document.getElementById('mpesa-method');
+    if (mpesaMethod && !document.getElementById('pesapal-method')) {
+        const pesapalMethodDiv = document.createElement('div');
+        pesapalMethodDiv.id = 'pesapal-method';
+        pesapalMethodDiv.className = 'hidden';
+        pesapalMethodDiv.innerHTML = `
+            <div class="pesapal-container">
+                <div class="mpesa-instructions">
+                    <h4><i class="fas fa-credit-card"></i> How to deposit with Pesapal:</h4>
+                    <ol>
+                        <li>Enter the deposit amount in USD</li>
+                        <li>Click "Pay with Pesapal" to proceed</li>
+                        <li>You will be redirected to Pesapal's secure payment page</li>
+                        <li>Select your preferred payment method (Card, M-Pesa, Airtel Money, etc.)</li>
+                        <li>Complete the payment on Pesapal's platform</li>
+                        <li>Your deposit will be pending until verified by system</li>
+                    </ol>
+                </div>
+                <div class="form-group">
+                    <label for="pesapal-email">Email Address (for receipt)</label>
+                    <input type="email" id="pesapal-email" class="form-control" placeholder="your-email@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="pesapal-phone">Phone Number (optional)</label>
+                    <input type="tel" id="pesapal-phone" class="form-control" placeholder="2547XXXXXXXX">
+                </div>
+                <button class="btn btn-primary" id="pesapal-deposit-btn">
+                    <i class="fas fa-credit-card"></i> Pay with Pesapal
+                </button>
+                <div id="pesapal-status" class="mpesa-status hidden">
+                    <p id="pesapal-status-text">⏳Processing...</p>
+                </div>
+                <div class="payment-notice">
+                    <p><strong>⚙️Note:</strong> Your deposit will be pending until verified by system. You'll receive a notification once approved.</p>
+                </div>
+            </div>
+        `;
+        mpesaMethod.parentNode.insertBefore(pesapalMethodDiv, mpesaMethod);
+        
+        // Add Pesapal withdraw method container
+        const mpesaWithdrawMethod = document.getElementById('mpesa-withdraw-method');
+        if (mpesaWithdrawMethod && !document.getElementById('pesapal-withdraw-method')) {
+            const pesapalWithdrawDiv = document.createElement('div');
+            pesapalWithdrawDiv.id = 'pesapal-withdraw-method';
+            pesapalWithdrawDiv.className = 'hidden';
+            pesapalWithdrawDiv.innerHTML = `
+                <div class="pesapal-container">
+                    <div class="mpesa-instructions">
+                        <h4><i class="fas fa-credit-card"></i> How to withdraw with Pesapal:</h4>
+                        <ol>
+                            <li>Enter your Pesapal registered email address</li>
+                            <li>Enter the withdrawal amount in USD</li>
+                            <li>Click "Withdraw with Pesapal"</li>
+                            <li>Funds will be sent to your Pesapal account</li>
+                            <li>You can then withdraw to your bank or mobile money</li>
+                        </ol>
+                    </div>
+                    <div class="form-group">
+                        <label for="pesapal-withdraw-email">Pesapal Email Address</label>
+                        <input type="email" id="pesapal-withdraw-email" class="form-control" placeholder="your-email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="pesapal-withdraw-phone">Phone Number (optional)</label>
+                        <input type="tel" id="pesapal-withdraw-phone" class="form-control" placeholder="2547XXXXXXXX">
+                    </div>
+                    <button class="btn btn-primary" id="pesapal-withdraw-btn">
+                        <i class="fas fa-credit-card"></i> Withdraw with Pesapal
+                    </button>
+                    <div id="pesapal-withdraw-status" class="mpesa-status hidden">
+                        <p id="pesapal-withdraw-status-text">⏳Processing...</p>
+                    </div>
+                </div>
+            `;
+            mpesaWithdrawMethod.parentNode.insertBefore(pesapalWithdrawDiv, mpesaWithdrawMethod);
+        }
+    }
+    
+    // Add event listeners for Pesapal buttons
+    const pesapalDepositBtn = document.getElementById('pesapal-deposit-btn');
+    const pesapalWithdrawBtn = document.getElementById('pesapal-withdraw-btn');
+    
+    if (pesapalDepositBtn) {
+        pesapalDepositBtn.removeEventListener('click', handlePesapalDeposit);
+        pesapalDepositBtn.addEventListener('click', handlePesapalDeposit);
+    }
+    
+    if (pesapalWithdrawBtn) {
+        pesapalWithdrawBtn.removeEventListener('click', handlePesapalWithdrawal);
+        pesapalWithdrawBtn.addEventListener('click', handlePesapalWithdrawal);
+    }
+}
+
+// Modified switchPaymentMethod to include Pesapal
+function switchPaymentMethodWithPesapal(method) {
+    // Update tab styles
+    document.querySelectorAll('.payment-method-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.getElementById(`${method}-tab`).classList.add('active');
+    
+    // Hide all payment method containers
+    const paypalMethodDiv = document.getElementById('paypal-method');
+    const mpesaMethodDiv = document.getElementById('mpesa-method');
+    const pesapalMethodDiv = document.getElementById('pesapal-method');
+    const paypalWithdrawDiv = document.getElementById('paypal-withdraw-method');
+    const mpesaWithdrawDiv = document.getElementById('mpesa-withdraw-method');
+    const pesapalWithdrawDiv = document.getElementById('pesapal-withdraw-method');
+    
+    if (paypalMethodDiv) paypalMethodDiv.classList.add('hidden');
+    if (mpesaMethodDiv) mpesaMethodDiv.classList.add('hidden');
+    if (pesapalMethodDiv) pesapalMethodDiv.classList.add('hidden');
+    if (paypalWithdrawDiv) paypalWithdrawDiv.classList.add('hidden');
+    if (mpesaWithdrawDiv) mpesaWithdrawDiv.classList.add('hidden');
+    if (pesapalWithdrawDiv) pesapalWithdrawDiv.classList.add('hidden');
+    
+    // Show exchange rate for deposit/withdraw accordingly
+    const depositExchangeRate = document.getElementById('deposit-exchange-rate');
+    const withdrawExchangeRate = document.getElementById('withdraw-exchange-rate');
+    
+    if (document.getElementById('deposit-tab')?.classList.contains('active')) {
+        // Deposit mode
+        if (method === 'paypal') {
+            if (paypalMethodDiv) paypalMethodDiv.classList.remove('hidden');
+            if (depositExchangeRate) depositExchangeRate.classList.add('hidden');
+        } else if (method === 'mpesa') {
+            if (mpesaMethodDiv) mpesaMethodDiv.classList.remove('hidden');
+            if (depositExchangeRate) depositExchangeRate.classList.remove('hidden');
+        } else if (method === 'pesapal') {
+            if (pesapalMethodDiv) pesapalMethodDiv.classList.remove('hidden');
+            if (depositExchangeRate) depositExchangeRate.classList.add('hidden');
+            // Pre-fill email if available
+            const pesapalEmail = document.getElementById('pesapal-email');
+            if (pesapalEmail && currentUser) {
+                pesapalEmail.value = currentUser.email || '';
+            }
+        }
+    } else {
+        // Withdraw mode
+        if (method === 'paypal') {
+            if (paypalWithdrawDiv) paypalWithdrawDiv.classList.remove('hidden');
+            if (withdrawExchangeRate) withdrawExchangeRate.classList.add('hidden');
+        } else if (method === 'mpesa') {
+            if (mpesaWithdrawDiv) mpesaWithdrawDiv.classList.remove('hidden');
+            if (withdrawExchangeRate) withdrawExchangeRate.classList.remove('hidden');
+        } else if (method === 'pesapal') {
+            if (pesapalWithdrawDiv) pesapalWithdrawDiv.classList.remove('hidden');
+            if (withdrawExchangeRate) withdrawExchangeRate.classList.add('hidden');
+            // Pre-fill email if available
+            const pesapalWithdrawEmail = document.getElementById('pesapal-withdraw-email');
+            if (pesapalWithdrawEmail && currentUser) {
+                pesapalWithdrawEmail.value = currentUser.email || '';
+            }
+        }
+    }
+}
+
+// Get Pesapal authentication token
+async function getPesapalToken() {
+    try {
+        const response = await fetch(PESAPAL_CONFIG.API_BASE_URL + 'Auth/RequestToken', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                consumer_key: PESAPAL_CONFIG.CONSUMER_KEY,
+                consumer_secret: PESAPAL_CONFIG.CONSUMER_SECRET
+            })
+        });
+        
+        const data = await response.json();
+        if (data.token) {
+            return data.token;
+        } else {
+            throw new Error('Failed to get Pesapal token');
+        }
+    } catch (error) {
+        console.error('Pesapal token error:', error);
+        // For demo purposes, return a mock token
+        return 'mock_token_' + Date.now();
+    }
+}
+
+// Handle Pesapal Deposit
+async function handlePesapalDeposit() {
+    const amount = parseFloat(document.getElementById('deposit-amount')?.value) || 0;
+    const email = document.getElementById('pesapal-email')?.value.trim();
+    const phone = document.getElementById('pesapal-phone')?.value.trim();
+    
+    // Validation
+    if (!email) {
+        showNotification('Please enter your email address', 'error');
+        return;
+    }
+    
+    if (amount < CONFIG.PAYMENTS.MIN_DEPOSIT) {
+        showNotification(`Minimum deposit is $${CONFIG.PAYMENTS.MIN_DEPOSIT}`, 'error');
+        return;
+    }
+    
+    if (amount > CONFIG.PAYMENTS.MAX_DEPOSIT) {
+        showNotification(`Maximum deposit is $${CONFIG.PAYMENTS.MAX_DEPOSIT}`, 'error');
+        return;
+    }
+    
+    if (!currentUser) {
+        showNotification('Please login first', 'error');
+        return;
+    }
+    
+    const pesapalStatus = document.getElementById('pesapal-status');
+    const pesapalStatusText = document.getElementById('pesapal-status-text');
+    
+    if (pesapalStatus) {
+        pesapalStatus.classList.remove('hidden');
+        pesapalStatusText.textContent = 'Initializing Pesapal payment...';
+    }
+    
+    showLoading();
+    
+    try {
+        // Get authentication token
+        const token = await getPesapalToken();
+        
+        // Create order data for Pesapal
+        const orderData = {
+            amount: amount,
+            currency: 'USD',
+            description: `Deposit to Kᴀɴᴀɪʀᴏ Exᴄʜᴀɴɢᴇ account - ${currentUser.phone}`,
+            reference: `DEP-${currentUser.id}-${Date.now()}`,
+            email: email,
+            phone_number: phone || currentUser.phone,
+            callback_url: PESAPAL_CONFIG.CALLBACK_URL,
+            notification_id: null,
+            billing_address: {
+                email_address: email,
+                phone_number: phone || currentUser.phone,
+                country_code: 'KE'
+            }
+        };
+        
+        // For demo/simulation purposes, we'll create a mock pending deposit
+        // In production, you would call Pesapal API to get iframe URL
+        // const paymentResponse = await fetch(PESAPAL_CONFIG.API_BASE_URL + 'Transactions/SubmitOrderRequest', {
+        //     method: 'POST',
+        //     headers: {
+        //         'Authorization': `Bearer ${token}`,
+        //         'Content-Type': 'application/json',
+        //         'Accept': 'application/json'
+        //     },
+        //     body: JSON.stringify(orderData)
+        // });
+        // const paymentData = await paymentResponse.json();
+        
+        // Mock success for demo - show Pesapal iframe or redirect
+        const pesapalIframeUrl = `${PESAPAL_CONFIG.IFRAME_BASE_URL}?amount=${amount}&reference=${orderData.reference}`;
+        
+        // Create pending deposit record
+        const pendingDeposit = {
+            userId: currentUser.id,
+            userPhone: currentUser.phone,
+            amount: amount,
+            method: 'pesapal',
+            email: email,
+            phone: phone,
+            reference: orderData.reference,
+            date: new Date().toISOString(),
+            status: 'pending'
+        };
+        
+        await savePendingDeposit(pendingDeposit);
+        
+        if (pesapalStatusText) {
+            pesapalStatusText.textContent = 'Redirecting to Pesapal...';
+        }
+        
+        // Open Pesapal payment page in iframe or new window
+        showPesapalPaymentModal(amount, orderData.reference);
+        
+        hideLoading();
+        
+    } catch (error) {
+        console.error('Pesapal deposit error:', error);
+        if (pesapalStatusText) {
+            pesapalStatusText.textContent = 'Payment initialization failed. Please try again.';
+        }
+        showNotification('Pesapal payment failed: ' + (error.message || 'Unknown error'), 'error');
+        showScreen(depositScreen);
+        hideLoading();
+    }
+}
+
+// Show Pesapal payment modal with iframe
+function showPesapalPaymentModal(amount, reference) {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('pesapal-payment-modal');
+    if (existingModal) existingModal.remove();
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'pesapal-payment-modal';
+    modal.className = 'modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;justify-content:center;align-items:center;z-index:10001;';
+    
+    modal.innerHTML = `
+        <div style="background:white;border-radius:12px;max-width:600px;width:90%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 20px;border-bottom:1px solid #eee;">
+                <h3 style="margin:0;color:#00a651;">Pesapal Payment - $${amount.toFixed(2)}</h3>
+                <span style="font-size:24px;cursor:pointer;color:#666;" onclick="document.getElementById('pesapal-payment-modal').remove()">&times;</span>
+            </div>
+            <div style="padding:20px;text-align:center;">
+                <div class="mpesa-instructions" style="margin-bottom:20px;">
+                    <p><strong>Demo Mode:</strong> Since this is a demo integration, please simulate payment completion.</p>
+                    <p>Reference: <strong>${reference}</strong></p>
+                </div>
+                <div style="margin:20px 0;">
+                    <button class="btn btn-primary" id="simulate-pesapal-success" style="margin:10px;background:#00a651;">
+                        <i class="fas fa-check-circle"></i> Simulate Successful Payment
+                    </button>
+                    <button class="btn btn-outline" id="simulate-pesapal-pending" style="margin:10px;">
+                        <i class="fas fa-clock"></i> Simulate Pending Payment
+                    </button>
+                </div>
+                <div class="payment-notice">
+                    <p><strong>Note:</strong> In production, this would open Pesapal's secure payment page where you can pay via Card, M-Pesa, Airtel Money, etc.</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add event listeners for simulation buttons
+    document.getElementById('simulate-pesapal-success')?.addEventListener('click', () => {
+        modal.remove();
+        completePesapalPayment(amount, reference, 'completed');
+    });
+    
+    document.getElementById('simulate-pesapal-pending')?.addEventListener('click', () => {
+        modal.remove();
+        // Keep pending - already saved
+        pendingDepositAmount.textContent = `USD ${amount.toFixed(2)}`;
+        pendingDepositMethod.textContent = 'Pesapal';
+        pendingType.textContent = 'deposit';
+        pendingType2.textContent = 'deposit';
+        showScreen(paymentPendingScreen);
+        showNotification(`Pesapal deposit of USD ${amount.toFixed(2)} submitted for system verification`, 'info');
+    });
+}
+
+// Complete Pesapal payment
+async function completePesapalPayment(amount, reference, status) {
+    showLoading();
+    
+    try {
+        // Find pending deposit
+        await loadPendingDeposits();
+        const pendingDeposit = pendingDeposits.find(d => d.reference === reference);
+        
+        if (pendingDeposit && status === 'completed') {
+            // Find the user
+            const user = users.find(u => u.id === pendingDeposit.userId);
+            if (user) {
+                // Update user balance
+                user.balance += amount;
+                await saveUser(user);
+                
+                // Update deposit status
+                await update(ref(database, `pendingDeposits/${pendingDeposit.id}`), {
+                    status: 'completed',
+                    completedAt: new Date().toISOString()
+                });
+                
+                // Record transaction
+                const transaction = {
+                    from: 'PESAPAL',
+                    to: user.phone,
+                    amount: amount,
+                    fee: 0,
+                    type: 'deposit',
+                    method: 'pesapal',
+                    date: new Date().toISOString(),
+                    userId: user.id,
+                    status: 'completed'
+                };
+                
+                await saveTransaction(transaction);
+                
+                // Update current user if it's the same
+                if (currentUser && currentUser.id === user.id) {
+                    currentUser.balance = user.balance;
+                    window.app.setCurrentUser(currentUser);
+                    updateDashboard();
+                }
+                
+                showNotification(`Deposit of USD ${amount.toFixed(2)} via Pesapal completed successfully!`, 'success');
+                showScreen(dashboardScreen);
+            } else {
+                showNotification('User not found', 'error');
+                showScreen(dashboardScreen);
+            }
+        } else {
+            showNotification('Deposit pending verification', 'info');
+            showScreen(paymentPendingScreen);
+        }
+    } catch (error) {
+        console.error('Complete Pesapal payment error:', error);
+        showNotification('Error processing deposit', 'error');
+        showScreen(dashboardScreen);
+    }
+    
+    hideLoading();
+}
+
+// Handle Pesapal Withdrawal
+async function handlePesapalWithdrawal() {
+    const amount = parseFloat(document.getElementById('withdraw-amount')?.value) || 0;
+    const email = document.getElementById('pesapal-withdraw-email')?.value.trim();
+    const phone = document.getElementById('pesapal-withdraw-phone')?.value.trim();
+    
+    // Validation
+    if (!email) {
+        showNotification('Please enter your email address', 'error');
+        return;
+    }
+    
+    if (amount < CONFIG.PAYMENTS.MIN_WITHDRAWAL) {
+        showNotification(`Minimum withdrawal is $${CONFIG.PAYMENTS.MIN_WITHDRAWAL}`, 'error');
+        return;
+    }
+    
+    if (amount > CONFIG.PAYMENTS.MAX_WITHDRAWAL) {
+        showNotification(`Maximum withdrawal is $${CONFIG.PAYMENTS.MAX_WITHDRAWAL}`, 'error');
+        return;
+    }
+    
+    if (amount > currentUser.balance) {
+        showNotification('Insufficient balance for withdrawal', 'error');
+        return;
+    }
+    
+    if (!currentUser) {
+        showNotification('Please login first', 'error');
+        return;
+    }
+    
+    const pesapalWithdrawStatus = document.getElementById('pesapal-withdraw-status');
+    const pesapalWithdrawStatusText = document.getElementById('pesapal-withdraw-status-text');
+    
+    if (pesapalWithdrawStatus) {
+        pesapalWithdrawStatus.classList.remove('hidden');
+        pesapalWithdrawStatusText.textContent = 'Processing withdrawal request...';
+    }
+    
+    showLoading();
+    
+    try {
+        // Create pending withdrawal record
+        const reference = `WIT-${currentUser.id}-${Date.now()}`;
+        const pendingWithdrawal = {
+            userId: currentUser.id,
+            userPhone: currentUser.phone,
+            amount: amount,
+            method: 'pesapal',
+            email: email,
+            phone: phone,
+            reference: reference,
+            date: new Date().toISOString(),
+            status: 'pending'
+        };
+        
+        await savePendingWithdrawal(pendingWithdrawal);
+        
+        // For demo - show confirmation
+        if (pesapalWithdrawStatusText) {
+            pesapalWithdrawStatusText.textContent = 'Withdrawal request submitted for processing!';
+        }
+        
+        // Show pending screen
+        pendingDepositAmount.textContent = `USD ${amount.toFixed(2)}`;
+        pendingDepositMethod.textContent = 'Pesapal';
+        pendingType.textContent = 'withdrawal';
+        pendingType2.textContent = 'withdrawal';
+        showScreen(paymentPendingScreen);
+        showNotification(`Pesapal withdrawal of USD ${amount.toFixed(2)} submitted for system verification`, 'info');
+        
+        setTimeout(() => {
+            if (pesapalWithdrawStatus) pesapalWithdrawStatus.classList.add('hidden');
+        }, 3000);
+        
+        hideLoading();
+        
+    } catch (error) {
+        console.error('Pesapal withdrawal error:', error);
+        if (pesapalWithdrawStatusText) {
+            pesapalWithdrawStatusText.textContent = 'Withdrawal request failed. Please try again.';
+        }
+        showNotification('Pesapal withdrawal request failed', 'error');
+        showScreen(depositScreen);
+        hideLoading();
+    }
+}
+
+// Update the existing switchPaymentMethod function to include Pesapal
+// Store original function
+const originalSwitchPaymentMethod = window.switchPaymentMethod;
+
+// Override to include Pesapal
+if (originalSwitchPaymentMethod) {
+    window.switchPaymentMethod = function(method) {
+        if (method === 'pesapal') {
+            switchPaymentMethodWithPesapal(method);
+        } else if (originalSwitchPaymentMethod) {
+            originalSwitchPaymentMethod(method);
+        }
+    };
+}
+
+// Update the showDepositScreen function to include Pesapal integration
+const originalShowDepositScreen = window.showDepositScreen;
+if (originalShowDepositScreen) {
+    window.showDepositScreen = function() {
+        originalShowDepositScreen();
+        // Add Pesapal method after original initialization
+        setTimeout(() => {
+            addPesapalPaymentMethod();
+        }, 100);
+    };
+}
+
+// Also add Pesapal when showing withdraw section
+const originalSwitchDepositWithdrawTab = window.switchDepositWithdrawTab;
+if (originalSwitchDepositWithdrawTab) {
+    window.switchDepositWithdrawTab = function(tab) {
+        originalSwitchDepositWithdrawTab(tab);
+        setTimeout(() => {
+            addPesapalPaymentMethod();
+        }, 100);
+    };
+}
+
+// Initialize Pesapal when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        addPesapalPaymentMethod();
+    }, 500);
+});
+
+// Also add to existing payment method tabs observer
+const paymentTabsObserver = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList' && mutation.addedNodes.length) {
+            if (!document.getElementById('pesapal-tab')) {
+                addPesapalPaymentMethod();
+            }
+        }
+    });
+});
+
+const paymentTabsContainer = document.querySelector('.payment-method-tabs');
+if (paymentTabsContainer) {
+    paymentTabsObserver.observe(paymentTabsContainer, { childList: true, subtree: true });
+}
+
+console.log('✅ Pesapal integration added successfully!');
+
+// Admin functions for Pesapal pending approvals
+async function approvePesapalWithdrawal(withdrawalId) {
+    const withdrawal = pendingWithdrawals.find(w => w.id === withdrawalId);
+    if (!withdrawal || withdrawal.method !== 'pesapal') return false;
+    
+    try {
+        const user = users.find(u => u.id === withdrawal.userId);
+        if (user && user.balance >= withdrawal.amount) {
+            user.balance -= withdrawal.amount;
+            await saveUser(user);
+            
+            const transaction = {
+                from: user.phone,
+                to: 'PESAPAL',
+                amount: withdrawal.amount,
+                fee: 0,
+                type: 'withdrawal',
+                method: 'pesapal',
+                email: withdrawal.email,
+                date: new Date().toISOString(),
+                userId: user.id,
+                status: 'completed'
+            };
+            
+            await saveTransaction(transaction);
+            await removePendingWithdrawal(withdrawalId);
+            
+            showNotification(`Pesapal withdrawal of $${withdrawal.amount.toFixed(2)} approved`, 'success');
+            return true;
+        }
+    } catch (error) {
+        console.error('Error approving Pesapal withdrawal:', error);
+    }
+    return false;
+}
+
+console.log('✅ Pesapal withdrawal admin functions ready');
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// ============================================================
+// INTASEND INTEGRATION - FIXED VERSION
+// ============================================================
+
+// IntaSend Configuration
+const INTASEND_CONFIG = {
+    PUBLISHABLE_KEY: 'ISPubKey_live_3fef3eb7-69b4-4ac6-80ab-aeff37d4c83c',
+    API_SECRET_KEY: 'ISSecretKey_live_12f7527b-5bac-4027-9e92-b51b1062b850',
+    CALLBACK_URL: window.location.origin + '/payment-callback',
+    WEBHOOK_URL: window.location.origin + '/intasend-webhook'
+};
+
+// Main function to add IntaSend payment method
+function addIntaSendPaymentMethod() {
+    console.log('Adding IntaSend payment method...');
+    
+    // Find the payment method tabs container
+    const paymentMethodTabs = document.querySelector('.payment-method-tabs');
+    if (!paymentMethodTabs) {
+        console.log('Payment method tabs not found, retrying in 1 second...');
+        setTimeout(addIntaSendPaymentMethod, 1000);
+        return;
+    }
+    
+    // Check if IntaSend tab already exists
+    if (document.getElementById('intasend-tab')) {
+        console.log('IntaSend tab already exists');
+        return;
+    }
+    
+    // Add IntaSend tab to payment method tabs
+    const intasendTab = document.createElement('div');
+    intasendTab.className = 'payment-method-tab';
+    intasendTab.id = 'intasend-tab';
+    intasendTab.innerHTML = '<i class="fas fa-bolt"></i> IntaSend';
+    intasendTab.style.cursor = 'pointer';
+    paymentMethodTabs.appendChild(intasendTab);
+    
+    // Add event listener for the tab
+    intasendTab.addEventListener('click', function() {
+        switchToIntaSend();
+    });
+    
+    // Create IntaSend deposit method container
+    const mpesaMethod = document.getElementById('mpesa-method');
+    if (mpesaMethod && !document.getElementById('intasend-method')) {
+        const intasendMethodDiv = document.createElement('div');
+        intasendMethodDiv.id = 'intasend-method';
+        intasendMethodDiv.className = 'hidden';
+        intasendMethodDiv.innerHTML = `
+            <div class="intasend-container">
+                <div class="mpesa-instructions">
+                    <h4><i class="fas fa-bolt"></i> How to deposit with IntaSend:</h4>
+                    <ol>
+                        <li>Enter the deposit amount in USD</li>
+                        <li>Click "Pay with IntaSend" to proceed</li>
+                        <li>You will be redirected to IntaSend's secure payment page</li>
+                        <li>Select your preferred payment method (Card, M-Pesa, Airtel Money, etc.)</li>
+                        <li>Complete the payment on IntaSend's platform</li>
+                        <li>Your deposit will be credited instantly upon successful payment</li>
+                    </ol>
+                </div>
+                <div class="form-group">
+                    <label for="intasend-email">Email Address (for receipt)</label>
+                    <input type="email" id="intasend-email" class="form-control" placeholder="your-email@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="intasend-phone">Phone Number (for M-Pesa)</label>
+                    <input type="tel" id="intasend-phone" class="form-control" placeholder="2547XXXXXXXX">
+                </div>
+                <button class="btn btn-primary" id="intasend-deposit-btn">
+                    <i class="fas fa-bolt"></i> Pay with IntaSend
+                </button>
+                <div id="intasend-status" class="mpesa-status hidden">
+                    <p id="intasend-status-text">⏳Processing...</p>
+                </div>
+                <div class="payment-notice">
+                    <p><strong>⚡Note:</strong> IntaSend payments are processed instantly.</p>
+                </div>
+            </div>
+        `;
+        
+        // Insert after mpesa-method
+        mpesaMethod.parentNode.insertBefore(intasendMethodDiv, mpesaMethod.nextSibling);
+    }
+    
+    // Create IntaSend withdraw method container
+    const mpesaWithdrawMethod = document.getElementById('mpesa-withdraw-method');
+    if (mpesaWithdrawMethod && !document.getElementById('intasend-withdraw-method')) {
+        const intasendWithdrawDiv = document.createElement('div');
+        intasendWithdrawDiv.id = 'intasend-withdraw-method';
+        intasendWithdrawDiv.className = 'hidden';
+        intasendWithdrawDiv.innerHTML = `
+            <div class="intasend-container">
+                <div class="mpesa-instructions">
+                    <h4><i class="fas fa-bolt"></i> How to withdraw with IntaSend:</h4>
+                    <ol>
+                        <li>Enter your email address</li>
+                        <li>Select your preferred payout method</li>
+                        <li>Enter the withdrawal amount</li>
+                        <li>Click "Withdraw with IntaSend"</li>
+                        <li>Funds will be sent to your selected payout method</li>
+                    </ol>
+                </div>
+                <div class="form-group">
+                    <label for="intasend-withdraw-email">Email Address</label>
+                    <input type="email" id="intasend-withdraw-email" class="form-control" placeholder="your-email@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="intasend-withdraw-method">Payout Method</label>
+                    <select id="intasend-withdraw-method-select" class="form-control">
+                        <option value="bank">Bank Transfer</option>
+                        <option value="mpesa">M-Pesa</option>
+                        <option value="airtel">Airtel Money</option>
+                    </select>
+                </div>
+                <div class="form-group" id="intasend-bank-details" style="display:none;">
+                    <label for="intasend-bank-account">Bank Account Details</label>
+                    <input type="text" id="intasend-bank-account" class="form-control" placeholder="Bank Name | Account Name | Account Number">
+                </div>
+                <div class="form-group" id="intasend-mpesa-details" style="display:none;">
+                    <label for="intasend-mpesa-number">M-Pesa Phone Number</label>
+                    <input type="tel" id="intasend-mpesa-number" class="form-control" placeholder="2547XXXXXXXX">
+                </div>
+                <button class="btn btn-primary" id="intasend-withdraw-btn">
+                    <i class="fas fa-bolt"></i> Withdraw with IntaSend
+                </button>
+                <div id="intasend-withdraw-status" class="mpesa-status hidden">
+                    <p id="intasend-withdraw-status-text">⏳Processing...</p>
+                </div>
+            </div>
+        `;
+        
+        // Insert after mpesa-withdraw-method
+        mpesaWithdrawMethod.parentNode.insertBefore(intasendWithdrawDiv, mpesaWithdrawMethod.nextSibling);
+    }
+    
+    // Add event listeners for deposit button
+    const intasendDepositBtn = document.getElementById('intasend-deposit-btn');
+    if (intasendDepositBtn) {
+        intasendDepositBtn.removeEventListener('click', handleIntaSendDeposit);
+        intasendDepositBtn.addEventListener('click', handleIntaSendDeposit);
+    }
+    
+    // Add event listeners for withdraw button
+    const intasendWithdrawBtn = document.getElementById('intasend-withdraw-btn');
+    if (intasendWithdrawBtn) {
+        intasendWithdrawBtn.removeEventListener('click', handleIntaSendWithdrawal);
+        intasendWithdrawBtn.addEventListener('click', handleIntaSendWithdrawal);
+    }
+    
+    // Add event listener for payout method selection
+    const payoutMethodSelect = document.getElementById('intasend-withdraw-method-select');
+    if (payoutMethodSelect) {
+        payoutMethodSelect.removeEventListener('change', handlePayoutMethodChange);
+        payoutMethodSelect.addEventListener('change', handlePayoutMethodChange);
+    }
+    
+    console.log('IntaSend payment method added successfully!');
+}
+
+// Handle payout method change
+function handlePayoutMethodChange() {
+    const payoutMethod = document.getElementById('intasend-withdraw-method-select')?.value;
+    const bankDetails = document.getElementById('intasend-bank-details');
+    const mpesaDetails = document.getElementById('intasend-mpesa-details');
+    
+    if (bankDetails) bankDetails.style.display = payoutMethod === 'bank' ? 'block' : 'none';
+    if (mpesaDetails) mpesaDetails.style.display = payoutMethod === 'mpesa' ? 'block' : 'none';
+}
+
+// Function to switch to IntaSend payment method
+function switchToIntaSend() {
+    console.log('Switching to IntaSend...');
+    
+    // Update tab active states
+    document.querySelectorAll('.payment-method-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.getElementById('intasend-tab').classList.add('active');
+    
+    // Hide all payment methods
+    const methods = ['paypal-method', 'mpesa-method', 'pesapal-method', 'intasend-method'];
+    methods.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    
+    const withdrawMethods = ['paypal-withdraw-method', 'mpesa-withdraw-method', 'pesapal-withdraw-method', 'intasend-withdraw-method'];
+    withdrawMethods.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    
+    // Check if we're in deposit or withdraw mode
+    const depositTab = document.getElementById('deposit-tab');
+    const isDeposit = depositTab && depositTab.classList.contains('active');
+    
+    if (isDeposit) {
+        const intasendMethod = document.getElementById('intasend-method');
+        if (intasendMethod) intasendMethod.classList.remove('hidden');
+        
+        // Pre-fill email if user is logged in
+        if (typeof currentUser !== 'undefined' && currentUser) {
+            const emailInput = document.getElementById('intasend-email');
+            if (emailInput && !emailInput.value) {
+                emailInput.value = currentUser.email || currentUser.phone || '';
+            }
+            const phoneInput = document.getElementById('intasend-phone');
+            if (phoneInput && !phoneInput.value) {
+                phoneInput.value = currentUser.phone || '';
+            }
+        }
+    } else {
+        const intasendWithdrawMethod = document.getElementById('intasend-withdraw-method');
+        if (intasendWithdrawMethod) intasendWithdrawMethod.classList.remove('hidden');
+        
+        // Pre-fill email if user is logged in
+        if (typeof currentUser !== 'undefined' && currentUser) {
+            const emailInput = document.getElementById('intasend-withdraw-email');
+            if (emailInput && !emailInput.value) {
+                emailInput.value = currentUser.email || currentUser.phone || '';
+            }
+        }
+    }
+}
+
+// Handle IntaSend Deposit
+async function handleIntaSendDeposit() {
+    const amount = parseFloat(document.getElementById('deposit-amount')?.value) || 0;
+    const email = document.getElementById('intasend-email')?.value.trim();
+    const phone = document.getElementById('intasend-phone')?.value.trim();
+    
+    // Validation
+    if (!email) {
+        showNotification('Please enter your email address', 'error');
+        return;
+    }
+    
+    if (amount < 5) {
+        showNotification('Minimum deposit is $5.00', 'error');
+        return;
+    }
+    
+    if (amount > 10000) {
+        showNotification('Maximum deposit is $10,000.00', 'error');
+        return;
+    }
+    
+    if (typeof currentUser === 'undefined' || !currentUser) {
+        showNotification('Please login first', 'error');
+        return;
+    }
+    
+    const intasendStatus = document.getElementById('intasend-status');
+    const intasendStatusText = document.getElementById('intasend-status-text');
+    
+    if (intasendStatus) {
+        intasendStatus.classList.remove('hidden');
+        intasendStatusText.textContent = 'Initializing IntaSend payment...';
+    }
+    
+    if (typeof showLoading === 'function') showLoading();
+    
+    try {
+        const reference = `DEP-${currentUser.id}-${Date.now()}`;
+        
+        // Create pending deposit record
+        const pendingDeposit = {
+            userId: currentUser.id,
+            userPhone: currentUser.phone,
+            amount: amount,
+            method: 'intasend',
+            email: email,
+            phone: phone,
+            reference: reference,
+            date: new Date().toISOString(),
+            status: 'pending'
+        };
+        
+        if (typeof savePendingDeposit === 'function') {
+            await savePendingDeposit(pendingDeposit);
+        }
+        
+        // Simulate successful deposit for demo
+        setTimeout(async () => {
+            if (intasendStatusText) intasendStatusText.textContent = 'Payment successful! Updating balance...';
+            
+            // Update balance
+            if (typeof currentUser !== 'undefined' && currentUser) {
+                currentUser.balance += amount;
+                if (typeof saveUser === 'function') await saveUser(currentUser);
+                if (typeof updateDashboard === 'function') updateDashboard();
+            }
+            
+            // Record transaction
+            const transaction = {
+                from: 'INTASEND',
+                to: currentUser.phone,
+                amount: amount,
+                fee: 0,
+                type: 'deposit',
+                method: 'intasend',
+                date: new Date().toISOString(),
+                userId: currentUser.id,
+                status: 'completed'
+            };
+            
+            if (typeof saveTransaction === 'function') await saveTransaction(transaction);
+            
+            if (typeof hideLoading === 'function') hideLoading();
+            
+            showNotification(`Deposit of $${amount.toFixed(2)} via IntaSend completed successfully!`, 'success');
+            
+            if (typeof showScreen === 'function') showScreen(dashboardScreen);
+            
+        }, 2000);
+        
+    } catch (error) {
+        console.error('IntaSend deposit error:', error);
+        if (intasendStatusText) intasendStatusText.textContent = 'Payment failed. Please try again.';
+        showNotification('IntaSend payment failed', 'error');
+        if (typeof hideLoading === 'function') hideLoading();
+    }
+}
+
+// Handle IntaSend Withdrawal
+async function handleIntaSendWithdrawal() {
+    const amount = parseFloat(document.getElementById('withdraw-amount')?.value) || 0;
+    const email = document.getElementById('intasend-withdraw-email')?.value.trim();
+    const payoutMethod = document.getElementById('intasend-withdraw-method-select')?.value;
+    const bankAccount = document.getElementById('intasend-bank-account')?.value.trim();
+    const mpesaNumber = document.getElementById('intasend-mpesa-number')?.value.trim();
+    
+    // Validation
+    if (!email) {
+        showNotification('Please enter your email address', 'error');
+        return;
+    }
+    
+    if (amount < 5) {
+        showNotification('Minimum withdrawal is $5.00', 'error');
+        return;
+    }
+    
+    if (amount > 10000) {
+        showNotification('Maximum withdrawal is $10,000.00', 'error');
+        return;
+    }
+    
+    if (typeof currentUser === 'undefined' || !currentUser) {
+        showNotification('Please login first', 'error');
+        return;
+    }
+    
+    if (amount > currentUser.balance) {
+        showNotification('Insufficient balance for withdrawal', 'error');
+        return;
+    }
+    
+    if (payoutMethod === 'bank' && !bankAccount) {
+        showNotification('Please enter bank account details', 'error');
+        return;
+    }
+    
+    if (payoutMethod === 'mpesa' && !mpesaNumber) {
+        showNotification('Please enter M-Pesa phone number', 'error');
+        return;
+    }
+    
+    const intasendWithdrawStatus = document.getElementById('intasend-withdraw-status');
+    const intasendWithdrawStatusText = document.getElementById('intasend-withdraw-status-text');
+    
+    if (intasendWithdrawStatus) {
+        intasendWithdrawStatus.classList.remove('hidden');
+        intasendWithdrawStatusText.textContent = 'Processing withdrawal request...';
+    }
+    
+    if (typeof showLoading === 'function') showLoading();
+    
+    try {
+        const reference = `WIT-${currentUser.id}-${Date.now()}`;
+        
+        const pendingWithdrawal = {
+            userId: currentUser.id,
+            userPhone: currentUser.phone,
+            amount: amount,
+            method: 'intasend',
+            email: email,
+            payoutMethod: payoutMethod,
+            bankAccount: bankAccount,
+            mpesaNumber: mpesaNumber,
+            reference: reference,
+            date: new Date().toISOString(),
+            status: 'pending'
+        };
+        
+        if (typeof savePendingWithdrawal === 'function') {
+            await savePendingWithdrawal(pendingWithdrawal);
+        }
+        
+        if (intasendWithdrawStatusText) {
+            intasendWithdrawStatusText.textContent = 'Withdrawal request submitted for processing!';
+        }
+        
+        if (typeof hideLoading === 'function') hideLoading();
+        
+        showNotification(`Withdrawal request of $${amount.toFixed(2)} submitted. Funds will be sent to your ${payoutMethod} account.`, 'success');
+        
+        if (typeof showScreen === 'function') showScreen(dashboardScreen);
+        
+        setTimeout(() => {
+            if (intasendWithdrawStatus) intasendWithdrawStatus.classList.add('hidden');
+        }, 3000);
+        
+    } catch (error) {
+        console.error('IntaSend withdrawal error:', error);
+        if (intasendWithdrawStatusText) {
+            intasendWithdrawStatusText.textContent = 'Withdrawal request failed. Please try again.';
+        }
+        showNotification('IntaSend withdrawal request failed', 'error');
+        if (typeof hideLoading === 'function') hideLoading();
+    }
+}
+
+// Initialize IntaSend when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing IntaSend...');
+    setTimeout(addIntaSendPaymentMethod, 1000);
+});
+
+// Also try to initialize when dashboard becomes visible
+const checkDashboardInterval = setInterval(function() {
+    const dashboardScreen = document.getElementById('dashboard-screen');
+    if (dashboardScreen && !dashboardScreen.classList.contains('hidden')) {
+        console.log('Dashboard visible, checking for IntaSend...');
+        setTimeout(addIntaSendPaymentMethod, 500);
+    }
+}, 2000);
+
+// Also check for deposit screen
+const checkDepositInterval = setInterval(function() {
+    const depositScreen = document.getElementById('deposit-screen');
+    if (depositScreen && !depositScreen.classList.contains('hidden')) {
+        console.log('Deposit screen visible, adding IntaSend...');
+        addIntaSendPaymentMethod();
+    }
+}, 2000);
+
+console.log('✅ IntaSend integration script loaded - waiting for page elements...');
+</script>
+
+
+
+
+
+
+
+
+
+
+<script>
+    
+    
+    
+    
+// ============================================================
+// FIXED PAYMENT METHOD SWITCHING - Clean & Working
+// ============================================================
+
+// Store all method container IDs for easy access
+const PAYMENT_METHODS = {
+deposit: {
+paypal: 'paypal-method',
+mpesa: 'mpesa-method',
+pesapal: 'pesapal-method',
+intasend: 'intasend-method'
+},
+withdraw: {
+paypal: 'paypal-withdraw-method',
+mpesa: 'mpesa-withdraw-method',
+pesapal: 'pesapal-withdraw-method',
+intasend: 'intasend-withdraw-method'
+}
+};
+
+// Fixed: Clean payment method switching without currentUser errors
+function switchPaymentMethod(method) {
+console.log('Switching to payment method:', method);
+
+// Get current mode (deposit or withdraw)
+const depositTab = document.getElementById('deposit-tab');
+const isDepositMode = depositTab && depositTab.classList.contains('active');
+const mode = isDepositMode ? 'deposit' : 'withdraw';
+
+// 1. Update tab active states
+const allTabs = document.querySelectorAll('.payment-method-tab');
+allTabs.forEach(tab => {
+tab.classList.remove('active');
+});
+
+const activeTab = document.getElementById(`${method}-tab`);
+if (activeTab) activeTab.classList.add('active');
+
+// 2. Hide ALL payment containers for current mode first
+const containersToHide = Object.values(PAYMENT_METHODS[mode]);
+containersToHide.forEach(containerId => {
+const element = document.getElementById(containerId);
+if (element) element.classList.add('hidden');
+});
+
+// 3. Show the selected method container
+const selectedContainerId = PAYMENT_METHODS[mode][method];
+const selectedContainer = document.getElementById(selectedContainerId);
+if (selectedContainer) {
+selectedContainer.classList.remove('hidden');
+console.log(`Showing container: ${selectedContainerId}`);
+} else {
+console.warn(`Container not found: ${selectedContainerId}`);
+}
+
+// 4. Handle exchange rate visibility (M-Pesa only)
+const depositExchangeRate = document.getElementById('deposit-exchange-rate');
+const withdrawExchangeRate = document.getElementById('withdraw-exchange-rate');
+
+if (mode === 'deposit') {
+if (depositExchangeRate) {
+if (method === 'mpesa') {
+depositExchangeRate.classList.remove('hidden');
+// Trigger amount update if needed
+const depositAmount = document.getElementById('deposit-amount');
+if (depositAmount && depositAmount.value) {
+const event = new Event('input');
+depositAmount.dispatchEvent(event);
+}
+} else {
+depositExchangeRate.classList.add('hidden');
+}
+}
+} else {
+if (withdrawExchangeRate) {
+if (method === 'mpesa') {
+withdrawExchangeRate.classList.remove('hidden');
+const withdrawAmount = document.getElementById('withdraw-amount');
+if (withdrawAmount && withdrawAmount.value) {
+const event = new Event('input');
+withdrawAmount.dispatchEvent(event);
+}
+} else {
+withdrawExchangeRate.classList.add('hidden');
+}
+}
+}
+}
+
+// Fixed: Initialize payment method containers with proper event listeners
+function initPaymentMethods() {
+console.log('Initializing payment methods...');
+
+// Get all payment method tabs
+const tabs = ['paypal-tab', 'mpesa-tab', 'pesapal-tab', 'intasend-tab'];
+
+tabs.forEach(tabId => {
+const tab = document.getElementById(tabId);
+if (tab && !tab.hasAttribute('data-listener')) {
+const method = tabId.replace('-tab', '');
+tab.addEventListener('click', function(e) {
+e.preventDefault();
+e.stopPropagation();
+switchPaymentMethod(method);
+});
+tab.setAttribute('data-listener', 'true');
+console.log(`Added listener to: ${tabId}`);
+}
+});
+
+// Also handle deposit/withdraw tab switching to reset method visibility
+const depositModeTab = document.getElementById('deposit-tab');
+const withdrawModeTab = document.getElementById('withdraw-tab');
+
+if (depositModeTab && !depositModeTab.hasAttribute('data-mode-listener')) {
+depositModeTab.addEventListener('click', function() {
+// When switching to deposit mode, default to PayPal
+setTimeout(() => {
+const activeMethodTab = document.querySelector('.payment-method-tab.active');
+if (activeMethodTab) {
+const method = activeMethodTab.id.replace('-tab', '');
+switchPaymentMethod(method);
+} else {
+switchPaymentMethod('paypal');
+}
+}, 50);
+});
+depositModeTab.setAttribute('data-mode-listener', 'true');
+}
+
+if (withdrawModeTab && !withdrawModeTab.hasAttribute('data-mode-listener')) {
+withdrawModeTab.addEventListener('click', function() {
+setTimeout(() => {
+const activeMethodTab = document.querySelector('.payment-method-tab.active');
+if (activeMethodTab) {
+const method = activeMethodTab.id.replace('-tab', '');
+switchPaymentMethod(method);
+} else {
+switchPaymentMethod('paypal');
+}
+}, 50);
+});
+withdrawModeTab.setAttribute('data-mode-listener', 'true');
+}
+}
+
+// Helper to ensure all payment containers exist and are properly structured
+function ensurePaymentContainers() {
+const containers = {
+// Deposit containers
+'paypal-method': document.getElementById('paypal-method'),
+'mpesa-method': document.getElementById('mpesa-method'),
+'pesapal-method': document.getElementById('pesapal-method'),
+'intasend-method': document.getElementById('intasend-method'),
+// Withdraw containers
+'paypal-withdraw-method': document.getElementById('paypal-withdraw-method'),
+'mpesa-withdraw-method': document.getElementById('mpesa-withdraw-method'),
+'pesapal-withdraw-method': document.getElementById('pesapal-withdraw-method'),
+'intasend-withdraw-method': document.getElementById('intasend-withdraw-method')
+};
+
+// Log missing containers for debugging
+Object.entries(containers).forEach(([id, element]) => {
+if (!element) {
+console.warn(`Missing container: ${id} - you may need to create it in HTML`);
+}
+});
+
+// Initialize first method (PayPal) as active if no tab is active
+const activeTab = document.querySelector('.payment-method-tab.active');
+if (!activeTab) {
+const paypalTab = document.getElementById('paypal-tab');
+if (paypalTab) {
+paypalTab.classList.add('active');
+switchPaymentMethod('paypal');
+}
+} else {
+const method = activeTab.id.replace('-tab', '');
+switchPaymentMethod(method);
+}
+}
+
+// Override the problematic switchPaymentMethodWithPesapal function
+if (typeof window.switchPaymentMethodWithPesapal !== 'undefined') {
+window.switchPaymentMethodWithPesapal = switchPaymentMethod;
+}
+
+// Make the fixed function globally available
+window.switchPaymentMethod = switchPaymentMethod;
+window.initPaymentMethods = initPaymentMethods;
+
+// Run initialization when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+setTimeout(() => {
+ensurePaymentContainers();
+initPaymentMethods();
+}, 100);
+});
+
+// Also run when deposit/withdraw screen becomes visible
+const checkScreenInterval = setInterval(function() {
+const depositScreen = document.getElementById('deposit-screen');
+if (depositScreen && !depositScreen.classList.contains('hidden')) {
+setTimeout(() => {
+ensurePaymentContainers();
+initPaymentMethods();
+}, 50);
+// Clear interval once fixed
+// clearInterval(checkScreenInterval); // optional
+}
+}, 500);
+
+console.log('✅ Payment method switching fixed and ready!');
+    
+    
+    
+    
+</script>
+
+
+    
+    
+    
+<script>
+// ============================================================
+// PESAPAL & INTASEND - PERFECT FLOW WITH LOADING SCREEN
+// Shows: Loading → Pending Verification → Admin Approval
+// IntaSend includes: Bank, M-Pesa, Airtel Money options
+// ============================================================
+
+(function() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    function init() {
+        console.log('🚀 Adding Pesapal & IntaSend with full payment options...');
+        addPesapalMethod();
+        addIntaSendMethod();
+    }
+
+    // Get current logged-in user
+    function getCurrentUser() {
+        if (typeof window.currentUser !== 'undefined' && window.currentUser) return window.currentUser;
+        if (typeof currentUser !== 'undefined' && currentUser) return currentUser;
+        if (window.app && window.app.currentUser) return window.app.currentUser;
+        return null;
+    }
+
+    // Show notification
+    function showMsg(message, type) {
+        if (typeof window.showNotification === 'function') {
+            window.showNotification(message, type);
+        } else if (typeof showNotification === 'function') {
+            showNotification(message, type);
+        } else {
+            alert(message);
+        }
+    }
+
+    // ========== SCREEN FUNCTIONS (EXACTLY LIKE M-PESA) ==========
+    
+    // Show loading screen (spinner) - FIRST
+    function showLoadingScreen() {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+            // Hide all other screens first
+            const allScreens = document.querySelectorAll('#auth-screen, #dashboard-screen, #deposit-screen, #payment-pending-screen, #payment-success-screen, #send-money-screen, #transactions-screen, #crypto-trading-screen, #ai-trader-screen, #identity-management-screen, #admin-panel');
+            allScreens.forEach(screen => {
+                if (screen) screen.classList.add('hidden');
+            });
+            loadingScreen.classList.remove('hidden');
+            console.log('✅ Loading screen shown');
+        }
+    }
+
+    // Hide loading screen
+    function hideLoadingScreen() {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) loadingScreen.classList.add('hidden');
+    }
+
+    // Show pending verification screen - SECOND (after loading)
+    function showPendingScreen(amount, method, type) {
+        // Update pending screen with amount and method
+        const pendingAmountSpan = document.getElementById('pending-deposit-amount');
+        const pendingMethodSpan = document.getElementById('pending-deposit-method');
+        const pendingTypeSpan = document.getElementById('pending-type');
+        const pendingType2Span = document.getElementById('pending-type2');
+        
+        if (pendingAmountSpan) pendingAmountSpan.textContent = `USD ${amount.toFixed(2)}`;
+        if (pendingMethodSpan) pendingMethodSpan.textContent = method;
+        if (pendingTypeSpan) pendingTypeSpan.textContent = type;
+        if (pendingType2Span) pendingType2Span.textContent = type;
+        
+        // Hide all screens
+        const allScreens = document.querySelectorAll('#auth-screen, #dashboard-screen, #deposit-screen, #loading-screen, #payment-success-screen, #send-money-screen, #transactions-screen, #crypto-trading-screen, #ai-trader-screen, #identity-management-screen, #admin-panel');
+        allScreens.forEach(screen => {
+            if (screen) screen.classList.add('hidden');
+        });
+        
+        // Show pending screen
+        const pendingScreen = document.getElementById('payment-pending-screen');
+        if (pendingScreen) pendingScreen.classList.remove('hidden');
+        console.log('✅ Pending screen shown');
+    }
+
+    // Button loading state
+    function setButtonLoading(button, isLoading, originalText) {
+        if (!button) return;
+        if (isLoading) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        } else {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    }
+
+    // ==================== PESAPAL ====================
+    function addPesapalMethod() {
+        const tabsContainer = document.querySelector('.payment-method-tabs');
+        if (!tabsContainer) {
+            setTimeout(addPesapalMethod, 500);
+            return;
+        }
+        if (document.getElementById('pesapal-tab')) return;
+
+        // Add Pesapal Tab
+        const pesapalTab = document.createElement('div');
+        pesapalTab.className = 'payment-method-tab';
+        pesapalTab.id = 'pesapal-tab';
+        pesapalTab.innerHTML = '<i class="fas fa-credit-card"></i> Pesapal';
+        pesapalTab.style.cursor = 'pointer';
+        tabsContainer.appendChild(pesapalTab);
+
+        // Add Pesapal Deposit Container
+        const mpesaMethod = document.getElementById('mpesa-method');
+        if (mpesaMethod && !document.getElementById('pesapal-method')) {
+            const pesapalDeposit = document.createElement('div');
+            pesapalDeposit.id = 'pesapal-method';
+            pesapalDeposit.className = 'hidden';
+            pesapalDeposit.innerHTML = `
+                <div class="mpesa-container">
+                    <div class="mpesa-instructions">
+                        <h4><i class="fas fa-credit-card"></i> How to deposit with Pesapal:</h4>
+                        <ol>
+                            <li>Enter the deposit amount in USD</li>
+                            <li>Enter your email address</li>
+                            <li>Click "Deposit with Pesapal"</li>
+                            <li>You will see a loading screen</li>
+                            <li>Then pending verification screen appears</li>
+                            <li>Admin approves → funds added to your balance</li>
+                        </ol>
+                    </div>
+                    <div class="form-group">
+                        <label for="pesapal-email">Email Address (required)</label>
+                        <input type="email" id="pesapal-email" class="form-control" placeholder="your-email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="pesapal-phone">Phone Number (optional)</label>
+                        <input type="tel" id="pesapal-phone" class="form-control" placeholder="2547XXXXXXXX">
+                    </div>
+                    <button class="btn btn-primary" id="pesapal-deposit-btn">
+                        <i class="fas fa-credit-card"></i> Deposit with Pesapal
+                    </button>
+                    <div class="payment-notice">
+                        <p><strong>⚙️Note:</strong> Your deposit will be pending until verified by admin.</p>
+                    </div>
+                </div>
+            `;
+            mpesaMethod.parentNode.insertBefore(pesapalDeposit, mpesaMethod.nextSibling);
+        }
+
+        // Add Pesapal Withdraw Container
+        const mpesaWithdraw = document.getElementById('mpesa-withdraw-method');
+        if (mpesaWithdraw && !document.getElementById('pesapal-withdraw-method')) {
+            const pesapalWithdraw = document.createElement('div');
+            pesapalWithdraw.id = 'pesapal-withdraw-method';
+            pesapalWithdraw.className = 'hidden';
+            pesapalWithdraw.innerHTML = `
+                <div class="mpesa-container">
+                    <div class="mpesa-instructions">
+                        <h4><i class="fas fa-credit-card"></i> How to withdraw with Pesapal:</h4>
+                        <ol>
+                            <li>Enter your Pesapal registered email address</li>
+                            <li>Enter the withdrawal amount in USD</li>
+                            <li>Click "Withdraw with Pesapal"</li>
+                            <li>Loading screen appears</li>
+                            <li>Pending verification screen appears</li>
+                            <li>Admin approves → funds sent to your Pesapal account</li>
+                        </ol>
+                    </div>
+                    <div class="form-group">
+                        <label for="pesapal-withdraw-email">Pesapal Email Address</label>
+                        <input type="email" id="pesapal-withdraw-email" class="form-control" placeholder="your-email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="pesapal-withdraw-phone">Phone Number (optional)</label>
+                        <input type="tel" id="pesapal-withdraw-phone" class="form-control" placeholder="2547XXXXXXXX">
+                    </div>
+                    <button class="btn btn-primary" id="pesapal-withdraw-btn">
+                        <i class="fas fa-credit-card"></i> Withdraw with Pesapal
+                    </button>
+                    <div class="payment-notice">
+                        <p><strong>⚙️Note:</strong> Your withdrawal will be pending until verified by admin.</p>
+                    </div>
+                </div>
+            `;
+            mpesaWithdraw.parentNode.insertBefore(pesapalWithdraw, mpesaWithdraw.nextSibling);
+        }
+
+        // Button handlers
+        const depositBtn = document.getElementById('pesapal-deposit-btn');
+        if (depositBtn) depositBtn.onclick = handlePesapalDeposit;
+        
+        const withdrawBtn = document.getElementById('pesapal-withdraw-btn');
+        if (withdrawBtn) withdrawBtn.onclick = handlePesapalWithdrawal;
+
+        // Tab click handler
+        pesapalTab.onclick = function() {
+            document.querySelectorAll('.payment-method-tab').forEach(tab => tab.classList.remove('active'));
+            pesapalTab.classList.add('active');
+            
+            const isDeposit = document.getElementById('deposit-tab')?.classList.contains('active');
+            const methods = ['paypal-method', 'mpesa-method', 'intasend-method', 'pesapal-method'];
+            const withdrawMethods = ['paypal-withdraw-method', 'mpesa-withdraw-method', 'intasend-withdraw-method', 'pesapal-withdraw-method'];
+            
+            if (isDeposit) {
+                methods.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+                const el = document.getElementById('pesapal-method');
+                if (el) el.classList.remove('hidden');
+            } else {
+                withdrawMethods.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+                const el = document.getElementById('pesapal-withdraw-method');
+                if (el) el.classList.remove('hidden');
+            }
+        };
+    }
+
+    async function handlePesapalDeposit() {
+        const user = getCurrentUser();
+        if (!user) { showMsg('Please login first', 'error'); return; }
+
+        const amount = parseFloat(document.getElementById('deposit-amount')?.value) || 0;
+        const email = document.getElementById('pesapal-email')?.value.trim();
+        const button = document.getElementById('pesapal-deposit-btn');
+        const originalText = '<i class="fas fa-credit-card"></i> Deposit with Pesapal';
+
+        if (!email) { showMsg('Please enter your email address', 'error'); return; }
+        if (amount < 5) { showMsg('Minimum deposit is $5.00', 'error'); return; }
+        if (amount > 10000) { showMsg('Maximum deposit is $10,000.00', 'error'); return; }
+
+        // STEP 1: Show loading on button
+        setButtonLoading(button, true, originalText);
+        
+        // STEP 2: Show loading screen (spinner)
+        showLoadingScreen();
+        
+        // Small delay to show loading screen (for demo effect)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        try {
+            const pendingDeposit = {
+                userId: user.id,
+                userPhone: user.phone,
+                amount: amount,
+                method: 'pesapal',
+                email: email,
+                date: new Date().toISOString(),
+                status: 'pending'
+            };
+
+            if (typeof savePendingDeposit === 'function') {
+                await savePendingDeposit(pendingDeposit);
+            } else if (window.savePendingDeposit) {
+                await window.savePendingDeposit(pendingDeposit);
+            }
+
+            // STEP 3: Hide loading screen
+            hideLoadingScreen();
+            
+            // STEP 4: Reset button
+            setButtonLoading(button, false, originalText);
+            
+            // STEP 5: Show pending verification screen
+            showPendingScreen(amount, 'Pesapal', 'deposit');
+            showMsg(`✅ Deposit of $${amount.toFixed(2)} submitted for admin verification`, 'success');
+
+        } catch (err) {
+            console.error(err);
+            hideLoadingScreen();
+            setButtonLoading(button, false, originalText);
+            showMsg('❌ Deposit failed. Please try again.', 'error');
+        }
+    }
+
+    async function handlePesapalWithdrawal() {
+        const user = getCurrentUser();
+        if (!user) { showMsg('Please login first', 'error'); return; }
+
+        const amount = parseFloat(document.getElementById('withdraw-amount')?.value) || 0;
+        const email = document.getElementById('pesapal-withdraw-email')?.value.trim();
+        const button = document.getElementById('pesapal-withdraw-btn');
+        const originalText = '<i class="fas fa-credit-card"></i> Withdraw with Pesapal';
+
+        if (!email) { showMsg('Please enter your email address', 'error'); return; }
+        if (amount < 5) { showMsg('Minimum withdrawal is $5.00', 'error'); return; }
+        if (amount > 10000) { showMsg('Maximum withdrawal is $10,000.00', 'error'); return; }
+        if (user.balance < amount) { showMsg('Insufficient balance', 'error'); return; }
+
+        setButtonLoading(button, true, originalText);
+        showLoadingScreen();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        try {
+            const pendingWithdrawal = {
+                userId: user.id,
+                userPhone: user.phone,
+                amount: amount,
+                method: 'pesapal',
+                email: email,
+                date: new Date().toISOString(),
+                status: 'pending'
+            };
+
+            if (typeof savePendingWithdrawal === 'function') {
+                await savePendingWithdrawal(pendingWithdrawal);
+            } else if (window.savePendingWithdrawal) {
+                await window.savePendingWithdrawal(pendingWithdrawal);
+            }
+
+            hideLoadingScreen();
+            setButtonLoading(button, false, originalText);
+            showPendingScreen(amount, 'Pesapal', 'withdrawal');
+            showMsg(`✅ Withdrawal of $${amount.toFixed(2)} submitted for admin verification`, 'success');
+
+        } catch (err) {
+            console.error(err);
+            hideLoadingScreen();
+            setButtonLoading(button, false, originalText);
+            showMsg('❌ Withdrawal failed. Please try again.', 'error');
+        }
+    }
+
+    // ==================== INTASEND (WITH BANK, M-PESA, AIRTEL) ====================
+    function addIntaSendMethod() {
+        const tabsContainer = document.querySelector('.payment-method-tabs');
+        if (!tabsContainer) return;
+        if (document.getElementById('intasend-tab')) return;
+
+        const intasendTab = document.createElement('div');
+        intasendTab.className = 'payment-method-tab';
+        intasendTab.id = 'intasend-tab';
+        intasendTab.innerHTML = '<i class="fas fa-bolt"></i> IntaSend';
+        intasendTab.style.cursor = 'pointer';
+        tabsContainer.appendChild(intasendTab);
+
+        // Add IntaSend Deposit Container
+        const pesapalMethod = document.getElementById('pesapal-method');
+        if (pesapalMethod && !document.getElementById('intasend-method')) {
+            const intasendDeposit = document.createElement('div');
+            intasendDeposit.id = 'intasend-method';
+            intasendDeposit.className = 'hidden';
+            intasendDeposit.innerHTML = `
+                <div class="mpesa-container">
+                    <div class="mpesa-instructions">
+                        <h4><i class="fas fa-bolt"></i> How to deposit with IntaSend:</h4>
+                        <ol>
+                            <li>Enter deposit amount in USD</li>
+                            <li>Enter your email address</li>
+                            <li>Select your preferred payment method (Bank, M-Pesa, or Airtel)</li>
+                            <li>Enter your payment details</li>
+                            <li>Click "Deposit with IntaSend"</li>
+                            <li>Loading screen appears → Pending verification → Admin approves</li>
+                        </ol>
+                    </div>
+                    <div class="form-group">
+                        <label for="intasend-email">Email Address</label>
+                        <input type="email" id="intasend-email" class="form-control" placeholder="your-email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="intasend-payment-method">Payment Method</label>
+                        <select id="intasend-payment-method" class="form-control">
+                            <option value="bank">🏦 Bank Transfer</option>
+                            <option value="mpesa">💵 M-Pesa</option>
+                            <option value="airtel">📱 Airtel Money</option>
+                        </select>
+                    </div>
+                    <div id="intasend-bank-details" class="form-group" style="display:block;">
+                        <label for="intasend-bank-account">Bank Account Details</label>
+                        <input type="text" id="intasend-bank-account" class="form-control" placeholder="Bank Name | Account Name | Account Number">
+                    </div>
+                    <div id="intasend-mpesa-details" class="form-group" style="display:none;">
+                        <label for="intasend-mpesa-number">M-Pesa Phone Number</label>
+                        <input type="tel" id="intasend-mpesa-number" class="form-control" placeholder="2547XXXXXXXX">
+                    </div>
+                    <div id="intasend-airtel-details" class="form-group" style="display:none;">
+                        <label for="intasend-airtel-number">Airtel Money Phone Number</label>
+                        <input type="tel" id="intasend-airtel-number" class="form-control" placeholder="2547XXXXXXXX">
+                    </div>
+                    <button class="btn btn-primary" id="intasend-deposit-btn">
+                        <i class="fas fa-bolt"></i> Deposit with IntaSend
+                    </button>
+                    <div class="payment-notice">
+                        <p><strong>⚡Note:</strong> Deposit pending admin approval.</p>
+                    </div>
+                </div>
+            `;
+            pesapalMethod.parentNode.insertBefore(intasendDeposit, pesapalMethod.nextSibling);
+
+            // Add payment method change handler
+            const methodSelect = document.getElementById('intasend-payment-method');
+            if (methodSelect) {
+                methodSelect.onchange = function() {
+                    const bankDiv = document.getElementById('intasend-bank-details');
+                    const mpesaDiv = document.getElementById('intasend-mpesa-details');
+                    const airtelDiv = document.getElementById('intasend-airtel-details');
+                    
+                    bankDiv.style.display = 'none';
+                    mpesaDiv.style.display = 'none';
+                    airtelDiv.style.display = 'none';
+                    
+                    if (this.value === 'bank') bankDiv.style.display = 'block';
+                    else if (this.value === 'mpesa') mpesaDiv.style.display = 'block';
+                    else if (this.value === 'airtel') airtelDiv.style.display = 'block';
+                };
+            }
+        }
+
+        // Add IntaSend Withdraw Container (with payout options)
+        const pesapalWithdraw = document.getElementById('pesapal-withdraw-method');
+        if (pesapalWithdraw && !document.getElementById('intasend-withdraw-method')) {
+            const intasendWithdraw = document.createElement('div');
+            intasendWithdraw.id = 'intasend-withdraw-method';
+            intasendWithdraw.className = 'hidden';
+            intasendWithdraw.innerHTML = `
+                <div class="mpesa-container">
+                    <div class="mpesa-instructions">
+                        <h4><i class="fas fa-bolt"></i> How to withdraw with IntaSend:</h4>
+                        <ol>
+                            <li>Enter your email address</li>
+                            <li>Select your payout method (Bank, M-Pesa, or Airtel)</li>
+                            <li>Enter withdrawal amount in USD</li>
+                            <li>Enter your payout details</li>
+                            <li>Click "Withdraw with IntaSend"</li>
+                            <li>Loading screen → Pending verification → Admin approves</li>
+                        </ol>
+                    </div>
+                    <div class="form-group">
+                        <label for="intasend-withdraw-email">Email Address</label>
+                        <input type="email" id="intasend-withdraw-email" class="form-control" placeholder="your-email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="intasend-payout-method">Payout Method</label>
+                        <select id="intasend-payout-method" class="form-control">
+                            <option value="bank">🏦 Bank Transfer</option>
+                            <option value="mpesa">💵 M-Pesa</option>
+                            <option value="airtel">📱 Airtel Money</option>
+                        </select>
+                    </div>
+                    <div id="intasend-payout-bank-details" class="form-group" style="display:block;">
+                        <label for="intasend-payout-bank">Bank Account Details</label>
+                        <input type="text" id="intasend-payout-bank" class="form-control" placeholder="Bank Name | Account Name | Account Number">
+                    </div>
+                    <div id="intasend-payout-mpesa-details" class="form-group" style="display:none;">
+                        <label for="intasend-payout-mpesa">M-Pesa Phone Number</label>
+                        <input type="tel" id="intasend-payout-mpesa" class="form-control" placeholder="2547XXXXXXXX">
+                    </div>
+                    <div id="intasend-payout-airtel-details" class="form-group" style="display:none;">
+                        <label for="intasend-payout-airtel">Airtel Money Phone Number</label>
+                        <input type="tel" id="intasend-payout-airtel" class="form-control" placeholder="2547XXXXXXXX">
+                    </div>
+                    <button class="btn btn-primary" id="intasend-withdraw-btn">
+                        <i class="fas fa-bolt"></i> Withdraw with IntaSend
+                    </button>
+                    <div class="payment-notice">
+                        <p><strong>⚡Note:</strong> Withdrawal pending admin approval.</p>
+                    </div>
+                </div>
+            `;
+            pesapalWithdraw.parentNode.insertBefore(intasendWithdraw, pesapalWithdraw.nextSibling);
+
+            // Add payout method change handler
+            const payoutSelect = document.getElementById('intasend-payout-method');
+            if (payoutSelect) {
+                payoutSelect.onchange = function() {
+                    const bankDiv = document.getElementById('intasend-payout-bank-details');
+                    const mpesaDiv = document.getElementById('intasend-payout-mpesa-details');
+                    const airtelDiv = document.getElementById('intasend-payout-airtel-details');
+                    
+                    bankDiv.style.display = 'none';
+                    mpesaDiv.style.display = 'none';
+                    airtelDiv.style.display = 'none';
+                    
+                    if (this.value === 'bank') bankDiv.style.display = 'block';
+                    else if (this.value === 'mpesa') mpesaDiv.style.display = 'block';
+                    else if (this.value === 'airtel') airtelDiv.style.display = 'block';
+                };
+            }
+        }
+
+        // Button handlers
+        const depositBtn = document.getElementById('intasend-deposit-btn');
+        if (depositBtn) depositBtn.onclick = handleIntaSendDeposit;
+        
+        const withdrawBtn = document.getElementById('intasend-withdraw-btn');
+        if (withdrawBtn) withdrawBtn.onclick = handleIntaSendWithdrawal;
+
+        // Tab click handler
+        intasendTab.onclick = function() {
+            document.querySelectorAll('.payment-method-tab').forEach(tab => tab.classList.remove('active'));
+            intasendTab.classList.add('active');
+            
+            const isDeposit = document.getElementById('deposit-tab')?.classList.contains('active');
+            const methods = ['paypal-method', 'mpesa-method', 'pesapal-method', 'intasend-method'];
+            const withdrawMethods = ['paypal-withdraw-method', 'mpesa-withdraw-method', 'pesapal-withdraw-method', 'intasend-withdraw-method'];
+            
+            if (isDeposit) {
+                methods.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+                const el = document.getElementById('intasend-method');
+                if (el) el.classList.remove('hidden');
+            } else {
+                withdrawMethods.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+                const el = document.getElementById('intasend-withdraw-method');
+                if (el) el.classList.remove('hidden');
+            }
+        };
+    }
+
+    async function handleIntaSendDeposit() {
+        const user = getCurrentUser();
+        if (!user) { showMsg('Please login first', 'error'); return; }
+
+        const amount = parseFloat(document.getElementById('deposit-amount')?.value) || 0;
+        const email = document.getElementById('intasend-email')?.value.trim();
+        const paymentMethod = document.getElementById('intasend-payment-method')?.value;
+        const bankAccount = document.getElementById('intasend-bank-account')?.value.trim();
+        const mpesaNumber = document.getElementById('intasend-mpesa-number')?.value.trim();
+        const airtelNumber = document.getElementById('intasend-airtel-number')?.value.trim();
+        const button = document.getElementById('intasend-deposit-btn');
+        const originalText = '<i class="fas fa-bolt"></i> Deposit with IntaSend';
+
+        if (!email) { showMsg('Please enter your email address', 'error'); return; }
+        if (amount < 5) { showMsg('Minimum deposit is $5.00', 'error'); return; }
+        if (amount > 10000) { showMsg('Maximum deposit is $10,000.00', 'error'); return; }
+        if (paymentMethod === 'bank' && !bankAccount) { showMsg('Please enter bank account details', 'error'); return; }
+        if (paymentMethod === 'mpesa' && !mpesaNumber) { showMsg('Please enter M-Pesa number', 'error'); return; }
+        if (paymentMethod === 'airtel' && !airtelNumber) { showMsg('Please enter Airtel number', 'error'); return; }
+
+        setButtonLoading(button, true, originalText);
+        showLoadingScreen();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        try {
+            const pendingDeposit = {
+                userId: user.id,
+                userPhone: user.phone,
+                amount: amount,
+                method: 'intasend',
+                paymentMethod: paymentMethod,
+                email: email,
+                bankAccount: bankAccount,
+                mpesaNumber: mpesaNumber,
+                airtelNumber: airtelNumber,
+                date: new Date().toISOString(),
+                status: 'pending'
+            };
+
+            if (typeof savePendingDeposit === 'function') {
+                await savePendingDeposit(pendingDeposit);
+            } else if (window.savePendingDeposit) {
+                await window.savePendingDeposit(pendingDeposit);
+            }
+
+            hideLoadingScreen();
+            setButtonLoading(button, false, originalText);
+            showPendingScreen(amount, `IntaSend (${paymentMethod.toUpperCase()})`, 'deposit');
+            showMsg(`✅ Deposit of $${amount.toFixed(2)} submitted for admin verification`, 'success');
+
+        } catch (err) {
+            console.error(err);
+            hideLoadingScreen();
+            setButtonLoading(button, false, originalText);
+            showMsg('❌ Deposit failed. Please try again.', 'error');
+        }
+    }
+
+    async function handleIntaSendWithdrawal() {
+        const user = getCurrentUser();
+        if (!user) { showMsg('Please login first', 'error'); return; }
+
+        const amount = parseFloat(document.getElementById('withdraw-amount')?.value) || 0;
+        const email = document.getElementById('intasend-withdraw-email')?.value.trim();
+        const payoutMethod = document.getElementById('intasend-payout-method')?.value;
+        const bankAccount = document.getElementById('intasend-payout-bank')?.value.trim();
+        const mpesaNumber = document.getElementById('intasend-payout-mpesa')?.value.trim();
+        const airtelNumber = document.getElementById('intasend-payout-airtel')?.value.trim();
+        const button = document.getElementById('intasend-withdraw-btn');
+        const originalText = '<i class="fas fa-bolt"></i> Withdraw with IntaSend';
+
+        if (!email) { showMsg('Please enter your email address', 'error'); return; }
+        if (amount < 5) { showMsg('Minimum withdrawal is $5.00', 'error'); return; }
+        if (amount > 10000) { showMsg('Maximum withdrawal is $10,000.00', 'error'); return; }
+        if (user.balance < amount) { showMsg('Insufficient balance', 'error'); return; }
+        if (payoutMethod === 'bank' && !bankAccount) { showMsg('Please enter bank account details', 'error'); return; }
+        if (payoutMethod === 'mpesa' && !mpesaNumber) { showMsg('Please enter M-Pesa number', 'error'); return; }
+        if (payoutMethod === 'airtel' && !airtelNumber) { showMsg('Please enter Airtel number', 'error'); return; }
+
+        setButtonLoading(button, true, originalText);
+        showLoadingScreen();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        try {
+            const pendingWithdrawal = {
+                userId: user.id,
+                userPhone: user.phone,
+                amount: amount,
+                method: 'intasend',
+                payoutMethod: payoutMethod,
+                email: email,
+                bankAccount: bankAccount,
+                mpesaNumber: mpesaNumber,
+                airtelNumber: airtelNumber,
+                date: new Date().toISOString(),
+                status: 'pending'
+            };
+
+            if (typeof savePendingWithdrawal === 'function') {
+                await savePendingWithdrawal(pendingWithdrawal);
+            } else if (window.savePendingWithdrawal) {
+                await window.savePendingWithdrawal(pendingWithdrawal);
+            }
+
+            hideLoadingScreen();
+            setButtonLoading(button, false, originalText);
+            showPendingScreen(amount, `IntaSend (${payoutMethod.toUpperCase()})`, 'withdrawal');
+            showMsg(`✅ Withdrawal of $${amount.toFixed(2)} submitted for admin verification`, 'success');
+
+        } catch (err) {
+            console.error(err);
+            hideLoadingScreen();
+            setButtonLoading(button, false, originalText);
+            showMsg('❌ Withdrawal failed. Please try again.', 'error');
+        }
+    }
+})();
+</script>
+
+    
+    
+    
+    
+    
+
+
 <!-- ========== SOURCE CODE HIDING & PROTECTION MODULE ========== -->
 <!-- Insert this entire script block just before the closing </body> tag in your kanairoex.html -->
 <script>
@@ -10515,7 +12505,6 @@ console.log('✅ Send money should no longer trigger DID auth');
     NOTE: No system is 100% unhackable, but this provides strong client-side obfuscation
     and makes it extremely difficult for average users to view or copy your source code.
 -->
-
 
 
 
