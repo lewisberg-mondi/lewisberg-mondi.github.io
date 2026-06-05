@@ -12092,7 +12092,467 @@ console.log('✅ Payment method switching fixed and ready!');
     
     
     
+
+<script>
+// ============================================================
+// ADMIN CONFIRMATION MODAL - Goes to DASHBOARD instead of Admin Panel
+// ============================================================
+
+(function() {
     
+    // Create and show the confirmation modal for admin
+    function showAdminConfirmationModal(type, amount, method, action, userPhone, transactionId) {
+        // Remove any existing modal
+        const existingModal = document.getElementById('admin-confirmation-modal');
+        if (existingModal) existingModal.remove();
+        
+        const isApprove = action === 'approved';
+        const typeText = type === 'deposit' ? 'Deposit' : 'Withdrawal';
+        const methodText = method === 'paypal' ? 'PayPal' : method === 'mpesa' ? 'M-Pesa' : method || 'System';
+        const statusText = isApprove ? 'APPROVED' : 'REJECTED';
+        const statusColor = isApprove ? '#2ecc71' : '#e74c3c';
+        const icon = isApprove ? 'fa-check-circle' : 'fa-times-circle';
+        
+        // Create modal similar to your Payment Pending Verification screen
+        const modal = document.createElement('div');
+        modal.id = 'admin-confirmation-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999999;
+            animation: fadeInModal 0.3s ease;
+        `;
+        
+        modal.innerHTML = `
+            <div style="
+                background: white;
+                border-radius: 12px;
+                max-width: 400px;
+                width: 90%;
+                padding: 30px 25px;
+                text-align: center;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                animation: slideUpModal 0.3s ease;
+            ">
+                <div style="margin-bottom: 20px;">
+                    <i class="fas ${icon}" style="font-size: 64px; color: ${statusColor};"></i>
+                </div>
+                
+                <h2 style="color: ${statusColor}; margin-bottom: 15px; font-size: 24px;">
+                    ${isApprove ? '✓ Transaction Approved!' : '✗ Transaction Rejected'}
+                </h2>
+                
+                <p style="margin: 10px 0; color: #666;">Your ${typeText.toLowerCase()} has been ${action}.</p>
+                
+                <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: left;">
+                    <p style="margin: 8px 0;"><strong>💰 Amount:</strong> USD ${amount.toFixed(2)}</p>
+                    <p style="margin: 8px 0;"><strong>💳 Method:</strong> ${methodText}</p>
+                    <p style="margin: 8px 0;"><strong>👤 User:</strong> ${userPhone}</p>
+                    <p style="margin: 8px 0;"><strong>📊 Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span></p>
+                </div>
+                
+                <div style="margin: 20px 0; padding: 12px; background: ${isApprove ? '#d4edda' : '#f8d7da'}; border-radius: 8px; color: ${isApprove ? '#155724' : '#721c24'}; font-size: 14px;">
+                    <i class="fas ${isApprove ? 'fa-info-circle' : 'fa-exclamation-triangle'}"></i>
+                    ${isApprove ? 
+                        `The ${typeText.toLowerCase()} has been successfully processed.` : 
+                        `The ${typeText.toLowerCase()} has been rejected. No funds were transferred.`
+                    }
+                </div>
+                
+                <button id="admin-confirmation-close-btn" class="btn btn-primary" style="
+                    background: ${statusColor};
+                    border: none;
+                    padding: 12px 24px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    width: 100%;
+                    color: white;
+                    margin-top: 10px;
+                ">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </button>
+            </div>
+        `;
+        
+        // Add animation styles if not present
+        if (!document.getElementById('admin-modal-animation')) {
+            const style = document.createElement('style');
+            style.id = 'admin-modal-animation';
+            style.textContent = `
+                @keyframes fadeInModal {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUpModal {
+                    from { 
+                        opacity: 0;
+                        transform: translateY(30px);
+                    }
+                    to { 
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(modal);
+        
+        // Close button event - NOW GOES TO DASHBOARD
+        document.getElementById('admin-confirmation-close-btn').addEventListener('click', () => {
+            modal.remove();
+            
+            // GO TO DASHBOARD SCREEN
+            const dashboardScreen = document.getElementById('dashboard-screen');
+            if (dashboardScreen && typeof window.showScreen === 'function') {
+                window.showScreen(dashboardScreen);
+            } else if (dashboardScreen) {
+                // Fallback if showScreen is not available
+                document.querySelectorAll('.card, [id$="-screen"]').forEach(screen => {
+                    if (screen) screen.classList.add('hidden');
+                });
+                dashboardScreen.classList.remove('hidden');
+            }
+            
+            // Refresh the pending lists in background
+            if (typeof window.displayPendingDeposits === 'function') {
+                setTimeout(() => window.displayPendingDeposits(), 500);
+            }
+            if (typeof window.displayPendingWithdrawals === 'function') {
+                setTimeout(() => window.displayPendingWithdrawals(), 500);
+            }
+        });
+        
+        // Close when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                
+                // GO TO DASHBOARD SCREEN
+                const dashboardScreen = document.getElementById('dashboard-screen');
+                if (dashboardScreen && typeof window.showScreen === 'function') {
+                    window.showScreen(dashboardScreen);
+                } else if (dashboardScreen) {
+                    document.querySelectorAll('.card, [id$="-screen"]').forEach(screen => {
+                        if (screen) screen.classList.add('hidden');
+                    });
+                    dashboardScreen.classList.remove('hidden');
+                }
+            }
+        });
+    }
+    
+    // Helper to show button loading state
+    function setButtonLoading(btn, isLoading) {
+        if (!btn) return;
+        if (isLoading) {
+            btn._originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        } else {
+            btn.disabled = false;
+            if (btn._originalHtml) {
+                btn.innerHTML = btn._originalHtml;
+            }
+        }
+    }
+    
+    // ============ OVERRIDE THE EXISTING FUNCTIONS ============
+    
+    // Store original functions
+    const originalApproveDeposit = window.approvePendingDeposit;
+    const originalRejectDeposit = window.rejectPendingDeposit;
+    const originalApproveWithdrawal = window.approvePendingWithdrawal;
+    const originalRejectWithdrawal = window.rejectPendingWithdrawal;
+    
+    // NEW approve deposit with modal
+    window.approvePendingDeposit = async function(depositId) {
+        console.log('Approving deposit:', depositId);
+        
+        const btn = document.querySelector(`.btn-approve[data-id="${depositId}"]`);
+        const transactionItem = btn?.closest('.transaction-admin-item');
+        
+        let amount = 0;
+        let method = '';
+        let userPhone = '';
+        
+        if (transactionItem) {
+            const amountText = transactionItem.querySelector('.transaction-amount')?.innerText || '';
+            const match = amountText.match(/[\d.]+/);
+            if (match) amount = parseFloat(match[0]);
+            
+            const methodText = transactionItem.querySelector('.transaction-type')?.innerText || '';
+            if (methodText.toLowerCase().includes('paypal')) method = 'paypal';
+            else if (methodText.toLowerCase().includes('mpesa')) method = 'mpesa';
+            else method = 'System';
+            
+            const userText = transactionItem.querySelector('.transaction-parties')?.innerText || '';
+            userPhone = userText.replace('User:', '').trim();
+        }
+        
+        if (btn) setButtonLoading(btn, true);
+        
+        try {
+            if (originalApproveDeposit) {
+                await originalApproveDeposit(depositId);
+            }
+            
+            showAdminConfirmationModal('deposit', amount, method, 'approved', userPhone, depositId);
+            
+        } catch (error) {
+            console.error('Approval error:', error);
+            const notification = document.getElementById('notification');
+            if (notification) {
+                notification.textContent = 'Error approving deposit';
+                notification.className = 'notification error show';
+                setTimeout(() => notification.classList.remove('show'), 3000);
+            }
+        } finally {
+            if (btn) setButtonLoading(btn, false);
+        }
+    };
+    
+    // NEW reject deposit with modal
+    window.rejectPendingDeposit = async function(depositId) {
+        console.log('Rejecting deposit:', depositId);
+        
+        const btn = document.querySelector(`.btn-reject[data-id="${depositId}"]`);
+        const transactionItem = btn?.closest('.transaction-admin-item');
+        
+        let amount = 0;
+        let method = '';
+        let userPhone = '';
+        
+        if (transactionItem) {
+            const amountText = transactionItem.querySelector('.transaction-amount')?.innerText || '';
+            const match = amountText.match(/[\d.]+/);
+            if (match) amount = parseFloat(match[0]);
+            
+            const methodText = transactionItem.querySelector('.transaction-type')?.innerText || '';
+            if (methodText.toLowerCase().includes('paypal')) method = 'paypal';
+            else if (methodText.toLowerCase().includes('mpesa')) method = 'mpesa';
+            else method = 'System';
+            
+            const userText = transactionItem.querySelector('.transaction-parties')?.innerText || '';
+            userPhone = userText.replace('User:', '').trim();
+        }
+        
+        if (btn) setButtonLoading(btn, true);
+        
+        try {
+            if (originalRejectDeposit) {
+                await originalRejectDeposit(depositId);
+            }
+            
+            showAdminConfirmationModal('deposit', amount, method, 'rejected', userPhone, depositId);
+            
+        } catch (error) {
+            console.error('Rejection error:', error);
+        } finally {
+            if (btn) setButtonLoading(btn, false);
+        }
+    };
+    
+    // NEW approve withdrawal with modal
+    window.approvePendingWithdrawal = async function(withdrawalId) {
+        console.log('Approving withdrawal:', withdrawalId);
+        
+        const btn = document.querySelector(`.btn-approve[data-id="${withdrawalId}"]`);
+        const transactionItem = btn?.closest('.transaction-admin-item');
+        
+        let amount = 0;
+        let method = '';
+        let userPhone = '';
+        
+        if (transactionItem) {
+            const amountText = transactionItem.querySelector('.transaction-amount')?.innerText || '';
+            const match = amountText.match(/[\d.]+/);
+            if (match) amount = parseFloat(match[0]);
+            
+            const methodText = transactionItem.querySelector('.transaction-type')?.innerText || '';
+            if (methodText.toLowerCase().includes('paypal')) method = 'paypal';
+            else if (methodText.toLowerCase().includes('mpesa')) method = 'mpesa';
+            else method = 'System';
+            
+            const userText = transactionItem.querySelector('.transaction-parties')?.innerText || '';
+            userPhone = userText.replace('User:', '').trim();
+        }
+        
+        if (btn) setButtonLoading(btn, true);
+        
+        try {
+            if (originalApproveWithdrawal) {
+                await originalApproveWithdrawal(withdrawalId);
+            }
+            
+            showAdminConfirmationModal('withdrawal', amount, method, 'approved', userPhone, withdrawalId);
+            
+        } catch (error) {
+            console.error('Approval error:', error);
+        } finally {
+            if (btn) setButtonLoading(btn, false);
+        }
+    };
+    
+    // NEW reject withdrawal with modal
+    window.rejectPendingWithdrawal = async function(withdrawalId) {
+        console.log('Rejecting withdrawal:', withdrawalId);
+        
+        const btn = document.querySelector(`.btn-reject[data-id="${withdrawalId}"]`);
+        const transactionItem = btn?.closest('.transaction-admin-item');
+        
+        let amount = 0;
+        let method = '';
+        let userPhone = '';
+        
+        if (transactionItem) {
+            const amountText = transactionItem.querySelector('.transaction-amount')?.innerText || '';
+            const match = amountText.match(/[\d.]+/);
+            if (match) amount = parseFloat(match[0]);
+            
+            const methodText = transactionItem.querySelector('.transaction-type')?.innerText || '';
+            if (methodText.toLowerCase().includes('paypal')) method = 'paypal';
+            else if (methodText.toLowerCase().includes('mpesa')) method = 'mpesa';
+            else method = 'System';
+            
+            const userText = transactionItem.querySelector('.transaction-parties')?.innerText || '';
+            userPhone = userText.replace('User:', '').trim();
+        }
+        
+        if (btn) setButtonLoading(btn, true);
+        
+        try {
+            if (originalRejectWithdrawal) {
+                await originalRejectWithdrawal(withdrawalId);
+            }
+            
+            showAdminConfirmationModal('withdrawal', amount, method, 'rejected', userPhone, withdrawalId);
+            
+        } catch (error) {
+            console.error('Rejection error:', error);
+        } finally {
+            if (btn) setButtonLoading(btn, false);
+        }
+    };
+    
+    // Re-attach event listeners to buttons after they're created
+    function attachModalListeners() {
+        document.querySelectorAll('#pending-deposits-list .btn-approve').forEach(btn => {
+            if (!btn.hasAttribute('data-modal-attached')) {
+                btn.setAttribute('data-modal-attached', 'true');
+                const id = btn.getAttribute('data-id');
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.approvePendingDeposit(id);
+                };
+            }
+        });
+        
+        document.querySelectorAll('#pending-deposits-list .btn-reject').forEach(btn => {
+            if (!btn.hasAttribute('data-modal-attached')) {
+                btn.setAttribute('data-modal-attached', 'true');
+                const id = btn.getAttribute('data-id');
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.rejectPendingDeposit(id);
+                };
+            }
+        });
+        
+        document.querySelectorAll('#pending-withdrawals-list .btn-approve').forEach(btn => {
+            if (!btn.hasAttribute('data-modal-attached')) {
+                btn.setAttribute('data-modal-attached', 'true');
+                const id = btn.getAttribute('data-id');
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.approvePendingWithdrawal(id);
+                };
+            }
+        });
+        
+        document.querySelectorAll('#pending-withdrawals-list .btn-reject').forEach(btn => {
+            if (!btn.hasAttribute('data-modal-attached')) {
+                btn.setAttribute('data-modal-attached', 'true');
+                const id = btn.getAttribute('data-id');
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.rejectPendingWithdrawal(id);
+                };
+            }
+        });
+    }
+    
+    // Override display functions to re-attach listeners
+    const originalDisplayPendingDeposits = window.displayPendingDeposits;
+    if (originalDisplayPendingDeposits) {
+        window.displayPendingDeposits = async function() {
+            await originalDisplayPendingDeposits();
+            setTimeout(attachModalListeners, 100);
+        };
+    }
+    
+    const originalDisplayPendingWithdrawals = window.displayPendingWithdrawals;
+    if (originalDisplayPendingWithdrawals) {
+        window.displayPendingWithdrawals = async function() {
+            await originalDisplayPendingWithdrawals();
+            setTimeout(attachModalListeners, 100);
+        };
+    }
+    
+    // Initialize
+    function init() {
+        attachModalListeners();
+        
+        const observer = new MutationObserver(() => attachModalListeners());
+        const pendingDeposits = document.getElementById('pending-deposits-list');
+        const pendingWithdrawals = document.getElementById('pending-withdrawals-list');
+        if (pendingDeposits) observer.observe(pendingDeposits, { childList: true, subtree: true });
+        if (pendingWithdrawals) observer.observe(pendingWithdrawals, { childList: true, subtree: true });
+        
+        console.log('✅ Admin confirmation modal ready - Goes to DASHBOARD');
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    
+})();
+</script>
+
+
+
+
+
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    ['pesapal-tab', 'intasend-tab', 'pesapal-method', 'intasend-method', 
+     'pesapal-withdraw-method', 'intasend-withdraw-method'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+});
+</script>
+
+
 
 
 <!-- ========== SOURCE CODE HIDING & PROTECTION MODULE ========== -->
@@ -12505,9 +12965,6 @@ console.log('✅ Payment method switching fixed and ready!');
     NOTE: No system is 100% unhackable, but this provides strong client-side obfuscation
     and makes it extremely difficult for average users to view or copy your source code.
 -->
-
-
-
 
 
 
