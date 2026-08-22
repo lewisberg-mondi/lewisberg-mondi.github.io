@@ -1,36 +1,44 @@
-const translations = {
-  en: {
-    welcome: "Welcome to M-USD",
-    balance: "Balance",
-    send: "Send",
-    receive: "Receive"
-  },
-  es: {
-    welcome: "Bienvenido a M-USD",
-    balance: "Saldo",
-    send: "Enviar",
-    receive: "Recibir"
-  },
-  fr: {
-    welcome: "Bienvenue sur M-USD",
-    balance: "Solde",
-    send: "Envoyer",
-    receive: "Recevoir"
+const I18n = (() => {
+  const KEY = "localmind_lang";
+  const dict = {
+    en: {
+      welcome: "Private study assistant for university and professional work.",
+      offline: "Offline",
+      online: "Online",
+      thinking: "Thinking…"
+    },
+    sw: {
+      welcome: "Msaidizi wa masomo wa faragha kwa chuo na kazi kitaaluma.",
+      offline: "Nje ya mtandao",
+      online: "Mtandaoni",
+      thinking: "Inafikiri…"
+    }
+  };
+  function getLang() {
+    try { return localStorage.getItem(KEY) || "en"; } catch { return "en"; }
   }
-};
-
-class I18n {
-  constructor(lang = 'en') {
-    this.lang = lang;
+  function setLang(l) {
+    const lang = (l === "sw") ? "sw" : "en";
+    try { localStorage.setItem(KEY, lang); } catch (e) {}
+    return lang;
   }
-  
-  t(key) {
-    return translations[this.lang]?.[key] || translations.en[key] || key;
+  function t(k) {
+    const d = dict[getLang()] || dict.en;
+    return d[k] || dict.en[k] || k;
   }
-  
-  setLanguage(lang) {
-    this.lang = lang;
-    localStorage.setItem('preferred_language', lang);
-    this.updateUI();
+  function detect(text) {
+    if (/^lang(uage)?\s+(sw|swahili|en|english)\b/i.test(text || "")) {
+      const sw = /sw|swahili/i.test(text);
+      return { type: "lang", lang: sw ? "sw" : "en" };
+    }
+    return null;
   }
-}
+  function handle(intent) {
+    if (!intent) return null;
+    const L = setLang(intent.lang);
+    return L === "sw"
+      ? "Lugha imewekwa **Kiswahili** (UI fupi). Andika: **language en** kurudisha Kiingereza."
+      : "Language set to **English**. Say **language sw** for Swahili labels.";
+  }
+  return { getLang: getLang, setLang: setLang, t: t, detect: detect, handle: handle };
+})();

@@ -1,0 +1,14 @@
+{
+  "name": "Kanairoex AI",
+  "short_name": "Kanairoex",
+  "description": "Kanairoex AI — private offline-first AI workstation with education, research, coding, memory and multi-token sandbox.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f1419",
+  "theme_color": "#0f1419",
+  "lang": "en",
+  "categories": ["education", "productivity", "development"],
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

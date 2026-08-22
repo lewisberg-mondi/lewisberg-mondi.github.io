@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="28" fill="#0f1419"/>
+  <circle cx="64" cy="58" r="28" fill="#1a2332" stroke="#5b8def" stroke-width="4"/>
+  <circle cx="54" cy="54" r="4" fill="#5b8def"/>
+  <circle cx="74" cy="54" r="4" fill="#5b8def"/>
+  <path d="M48 70 Q64 82 80 70" stroke="#3ecf8e" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <text x="64" y="112" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" fill="#9bb0c9">LocalMind</text>
+</svg>

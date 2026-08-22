@@ -1,475 +1,168 @@
-// Blockchain and Wallet Simulation - PRODUCTION READY
-class PhoneBlockchain {
-    constructor() {
-        this.users = new Map();
-        this.transactions = [];
-        this.pendingTransactions = [];
-        this.blockHeight = 0;
-        this.loadFromStorage();
-        this.ensureFeeCollectorExists();
+/**
+ * Kanairoex Blockchain Memory
+ * A simple linked-hash chain stored in localStorage.
+ * Each block holds conversation turns, learned facts, or system events.
+ */
+
+const Blockchain = (() => {
+  const STORAGE_KEY = "localmind_chain";
+
+  function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
     }
+    return "0x" + Math.abs(hash).toString(16).padStart(8, "0");
+  }
 
-    // Ensure fee collector account exists
-    ensureFeeCollectorExists() {
-        const feeCollector = security.getFeeCollector();
-        if (!this.users.has(feeCollector)) {
-            const systemPassword = "system_fee_collector_2024";
-            const walletAddress = security.generateWalletAddress(feeCollector);
-            const passwordHash = security.hashPassword(systemPassword);
-            
-            const feeUser = {
-                phoneNumber: feeCollector,
-                walletAddress: walletAddress,
-                passwordHash: passwordHash,
-                balance: 0,
-                createdAt: new Date().toISOString(),
-                isActive: true,
-                isSystem: true
-            };
-            
-            this.users.set(feeCollector, feeUser);
-            this.saveToStorage();
-        }
+  function createGenesis() {
+    const genesis = {
+      index: 0,
+      timestamp: Date.now(),
+      data: { type: "genesis", message: "Kanairoex Blockchain initialized" },
+      previousHash: "0x00000000",
+      hash: ""
+    };
+    genesis.hash = simpleHash(JSON.stringify(genesis));
+    return [genesis];
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return createGenesis();
+      const chain = JSON.parse(raw);
+      if (!Array.isArray(chain) || chain.length === 0) return createGenesis();
+      return chain;
+    } catch {
+      return createGenesis();
     }
+  }
 
-    // Register new user with phone number
-    registerUser(phoneNumber, password) {
-        if (!phoneNumber || !password) {
-            throw new Error('📵 Phone number and password are required');
+  const MAX_BLOCKS = 400;
+
+  function save(chain) {
+    try {
+      // Keep chain bounded so localStorage writes stay fast
+      let toSave = chain;
+      if (Array.isArray(chain) && chain.length > MAX_BLOCKS) {
+        toSave = [chain[0]].concat(chain.slice(-(MAX_BLOCKS - 1)));
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    } catch (e) {
+      // Quota — drop older half (keep genesis)
+      try {
+        if (Array.isArray(chain) && chain.length > 20) {
+          const trimmed = [chain[0]].concat(chain.slice(-Math.floor(chain.length / 2)));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
         }
-
-        // Sanitize inputs
-        phoneNumber = security.sanitizeInput(phoneNumber, 'phone');
-        password = security.sanitizeInput(password);
-
-        if (!security.validatePhoneNumber(phoneNumber)) {
-            throw new Error('📵 Please enter a valid phone number');
-        }
-
-        if (!security.validatePassword(password)) {
-            throw new Error(`📵 Password must be at least ${security.PASSWORD_MIN_LENGTH} characters`);
-        }
-
-        if (this.users.has(phoneNumber)) {
-            throw new Error('❌ Phone number already registered');
-        }
-
-        const walletAddress = security.generateWalletAddress(phoneNumber);
-        const passwordHash = security.hashPassword(password);
-        
-        const user = {
-            phoneNumber,
-            walletAddress,
-            passwordHash,
-            balance: 0,
-            createdAt: new Date().toISOString(),
-            isActive: true,
-            frozen: false,
-            freezeReason: '',
-            suspendReason: '',
-            transactions: []
-        };
-        
-        this.users.set(phoneNumber, user);
-        this.saveToStorage();
-        
-        return user;
+      } catch (e2) {}
     }
+  }
 
-    // Authenticate user
-    authenticateUser(phoneNumber, password) {
-        console.log('Authenticating:', phoneNumber);
-        
-        if (!phoneNumber || !password) {
-            throw new Error('📵 Phone number and password are required');
-        }
+  function getChain() {
+    return load();
+  }
 
-        const user = this.users.get(phoneNumber);
-        if (!user) {
-            throw new Error('❌ User not found. Please register first.');
-        }
-
-        // Check if account is suspended
-        if (!user.isActive) {
-            throw new Error(`☢️ Account suspended. Reason: ${user.suspendReason || 'Violation of terms of service'}`);
-        }
-
-        const isValid = security.verifyPassword(password, user.passwordHash);
-        console.log('✅ Password valid:', isValid);
-        
-        if (!isValid) {
-            throw new Error('❌ Invalid password');
-        }
-
-        // Ensure balance is a number
-        user.balance = parseFloat(user.balance) || 0;
-        
-        return user;
+  function addBlock(data) {
+    const chain = load();
+    const previous = chain[chain.length - 1] || {
+      hash: "0x0",
+      index: -1
+    };
+    // Avoid storing huge payloads that slow stringify
+    let payload = data;
+    if (payload && typeof payload === "object" && payload.content && String(payload.content).length > 4000) {
+      payload = Object.assign({}, payload, { content: String(payload.content).slice(0, 4000) + "…" });
     }
+    const block = {
+      index: chain.length,
+      timestamp: Date.now(),
+      data: payload,
+      previousHash: previous.hash,
+      hash: ""
+    };
+    block.hash = simpleHash(JSON.stringify({
+      index: block.index,
+      timestamp: block.timestamp,
+      data: block.data,
+      previousHash: block.previousHash
+    }));
+    chain.push(block);
+    save(chain);
+    return block;
+  }
 
-    // Get user balance
-    getBalance(phoneNumber) {
-        const user = this.users.get(phoneNumber);
-        if (!user) return 0;
-        return parseFloat(user.balance) || 0;
-    }
+  function verify() {
+    const chain = load();
+    if (chain.length === 0) return { valid: false, message: "Empty chain" };
 
-    // Send money to another phone number
-    sendMoney(fromPhone, toPhone, amount, password) {
-        console.log('Sending money:', { fromPhone, toPhone, amount });
-        
-        if (!fromPhone || !toPhone || !amount || !password) {
-            throw new Error('☢️ All fields are required');
-        }
+    for (let i = 1; i < chain.length; i++) {
+      const current = chain[i];
+      const previous = chain[i - 1];
 
-        // Sanitize inputs
-        fromPhone = security.sanitizeInput(fromPhone, 'phone');
-        toPhone = security.sanitizeInput(toPhone, 'phone');
-        amount = parseFloat(security.sanitizeInput(amount.toString(), 'amount'));
-
-        if (amount <= 0) {
-            throw new Error('☢️ Amount must be positive');
-        }
-
-        const fromUser = this.users.get(fromPhone);
-        const toUser = this.users.get(toPhone);
-
-        if (!fromUser) {
-            throw new Error('☢️ Sender account not found');
-        }
-
-        if (!toUser) {
-            throw new Error('☢️ Recipient account not found');
-        }
-
-        // Check if sender account is frozen
-        if (fromUser.frozen) {
-            throw new Error(`☢️ Account frozen. Reason: ${fromUser.freezeReason || 'Security concerns'}. Contact support.`);
-        }
-
-        // Check if sender account is suspended
-        if (!fromUser.isActive) {
-            throw new Error(`☢️ Account suspended. Reason: ${fromUser.suspendReason || 'Violation of terms of service'}`);
-        }
-
-        // Check if recipient account is suspended
-        if (!toUser.isActive) {
-            throw new Error('☢️ Recipient account is suspended');
-        }
-
-        if (fromPhone === toPhone) {
-            throw new Error('☢️ Cannot send to yourself');
-        }
-
-        // Verify sender's password
-        if (!security.verifyPassword(password, fromUser.passwordHash)) {
-            throw new Error('☢️ Invalid transaction password');
-        }
-
-        // Validate transaction limits
-        this.validateTransactionLimits(fromPhone, amount);
-
-        // COMPLIANCE CHECK - Integrate regulatory compliance
-        if (typeof compliance !== 'undefined') {
-            const complianceCheck = compliance.monitorTransaction({
-                from: fromPhone,
-                to: toPhone,
-                amount: amount,
-                timestamp: new Date().toISOString(),
-                id: 'TX_' + Date.now()
-            });
-            
-            if (!complianceCheck) {
-                throw new Error('☢️ Transaction blocked by compliance rules');
-            }
-        }
-
-        // Calculate transaction fee
-        const transactionFee = security.calculateTransactionFee(amount);
-        const totalDeduction = amount + transactionFee;
-        
-        console.log('Transaction details:', { amount, fee: transactionFee, total: totalDeduction });
-
-        // Check balance
-        const currentBalance = parseFloat(fromUser.balance) || 0;
-        if (currentBalance < totalDeduction) {
-            throw new Error(`You have insufficient balance. You Need ${totalDeduction.toFixed(2)} USD (including ${transactionFee.toFixed(2)} USD fee)`);
-        }
-
-        // Process transaction
-        return this.processTransactionWithFee(fromPhone, toPhone, amount, transactionFee);
-    }
-
-    // Validate transaction limits
-    validateTransactionLimits(fromPhone, amount) {
-        const dailyTotal = this.getDailyTotal(fromPhone);
-        const monthlyTotal = this.getMonthlyTotal(fromPhone);
-        
-        // Single transaction limit
-        if (amount > CONFIG.COMPLIANCE.TRANSACTION_LIMIT) {
-            throw new Error(`Transaction exceeds single transaction limit of ${CONFIG.COMPLIANCE.TRANSACTION_LIMIT} USD`);
-        }
-        
-        // Daily limit
-        if (dailyTotal + amount > CONFIG.COMPLIANCE.DAILY_LIMIT) {
-            throw new Error(`Transaction exceeds daily limit of ${CONFIG.COMPLIANCE.DAILY_LIMIT} USD`);
-        }
-        
-        return true;
-    }
-
-    // Process transaction with fee
-    processTransactionWithFee(fromPhone, toPhone, amount, fee) {
-        const fromUser = this.users.get(fromPhone);
-        const toUser = this.users.get(toPhone);
-        const feeCollector = this.users.get(security.getFeeCollector());
-
-        console.log('Before transaction - From balance:', fromUser.balance, 'To balance:', toUser.balance);
-
-        // Update balances
-        fromUser.balance = (parseFloat(fromUser.balance) || 0) - amount - fee;
-        toUser.balance = (parseFloat(toUser.balance) || 0) + amount;
-        
-        if (feeCollector) {
-            feeCollector.balance = (parseFloat(feeCollector.balance) || 0) + fee;
-        }
-
-        console.log('After transaction - From balance:', fromUser.balance, 'To balance:', toUser.balance);
-
-        // Create main transaction
-        const mainTransaction = {
-            id: security.generateTransactionId(),
-            from: fromPhone,
-            to: toPhone,
-            fromAddress: fromUser.walletAddress,
-            toAddress: toUser.walletAddress,
-            amount: parseFloat(amount),
-            fee: fee,
-            total: parseFloat(amount) + fee,
-            timestamp: new Date().toISOString(),
-            status: 'confirmed',
-            type: 'transfer',
-            blockHeight: this.blockHeight
-        };
-
-        // Create fee transaction
-        const feeTransaction = {
-            id: security.generateTransactionId(),
-            from: fromPhone,
-            to: security.getFeeCollector(),
-            fromAddress: fromUser.walletAddress,
-            toAddress: feeCollector ? feeCollector.walletAddress : 'FEE_WALLET',
-            amount: parseFloat(fee),
-            fee: 0,
-            total: parseFloat(fee),
-            timestamp: new Date().toISOString(),
-            status: 'confirmed',
-            type: 'fee',
-            blockHeight: this.blockHeight,
-            relatedTx: mainTransaction.id
-        };
-
-        // Sign transactions
-        mainTransaction.signature = security.hashPassword(
-            mainTransaction.from + mainTransaction.to + mainTransaction.amount + mainTransaction.timestamp
-        );
-        
-        feeTransaction.signature = security.hashPassword(
-            feeTransaction.from + feeTransaction.to + feeTransaction.amount + feeTransaction.timestamp
-        );
-
-        // Add to transaction history
-        this.transactions.push(mainTransaction);
-        this.transactions.push(feeTransaction);
-        
-        // Update users' transaction history
-        if (!fromUser.transactions) fromUser.transactions = [];
-        if (!toUser.transactions) toUser.transactions = [];
-        
-        fromUser.transactions.push(mainTransaction.id, feeTransaction.id);
-        toUser.transactions.push(mainTransaction.id);
-        
-        if (feeCollector) {
-            if (!feeCollector.transactions) feeCollector.transactions = [];
-            feeCollector.transactions.push(feeTransaction.id);
-        }
-
-        this.blockHeight++;
-        this.saveToStorage();
-
-        console.log('Transaction completed successfully. New balances - From:', fromUser.balance, 'To:', toUser.balance);
-        
+      if (current.previousHash !== previous.hash) {
         return {
-            amount: amount,
-            fee: fee,
-            total: amount + fee,
-            recipient: toPhone,
-            transactionId: mainTransaction.id
+          valid: false,
+          message: `Broken link at block #${i}: previousHash mismatch`
         };
-    }
+      }
 
-    // Add transaction (for compatibility)
-    addTransaction(transaction) {
-        this.transactions.push({
-            ...transaction,
-            id: security.generateTransactionId(),
-            timestamp: new Date().toISOString(),
-            status: 'confirmed'
-        });
-        this.saveToStorage();
-    }
+      const recalculated = simpleHash(JSON.stringify({
+        index: current.index,
+        timestamp: current.timestamp,
+        data: current.data,
+        previousHash: current.previousHash
+      }));
 
-    // Get user's transaction history
-    getUserTransactions(phoneNumber) {
-        const user = this.users.get(phoneNumber);
-        if (!user || !user.transactions) {
-            return [];
-        }
-
-        // Get all transactions involving this user
-        const userTxs = this.transactions.filter(tx => 
-            tx.from === phoneNumber || tx.to === phoneNumber
-        );
-        
-        return userTxs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    }
-
-    // Get user by phone number (public info only)
-    getUserProfile(phoneNumber) {
-        const user = this.users.get(phoneNumber);
-        if (!user) return null;
-
+      if (current.hash !== recalculated) {
         return {
-            phoneNumber: user.phoneNumber,
-            walletAddress: user.walletAddress,
-            isActive: user.isActive,
-            createdAt: user.createdAt,
-            balance: user.balance
+          valid: false,
+          message: `Tampered data at block #${i}: hash mismatch`
         };
+      }
     }
 
-    // Add funds (for demo purposes)
-    addFunds(phoneNumber, amount) {
-        const user = this.users.get(phoneNumber);
-        if (!user) {
-            throw new Error('📵 User not found');
-        }
+    return {
+      valid: true,
+      message: `Chain intact • ${chain.length} blocks verified`
+    };
+  }
 
-        // Check if account is frozen
-        if (user.frozen) {
-            throw new Error(`☢️ Account frozen. Reason: ${user.freezeReason || 'Security concerns'}. Cannot add funds.`);
-        }
+  function getBlocksByType(type) {
+    return load().filter(b => b.data && b.data.type === type);
+  }
 
-        // Check if account is suspended
-        if (!user.isActive) {
-            throw new Error(`☢️ Account suspended. Reason: ${user.suspendReason || 'Violation of terms of service'}. Cannot add funds.`);
-        }
+  function clear() {
+    localStorage.removeItem(STORAGE_KEY);
+    return createGenesis();
+  }
 
-        user.balance = (parseFloat(user.balance) || 0) + parseFloat(amount);
-        
-        // Create funding transaction
-        const transaction = {
-            id: security.generateTransactionId(),
-            from: 'system',
-            to: phoneNumber,
-            fromAddress: 'SYSTEM_WALLET',
-            toAddress: user.walletAddress,
-            amount: parseFloat(amount),
-            timestamp: new Date().toISOString(),
-            status: 'confirmed',
-            type: 'funding',
-            blockHeight: this.blockHeight++
-        };
+  function exportChain() {
+    return JSON.stringify(load(), null, 2);
+  }
 
-        this.transactions.push(transaction);
-        if (!user.transactions) user.transactions = [];
-        user.transactions.push(transaction.id);
-
-        this.saveToStorage();
-        return transaction;
+  function importChain(jsonString) {
+    try {
+      const chain = JSON.parse(jsonString);
+      if (!Array.isArray(chain)) throw new Error("Invalid format");
+      save(chain);
+      return true;
+    } catch {
+      return false;
     }
+  }
 
-    // Check if user exists
-    userExists(phoneNumber) {
-        return this.users.has(phoneNumber);
-    }
-
-    // Get daily total for a user
-    getDailyTotal(phoneNumber) {
-        const userTxs = this.getUserTransactions(phoneNumber);
-        const today = new Date().toDateString();
-        const todayTxs = userTxs.filter(tx =>
-            new Date(tx.timestamp).toDateString() === today && tx.from === phoneNumber
-        );
-        
-        return todayTxs.reduce((sum, tx) => sum + tx.amount, 0);
-    }
-
-    // Get monthly total for a user
-    getMonthlyTotal(phoneNumber) {
-        const userTxs = this.getUserTransactions(phoneNumber);
-        const now = new Date();
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const monthTxs = userTxs.filter(tx =>
-            new Date(tx.timestamp) >= monthStart && tx.from === phoneNumber
-        );
-        
-        return monthTxs.reduce((sum, tx) => sum + tx.amount, 0);
-    }
-
-    // Storage management WITH BACKUP INTEGRATION
-    saveToStorage() {
-        try {
-            const data = {
-                users: Array.from(this.users.entries()),
-                transactions: this.transactions,
-                blockHeight: this.blockHeight
-            };
-            localStorage.setItem('phonechain_data', JSON.stringify(data));
-            console.log('Data saved to storage. Total users:', this.users.size);
-            
-            // AUTO-BACKUP INTEGRATION
-            if (typeof backupSystem !== 'undefined') {
-                backupSystem.createBackup();
-            }
-        } catch (error) {
-            console.error('📵 Failed to save data:', error);
-        }
-    }
-
-    loadFromStorage() {
-        try {
-            const data = localStorage.getItem('phonechain_data');
-            if (data) {
-                const parsed = JSON.parse(data);
-                this.users = new Map(parsed.users);
-                this.transactions = parsed.transactions || [];
-                this.blockHeight = parsed.blockHeight || 0;
-                console.log('✅ Data loaded from storage. Users:', this.users.size);
-            }
-        } catch (error) {
-            console.error('❌ Failed to load data:', error);
-            this.users = new Map();
-            this.transactions = [];
-            this.blockHeight = 0;
-        }
-    }
-
-    // Get system statistics
-    getSystemStats() {
-        const feeCollector = this.users.get(security.getFeeCollector());
-        const totalFees = feeCollector ? feeCollector.balance : 0;
-        
-        return {
-            totalUsers: this.users.size,
-            totalTransactions: this.transactions.length,
-            blockHeight: this.blockHeight,
-            totalValue: Array.from(this.users.values()).reduce((sum, user) => sum + (parseFloat(user.balance) || 0), 0),
-            totalFees: totalFees,
-            feeCollector: security.getFeeCollector()
-        };
-    }
-}
-
-// Global blockchain instance
-const blockchain = new PhoneBlockchain();
+  return {
+    getChain,
+    addBlock,
+    verify,
+    getBlocksByType,
+    clear,
+    exportChain,
+    importChain,
+    simpleHash
+  };
+})();
