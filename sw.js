@@ -1,5 +1,5 @@
 /* Kanairoex offline cache — performance build */
-const CACHE = "localmind-v26-perf";
+const CACHE = "kanairoex-v27-online";
 const CORE = [
   "./index.html",
   "./styles.css",

@@ -1011,9 +1011,11 @@ function updateLlmStatusLine() {
               thinking: thinkingLines.map(function (t) { return "→ " + t; }).join("\n"),
               reply:
                 "Online fetch failed: " + (err.message || err) +
-                "\n\nTips:\n• Use **look up Topic** or **search online for Topic**\n" +
-                "• Sources: full Wikipedia + DuckDuckGo (Google needs an API key and is not available from file://)\n" +
-                "• Check internet / allow wikipedia.org & api.duckduckgo.com\n" +
+                "\n\nTips:\n• Exact form: **look up photosynthesis**\n" +
+                "• Check status: **online status**\n" +
+                "• Site must be HTTPS (GitHub Pages is fine)\n" +
+                "• Hard-refresh (Ctrl+Shift+R) so the new `online.js` loads\n" +
+                "• Allow network to **en.wikipedia.org**\n" +
                 "• Or teach offline: **Remember that …**",
               creative: null
             };

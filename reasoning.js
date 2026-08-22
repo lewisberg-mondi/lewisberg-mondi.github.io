@@ -1085,6 +1085,28 @@ const Reasoning = (() => {
     // Online learn (async handled specially — sync path returns instruction if needed)
     // Actual async online is triggered from app.js; here we detect and flag
     if (typeof Online !== 'undefined') {
+      if (/^online\s+(on|enable)$/i.test(String(userText || "").trim())) {
+        Online.setEnabled(true);
+        return { thinking: buildThinking(steps), reply: "Online lookup **enabled**. Try: `look up photosynthesis`" };
+      }
+      if (/^online\s+(off|disable)$/i.test(String(userText || "").trim())) {
+        Online.setEnabled(false);
+        return { thinking: buildThinking(steps), reply: "Online lookup **disabled**. Only offline memory will be used." };
+      }
+      if (/^online(\s+status)?$/i.test(String(userText || "").trim()) || /^lookup status$/i.test(String(userText || "").trim())) {
+        const st = Online.status ? Online.status() : { enabled: Online.getEnabled(), browserOnline: Online.isOnline() };
+        return {
+          thinking: buildThinking(steps),
+          reply:
+            "**Online lookup status**\n" +
+            "• Feature: **" + (st.enabled ? "on" : "off") + "**\n" +
+            "• Browser network: **" + (st.browserOnline ? "online" : "offline") + "**\n" +
+            "• Ready to look up: **" + (st.lookupReady ? "yes" : "no") + "**\n" +
+            "• Saved offline pages: **" + (st.offlinePages != null ? st.offlinePages : "?") + "**\n" +
+            "• Sources: " + ((st.sources || []).join(", ") || "Wikipedia") + "\n\n" +
+            "Try: `look up photosynthesis`"
+        };
+      }
       // Never treat profile / wallet / p2p system commands as web look-ups
       const skipOnline =
         /^(profile|my profile|balance|wallet|p2p|commands|diagnose|streak|review)\b/i.test(
