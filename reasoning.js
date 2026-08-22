@@ -1112,6 +1112,11 @@ const Reasoning = (() => {
         /^(profile|my profile|balance|wallet|p2p|commands|diagnose|streak|review)\b/i.test(
           String(userText || "").trim()
         );
+      const vi = (typeof VideoResearch !== 'undefined') ? VideoResearch.isIntent(userText) : null;
+      if (vi) {
+        steps.push('Video search intent: ' + vi.query);
+        return { thinking: buildThinking(steps), reply: 'VIDEO_SEARCH:' + vi.query, videoSearch: vi };
+      }
       const oi = skipOnline ? null : Online.detectIntent(userText);
       if (oi) {
         if (oi.type === "list") {

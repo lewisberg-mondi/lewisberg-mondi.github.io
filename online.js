@@ -428,7 +428,7 @@ const Online = (() => {
     return null;
   }
 
-  return { isOnline, setEnabled, getEnabled, status, probe, fetchTopicFull, fetchWikipedia: fetchTopicFull, fetchUrlText, learnTopic, learnUrl, detectIntent, storeInMemory, listOfflinePages, getOfflinePage, searchOfflinePages };
+  return { isOnline, setEnabled, getEnabled, status, probe, fetchTopicFull, fetchWikipedia: fetchTopicFull, fetchUrlText, learnTopic, learnUrl, detectIntent, storeInMemory, listOfflinePages, getOfflinePage, searchOfflinePages, searchRelatedTopics: wikiSearch };
 })();
 
 if (typeof window !== "undefined") window.Online = Online;

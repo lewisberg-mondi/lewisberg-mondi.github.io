@@ -964,7 +964,19 @@ function updateLlmStatusLine() {
           }
         }
 
-        // Online fetch path (multi-source: full Wikipedia + DuckDuckGo)
+        // Video search path
+        if (result && result.videoSearch && typeof VideoResearch !== "undefined") {
+          const vi = result.videoSearch;
+          try {
+            const vd = await VideoResearch.search(vi.query, 8);
+            VideoResearch.saveMetadata(vd);
+            result = { thinking: "→ Searching video sources\n→ Collecting results\n→ Saving video metadata to offline memory", reply: "Found **" + vd.videos.length + " videos** for **" + vd.query + "**.\n\nVideo metadata and links have been saved to LocalMind memory.\n\nYou can watch the videos below.", creative: { type: "video-search", items: vd.videos } };
+          } catch (err) {
+            result = { thinking: "→ Video search failed", reply: "Video search failed: " + (err.message || err) + "\n\nTry again while online.", creative: null };
+          }
+        }
+
+        // Online fetch path (deep multi-source research)
         if (result && result.online && typeof Online !== "undefined") {
           const oi = result.online;
           const thinkingLines = [
@@ -974,9 +986,16 @@ function updateLlmStatusLine() {
             "Storing complete result into offline memory…"
           ];
           try {
-            const data = oi.type === "url"
-              ? await Online.learnUrl(oi.query)
-              : await Online.learnTopic(oi.query);
+            let data;
+            if (oi.type === "url") {
+              data = await Online.learnUrl(oi.query);
+            } else if (typeof ResearchManager !== "undefined") {
+              data = await ResearchManager.research(oi.query);
+              Online.storeInMemory(data.title || oi.query, data.content || data.extract || "", (data.sources && data.sources[0] && data.sources[0].url) || "online research");
+              if (typeof OfflineAssistant !== "undefined" && OfflineAssistant.saveStructured) OfflineAssistant.saveStructured(data.title || oi.query, (data.content || "").slice(0, 50000), (data.sources && data.sources[0] && data.sources[0].url) || "online", 90);
+            } else {
+              data = await Online.learnTopic(oi.query);
+            }
             if (typeof OfflineAssistant !== "undefined") {
               OfflineAssistant.saveStructured(
                 data.title || oi.query,
@@ -987,7 +1006,7 @@ function updateLlmStatusLine() {
               OfflineAssistant.addWatch(data.title || oi.query);
               try { localStorage.setItem("localmind_last_sync", new Date().toISOString()); } catch(e) {}
             }
-            const body = (data.content || data.extract || "").slice(0, 4500);
+            const body = (data.content || data.extract || "").slice(0, 30000);
             const srcLine = (data.sources && data.sources.length)
               ? data.sources.map(function (s) { return s.name + (s.url ? " — " + s.url : ""); }).join("\n")
               : (data.url || "online");
@@ -1003,7 +1022,7 @@ function updateLlmStatusLine() {
             }
             result = {
               thinking: thinkingLines.map(function (t) { return "→ " + t; }).join("\n"),
-              reply: natural + (chars > 4500 ? "\n\n…(full article stored — ask again or list offline pages)" : ""),
+              reply: natural + (chars > 30000 ? "\n\n…The complete research is stored in offline memory." : ""),
               creative: null
             };
           } catch (err) {
@@ -1293,6 +1312,23 @@ function updateLlmStatusLine() {
   }
 
   function renderCreative(bubble, creative) {
+    if (creative.type === "video-search" && Array.isArray(creative.items)) {
+      const grid=document.createElement("div");
+      grid.style.cssText="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;";
+      creative.items.forEach(function(v){
+        const card=document.createElement("div"); card.style.cssText="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#0a0c10;";
+        if(v.thumbnail){ const img=document.createElement("img"); img.src=v.thumbnail; img.alt=v.title||"video"; img.loading="lazy"; img.style.cssText="width:100%;height:130px;object-fit:cover;display:block;"; card.appendChild(img); }
+        const body=document.createElement("div"); body.style.cssText="padding:10px;display:flex;flex-direction:column;gap:7px;";
+        const title=document.createElement("div"); title.textContent=v.title||"Video"; title.style.cssText="font-weight:600;line-height:1.3;"; body.appendChild(title);
+        if(v.uploader){const u=document.createElement("div");u.textContent=v.uploader;u.style.cssText="font-size:12px;opacity:.7;";body.appendChild(u);}
+        const row=document.createElement("div");row.style.cssText="display:flex;gap:7px;flex-wrap:wrap;";
+        const watch=document.createElement("button");watch.className="btn primary";watch.textContent="▶ Watch";watch.onclick=function(){ window.open(v.url,"_blank","noopener,noreferrer"); };row.appendChild(watch);
+        if(v.embed){const emb=document.createElement("button");emb.className="btn secondary";emb.textContent="▣ Play here";emb.onclick=function(){ const frame=document.createElement("iframe"); frame.src=v.embed; frame.title=v.title||"Video"; frame.allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"; frame.allowFullscreen=true; frame.style.cssText="width:100%;height:220px;border:0;border-radius:8px;margin-top:7px;"; if(!card.querySelector("iframe")) card.appendChild(frame); };row.appendChild(emb);}
+        body.appendChild(row); card.appendChild(body); grid.appendChild(card);
+      });
+      bubble.appendChild(grid);
+      const note=document.createElement("div"); note.textContent="Video links are saved to LocalMind memory. Videos are not automatically copied unless the source explicitly provides a permitted downloadable file."; note.style.cssText="font-size:12px;opacity:.7;margin-top:8px;"; bubble.appendChild(note);
+    }
     if (creative.type === "embed" && creative.url) {
       const row = document.createElement("div");
       row.style.cssText = "margin-top:10px;display:flex;flex-direction:column;gap:8px;";
