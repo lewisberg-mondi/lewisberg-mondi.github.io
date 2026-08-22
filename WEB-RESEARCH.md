@@ -30,3 +30,13 @@ For unrestricted multi-engine search later, connect the same normalized research
 ## Service-worker updates
 
 The service worker is versioned as `kanairoex-v31-web-research` and uses network-first behavior for `index.html`, `app.js`, `ai-core.js`, `reasoning.js`, `online.js`, and the service worker itself. Registration also uses `updateViaCache: "none"`. This prevents an old cached `online.js` from silently defeating a new GitHub Pages deployment.
+
+## Deep Research + Video Search (v32)
+
+- Deep research now gathers the main Wikipedia result plus related Wikipedia topics, combines them, deduplicates sources, and saves the full report to LocalMind memory.
+- The UI no longer truncates the displayed research to 4,500 characters; long answers can display up to 30,000 characters while the full research is stored locally.
+- Research progress is tracked through stages so a completed request is not treated as finished until all selected sources have been processed.
+- Video searches such as `search videos about Jesus` use public Piped API instances as browser-friendly adapters. Piped documents an unauthenticated `/search` endpoint for video/channel/playlist search.
+- Video results include thumbnails, watch links and an embedded-player option when the source supports it.
+- Video metadata and links are saved to LocalMind memory. Arbitrary online videos are **not** automatically copied to local storage; downloading is only appropriate when the source provides a permitted downloadable file.
+- GitHub Pages remains a static frontend. Public third-party adapters can fail or change, so the application rotates through several configured Piped instances and reports failure instead of pretending that a search succeeded.
