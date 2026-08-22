@@ -169,32 +169,27 @@ const Online = (() => {
     };
   }
 
-  /** Full plain-text article — try REST HTML→text, then action API extracts */
+  /**
+   * Optional longer article text (action API). Never throws — summary is enough.
+   * Do NOT call rest_v1/page/mobile-sections* — Wikimedia shut it down (HTTP 403 "Access denied").
+   */
   async function fetchWikipediaFull(title) {
-    // REST: plain mobile sections (often allowed when action API is rate-limited)
     try {
-      const mobile =
-        "https://en.wikipedia.org/api/rest_v1/page/mobile-sections-summary/" +
-        encodeURIComponent(String(title).replace(/\s+/g, "_"));
-      const r = await fetchWithTimeout(mobile, fetchOpts({ Accept: "application/json" }));
-      if (r.ok) {
-        const j = await r.json();
-        if (j.extract) return String(j.extract).trim();
-      }
-    } catch (e) { /* next */ }
-
-    const url =
-      "https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&exsectionformat=plain&redirects=1&titles=" +
-      encodeURIComponent(title) +
-      "&format=json&origin=*";
-    const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }));
-    if (res.status === 429) return ""; // caller will use summary
-    if (!res.ok) throw new Error("Wikipedia full extract failed (HTTP " + res.status + ")");
-    const data = await res.json();
-    const pages = (data.query && data.query.pages) || {};
-    const page = Object.values(pages)[0];
-    if (!page || page.missing) return "";
-    return (page.extract || "").trim();
+      const url =
+        "https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&exsectionformat=plain&redirects=1&titles=" +
+        encodeURIComponent(title) +
+        "&format=json&origin=*";
+      const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }));
+      if (!res.ok) return "";
+      const data = await res.json();
+      if (data && data.error) return "";
+      const pages = (data.query && data.query.pages) || {};
+      const page = Object.values(pages)[0];
+      if (!page || page.missing) return "";
+      return (page.extract || "").trim();
+    } catch (e) {
+      return "";
+    }
   }
 
   /** DuckDuckGo Instant Answer — best-effort; many browsers block this host */

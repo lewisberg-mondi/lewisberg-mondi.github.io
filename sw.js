@@ -1,5 +1,5 @@
 /* Kanairoex offline cache — performance build */
-const CACHE = "kanairoex-v27-online";
+const CACHE = "kanairoex-v28-online";
 const CORE = [
   "./index.html",
   "./styles.css",
