@@ -1,0 +1,50 @@
+[
+  {
+    "subject": "How neurons form concepts",
+    "content": "To understand how neurons create new concepts, look at three levels: biochemical (inside a single neuron), network (between neurons), and systems (whole brain regions). A concept is not stored in one neuron; it is a distributed firing pattern across many neurons."
+  },
+  {
+    "subject": "Dendrites and synaptic input",
+    "content": "A neuron receives information through dendrites covered in spines that act as listening posts. Signals arrive from another neuron's axon terminal across a synapse. Neurotransmitters such as glutamate, GABA, and dopamine bind to receptors on the receiving spine."
+  },
+  {
+    "subject": "Excitation and inhibition",
+    "content": "Glutamate opens sodium channels and is excitatory, making a neuron more likely to fire. GABA opens chloride channels and is inhibitory, making firing less likely. The neuron sums thousands of signals at the axon hillock; if excitation minus inhibition crosses threshold, it fires an action potential."
+  },
+  {
+    "subject": "Action potential",
+    "content": "Once threshold is crossed, a neuron generates an action potential \u2014 a rapid electrical spike down the axon. It follows the all-or-none law: the spike is the same strength. Myelin insulation with Nodes of Ranvier lets the signal jump and travel up to about 100 times faster."
+  },
+  {
+    "subject": "Neurotransmitter release",
+    "content": "When a spike reaches the axon terminal, calcium entry causes synaptic vesicles to fuse and release neurotransmitters into the next synapse. Neurons can also use volume transmission into surrounding fluid and retrograde signaling back to the sending neuron."
+  },
+  {
+    "subject": "Hebbian learning",
+    "content": "Hebbian learning is summarized as cells that fire together, wire together. When two neurons fire at the same time, the synapse between them strengthens via Long-Term Potentiation (LTP): more receptors are inserted and spines grow larger. Example: neurons for red and apple firing together strengthen the link."
+  },
+  {
+    "subject": "Pattern completion",
+    "content": "A concept is a neural ensemble \u2014 a web of interconnected neurons for sights, sounds, textures, emotions, and context. A partial cue (for example the smell of cinnamon) activates part of the ensemble; strong wiring spreads activation and completes the pattern (memories, places, feelings)."
+  },
+  {
+    "subject": "Abstraction and new concepts",
+    "content": "New concepts form by extracting shared features across examples through hierarchical processing: sensory cortex detects simple features; association cortex builds complex features; prefrontal cortex fires for shared rules (for example vehicle from car, bus, and boat) while ignoring differences."
+  },
+  {
+    "subject": "Synaptic pruning",
+    "content": "Forming a concept also means removing weak or irrelevant connections. During sleep the brain prunes connections that do not fit the new rule. Concepts become encoded more sparsely by specialized neurons while unrelated activity is suppressed."
+  },
+  {
+    "subject": "Predictive coding",
+    "content": "The brain constantly predicts what should come next. When reality mismatches the prediction, an error signal in the hippocampus and prefrontal cortex drives rewiring so the concept better fits both old memory and new experience."
+  },
+  {
+    "subject": "Hippocampus and memory consolidation",
+    "content": "New concepts are first built in the hippocampus as a rapid scratch pad. During deep sleep, the hippocampus replays patterns (including sharp-wave ripples) to train the neocortex to store the concept long-term, freeing the hippocampus for new learning."
+  },
+  {
+    "subject": "Long-Term Potentiation",
+    "content": "Long-Term Potentiation (LTP) is the lasting strengthening of synapses after repeated co-activation. It is a core biochemical mechanism of learning and memory at the synapse."
+  }
+]

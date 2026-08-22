@@ -1,0 +1,62 @@
+[
+  {
+    "subject": "Neuron equals Perceptron",
+    "content": "A biological neuron maps to an AI artificial node (perceptron). Dendrites are like input weights: each incoming signal is multiplied by a strength number. The cell body acts as summation of weighted inputs. The action-potential threshold is the activation function (e.g. ReLU or Sigmoid) that decides to fire (1) or stay quiet (0). Axon terminals are the output to the next layer."
+  },
+  {
+    "subject": "Dendrites and weights",
+    "content": "In biology, dendrites receive signals. In artificial neural networks, each connection has a weight that scales the input. Stronger synapses correspond to larger absolute weights."
+  },
+  {
+    "subject": "Activation function and action potential",
+    "content": "The neuron fires when summed input crosses a threshold (action potential). In AI, an activation function such as ReLU or Sigmoid maps the summed weighted inputs to an output activation."
+  },
+  {
+    "subject": "Hebbian learning and backpropagation",
+    "content": "Hebb's law says cells that fire together wire together. In AI, learning often uses backpropagation and gradient descent: compute a loss (how wrong the prediction was), then work backward through the network adjusting each weight to reduce future loss. Learning rate controls how large each weight tweak is."
+  },
+  {
+    "subject": "Backpropagation",
+    "content": "Backpropagation calculates how much each weight contributed to the error and updates weights to reduce loss. It is the main supervised-learning algorithm for deep networks, loosely analogous to refining synaptic strengths after a prediction error."
+  },
+  {
+    "subject": "Dopamine and reinforcement learning",
+    "content": "Dopamine reward prediction error is similar to Temporal Difference (TD) learning in AI: TD Error = Actual Reward minus Expected Reward. Positive surprise strengthens paths that led to the outcome; negative surprise weakens them. This is how agents learn games and control tasks from trial and reward feedback."
+  },
+  {
+    "subject": "Temporal Difference learning",
+    "content": "TD learning updates value estimates from the difference between expected and actual reward. It is used in reinforcement learning systems such as game-playing agents (e.g. AlphaGo-style methods)."
+  },
+  {
+    "subject": "Brain waves Dropout and batch normalization",
+    "content": "Synchronized brain activity (e.g. gamma) relates loosely to focusing or stabilizing network activity. Biological pruning of unused synapses resembles Dropout in AI: randomly turning off units during training so the network learns robust patterns and avoids overfitting. Batch normalization stabilizes layer activations during training."
+  },
+  {
+    "subject": "Dropout",
+    "content": "Dropout randomly disables a fraction of nodes during training. This forces redundant pathways and reduces overfitting, analogous in spirit to synaptic pruning of unused connections."
+  },
+  {
+    "subject": "Memory consolidation and experience replay",
+    "content": "During sleep, the hippocampus replays daytime patterns to the cortex (memory consolidation). In AI, experience replay stores past transitions and re-trains on them offline so new learning does not wipe old skills (helps prevent catastrophic forgetting), as in Deep Q-Networks."
+  },
+  {
+    "subject": "Experience replay",
+    "content": "Experience replay buffers past successes and failures and samples them during training. It stabilizes reinforcement learning and reduces forgetting of earlier skills while learning new ones."
+  },
+  {
+    "subject": "Brain vs AI sample efficiency",
+    "content": "Brains often need few examples because of evolutionary inductive biases and pre-wired circuits. Typical deep nets start from random weights and need large datasets. Biological synapses also adjust in richer chemical ways than a single scalar weight."
+  },
+  {
+    "subject": "Spiking neural networks",
+    "content": "Spiking neural networks (SNNs) model the timing of action potentials, not only average firing rates. Neuromorphic chips aim to run such models with energy closer to biological brains than large GPU farms."
+  },
+  {
+    "subject": "Neuromorphic computing",
+    "content": "Neuromorphic hardware (e.g. designs inspired by IBM TrueNorth-class chips) runs brain-like computation more energy-efficiently than conventional GPUs for certain workloads, targeting low power similar in spirit to the brain's roughly 20-watt scale."
+  },
+  {
+    "subject": "Brain AI map overview",
+    "content": "Biology to AI map: neuron→perceptron node; dendrites→weights; cell body→summation; threshold→activation; learning→backprop/gradient descent; dopamine→TD reward signal; pruning→dropout; sleep replay→experience replay. AI still differs: less sample-efficient and simpler synapse models than chemistry-rich biology."
+  }
+]

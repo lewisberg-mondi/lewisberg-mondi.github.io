@@ -1,0 +1,429 @@
+{
+"countries": [
+{
+"subject": "Kenya",
+"name": "Kenya",
+"capital": "Nairobi",
+"content": "Kenya is a country. Capital: Nairobi. East Africa. Swahili and English. Currency KES. Known for wildlife and the Great Rift Valley.",
+"category": "geo"
+},
+{
+"subject": "Nigeria",
+"name": "Nigeria",
+"capital": "Abuja",
+"content": "Nigeria is a country. Capital: Abuja. West Africa. Most populous African country. Currency Naira. Lagos is a major commercial city.",
+"category": "geo"
+},
+{
+"subject": "South Africa",
+"name": "South Africa",
+"capital": "Pretoria",
+"content": "South Africa is a country. Capital: Pretoria. Three capitals including Cape Town and Bloemfontein. Rainbow Nation.",
+"category": "geo"
+},
+{
+"subject": "Egypt",
+"name": "Egypt",
+"capital": "Cairo",
+"content": "Egypt is a country. Capital: Cairo. Nile River. Ancient civilization and pyramids. Currency EGP.",
+"category": "geo"
+},
+{
+"subject": "Ghana",
+"name": "Ghana",
+"capital": "Accra",
+"content": "Ghana is a country. Capital: Accra. West Africa. Cocoa and gold. Currency Cedi.",
+"category": "geo"
+},
+{
+"subject": "Ethiopia",
+"name": "Ethiopia",
+"capital": "Addis Ababa",
+"content": "Ethiopia is a country. Capital: Addis Ababa. African Union headquarters. Never fully colonized.",
+"category": "geo"
+},
+{
+"subject": "Tanzania",
+"name": "Tanzania",
+"capital": "Dodoma",
+"content": "Tanzania is a country. Capital: Dodoma. Kilimanjaro and Serengeti. Zanzibar islands.",
+"category": "geo"
+},
+{
+"subject": "Uganda",
+"name": "Uganda",
+"capital": "Kampala",
+"content": "Uganda is a country. Capital: Kampala. Lake Victoria region. Source of the Nile related geography.",
+"category": "geo"
+},
+{
+"subject": "Rwanda",
+"name": "Rwanda",
+"capital": "Kigali",
+"content": "Rwanda is a country. Capital: Kigali. East Africa. Known for post-1994 recovery and technology push.",
+"category": "geo"
+},
+{
+"subject": "United States",
+"name": "United States",
+"capital": "Washington DC",
+"content": "United States is a country. Capital: Washington DC. 50 states. Major tech and research universities.",
+"category": "geo"
+},
+{
+"subject": "United Kingdom",
+"name": "United Kingdom",
+"capital": "London",
+"content": "United Kingdom is a country. Capital: London. Constitutional monarchy. English language and common law influence.",
+"category": "geo"
+},
+{
+"subject": "France",
+"name": "France",
+"capital": "Paris",
+"content": "France is a country. Capital: Paris. European Union member. Known for science culture and engineering.",
+"category": "geo"
+},
+{
+"subject": "Germany",
+"name": "Germany",
+"capital": "Berlin",
+"content": "Germany is a country. Capital: Berlin. Largest EU economy by many measures. Strong engineering tradition.",
+"category": "geo"
+},
+{
+"subject": "China",
+"name": "China",
+"capital": "Beijing",
+"content": "China is a country. Capital: Beijing. Most populous country. Manufacturing and technology hub.",
+"category": "geo"
+},
+{
+"subject": "India",
+"name": "India",
+"capital": "New Delhi",
+"content": "India is a country. Capital: New Delhi. Large democracy. Major IT and education sector.",
+"category": "geo"
+},
+{
+"subject": "Japan",
+"name": "Japan",
+"capital": "Tokyo",
+"content": "Japan is a country. Capital: Tokyo. Advanced technology and robotics. Island nation in East Asia.",
+"category": "geo"
+},
+{
+"subject": "Australia",
+"name": "Australia",
+"capital": "Canberra",
+"content": "Australia is a country. Capital: Canberra. Island continent. Strong universities and research.",
+"category": "geo"
+},
+{
+"subject": "Brazil",
+"name": "Brazil",
+"capital": "Brasilia",
+"content": "Brazil is a country. Capital: Brasilia. Amazon rainforest. Portuguese-speaking South America.",
+"category": "geo"
+},
+{
+"subject": "Canada",
+"name": "Canada",
+"capital": "Ottawa",
+"content": "Canada is a country. Capital: Ottawa. Bilingual English French. Natural resources and research.",
+"category": "geo"
+},
+{
+"subject": "Russia",
+"name": "Russia",
+"capital": "Moscow",
+"content": "Russia is a country. Capital: Moscow. Largest country by area. Spans Europe and Asia.",
+"category": "geo"
+}
+],
+"science": [
+{
+"subject": "BODMAS",
+"content": "BODMAS is the order of operations used in many school systems including Kenya: Brackets, Orders (powers and roots), Division, Multiplication, Addition, Subtraction.",
+"category": "math"
+},
+{
+"subject": "Photosynthesis",
+"content": "Plants convert carbon dioxide and water into glucose and oxygen using sunlight and chlorophyll.",
+"category": "science"
+},
+{
+"subject": "Water cycle",
+"content": "Evaporation, condensation, precipitation, and collection move water through Earth's systems.",
+"category": "science"
+},
+{
+"subject": "Gravity",
+"content": "Gravity is the attraction between masses. On Earth, gravitational acceleration is about 9.8 m/s\u00b2.",
+"category": "science"
+},
+{
+"subject": "Atom",
+"content": "An atom has a nucleus of protons and neutrons, with electrons around it. Atomic number equals proton count.",
+"category": "science"
+},
+{
+"subject": "Neutron",
+"content": "A neutron is an uncharged particle in the atomic nucleus, slightly heavier than a proton.",
+"category": "science"
+},
+{
+"subject": "Neurotransmitter",
+"content": "Chemical messengers at synapses such as dopamine, serotonin, acetylcholine, GABA and glutamate.",
+"category": "science"
+},
+{
+"subject": "DNA",
+"content": "DNA carries genetic information as a double helix of nucleotide bases A T C G.",
+"category": "science"
+},
+{
+"subject": "pH",
+"content": "pH measures acidity: 7 neutral, below 7 acidic, above 7 alkaline.",
+"category": "science"
+},
+{
+"subject": "Speed of light",
+"content": "In vacuum, light travels at about 299,792 km/s.",
+"category": "science"
+},
+{
+"subject": "Force",
+"content": "Newton's second law: F = ma (force equals mass times acceleration).",
+"category": "science"
+},
+{
+"subject": "Energy",
+"content": "Energy is the capacity to do work. Forms include kinetic, potential, thermal, chemical, electrical.",
+"category": "science"
+},
+{
+"subject": "Cell",
+"content": "The cell is the basic unit of life. Prokaryotic cells lack a nucleus; eukaryotic cells have one.",
+"category": "science"
+},
+{
+"subject": "Evolution",
+"content": "In biology, evolution is change in heritable traits of populations over generations, explained mainly by natural selection and other mechanisms.",
+"category": "science"
+},
+{
+"subject": "Climate vs weather",
+"content": "Weather is short-term atmospheric conditions; climate is the long-term average pattern.",
+"category": "science"
+},
+{
+"subject": "Synapse",
+"content": "The junction where neurons communicate, often by releasing neurotransmitters.",
+"category": "science"
+},
+{
+"subject": "Action potential",
+"content": "A rapid electrical signal that travels along a neuron's axon when the cell fires.",
+"category": "science"
+}
+],
+"technology": [
+{
+"subject": "HTML",
+"content": "HTML structures web pages with elements such as headings, paragraphs, links, and forms.",
+"category": "tech"
+},
+{
+"subject": "CSS",
+"content": "CSS styles HTML: layout, colors, fonts, and responsive design.",
+"category": "tech"
+},
+{
+"subject": "JavaScript",
+"content": "JavaScript adds interactivity in browsers and can also run on servers (Node.js).",
+"category": "tech"
+},
+{
+"subject": "HTTP",
+"content": "HTTP is the protocol for web requests. HTTPS adds encryption with TLS.",
+"category": "tech"
+},
+{
+"subject": "API",
+"content": "An API lets programs communicate, often using JSON over HTTP.",
+"category": "tech"
+},
+{
+"subject": "SQL",
+"content": "SQL queries relational databases: SELECT, INSERT, UPDATE, DELETE, JOIN.",
+"category": "tech"
+},
+{
+"subject": "Git",
+"content": "Git tracks versions of code: commit, branch, merge, push, pull.",
+"category": "tech"
+},
+{
+"subject": "Algorithm",
+"content": "An algorithm is a finite sequence of steps to solve a problem or compute a result.",
+"category": "tech"
+},
+{
+"subject": "Data structure",
+"content": "Common structures: arrays, lists, stacks, queues, trees, hash tables, graphs.",
+"category": "tech"
+},
+{
+"subject": "Machine learning",
+"content": "ML learns patterns from data: supervised, unsupervised, and reinforcement learning.",
+"category": "tech"
+},
+{
+"subject": "Neural network",
+"content": "A neural network is a layered model of connected nodes trained by adjusting weights.",
+"category": "tech"
+},
+{
+"subject": "Microprocessor",
+"content": "A microprocessor is an IC that implements a CPU: fetch, decode, and execute instructions.",
+"category": "tech"
+},
+{
+"subject": "Optical transceiver",
+"content": "Converts electrical signals to light and back for fiber links (SFP, QSFP, etc.).",
+"category": "tech"
+},
+{
+"subject": "Cloud computing",
+"content": "On-demand computing resources over the internet: servers, storage, databases, services.",
+"category": "tech"
+},
+{
+"subject": "Cybersecurity basics",
+"content": "Protect systems with strong passwords, updates, encryption, least privilege, and awareness of phishing.",
+"category": "tech"
+},
+{
+"subject": "Nanometer",
+"content": "One nanometre is 10^-9 metres \u2014 the scale of molecules and advanced chip features.",
+"category": "tech"
+},
+{
+"subject": "CAD",
+"content": "Computer-aided design software for precise engineering and architectural models.",
+"category": "tech"
+}
+],
+"space": [
+{
+"subject": "Solar system",
+"content": "The Sun and planets Mercury Venus Earth Mars Jupiter Saturn Uranus Neptune; Pluto is a dwarf planet.",
+"category": "space"
+},
+{
+"subject": "Earth",
+"content": "Third planet from the Sun; about 71% surface water; one natural satellite, the Moon.",
+"category": "space"
+},
+{
+"subject": "Moon",
+"content": "Earth's Moon causes tides and shows phases; first crewed landing was in 1969.",
+"category": "space"
+},
+{
+"subject": "Galaxy",
+"content": "A galaxy is a large system of stars, gas, dust, and dark matter. Earth is in the Milky Way.",
+"category": "space"
+},
+{
+"subject": "Black hole",
+"content": "A region where gravity is so strong that not even light can escape.",
+"category": "space"
+},
+{
+"subject": "Big Bang",
+"content": "Leading scientific model for the early universe about 13.8 billion years ago.",
+"category": "space"
+},
+{
+"subject": "Satellite",
+"content": "An object orbiting a planet; artificial satellites support GPS, weather, and communications.",
+"category": "space"
+}
+],
+"study": [
+{
+"subject": "Essay structure",
+"content": "Typical essay: introduction with thesis, body paragraphs with evidence, conclusion that synthesizes.",
+"category": "study"
+},
+{
+"subject": "Citation",
+"content": "Always credit sources. Common styles: APA, MLA, Chicago. Avoid plagiarism.",
+"category": "study"
+},
+{
+"subject": "Study method",
+"content": "Active recall and spaced repetition beat passive rereading for long-term memory.",
+"category": "study"
+},
+{
+"subject": "Critical thinking",
+"content": "Question claims, check evidence, consider alternatives, and watch for logical fallacies.",
+"category": "study"
+},
+{
+"subject": "University research",
+"content": "Start with a clear question, search scholarly sources, take notes, outline, draft, revise, cite.",
+"category": "study"
+},
+{
+"subject": "Time management",
+"content": "Break tasks into blocks, set deadlines, avoid multitasking on deep work, review weekly.",
+"category": "study"
+}
+],
+"materials": [
+{
+"subject": "Iron",
+"content": "Metal Fe used in steel; rusts when oxidized.",
+"category": "materials"
+},
+{
+"subject": "Copper",
+"content": "Conductive metal used in electrical wiring.",
+"category": "materials"
+},
+{
+"subject": "Aluminium",
+"content": "Light corrosion-resistant metal used in aircraft and packaging.",
+"category": "materials"
+},
+{
+"subject": "Loam",
+"content": "Balanced soil of sand, silt, and clay; good for agriculture.",
+"category": "materials"
+},
+{
+"subject": "Clay soil",
+"content": "Fine particles; holds water; can drain poorly.",
+"category": "materials"
+},
+{
+"subject": "Sandy soil",
+"content": "Coarse particles; drains quickly; lower nutrient retention.",
+"category": "materials"
+},
+{
+"subject": "Air composition",
+"content": "About 78% nitrogen, 21% oxygen, argon and trace gases including CO2.",
+"category": "materials"
+},
+{
+"subject": "Concrete",
+"content": "Mixture of cement, aggregate, and water that hardens into a structural material.",
+"category": "materials"
+}
+]
+}

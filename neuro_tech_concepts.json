@@ -1,0 +1,117 @@
+[
+{
+"subject": "Neutron",
+"content": "A neutron is a subatomic particle with no electric charge, found in atomic nuclei with protons. Free neutrons are unstable outside the nucleus. Used in nuclear reactors and materials research.",
+"category": "education"
+},
+{
+"subject": "Neurotransmitter",
+"content": "Neurotransmitters are chemicals that carry signals across synapses between neurons. Examples: dopamine (motivation/reward), serotonin (mood), acetylcholine (muscle and memory), GABA (inhibition), glutamate (excitation), norepinephrine (alertness).",
+"category": "education"
+},
+{
+"subject": "Neural network",
+"content": "A neural network is a computing model inspired by biological neurons: layers of nodes with weighted connections, trained so outputs match desired results. Used for pattern recognition, language, and prediction.",
+"category": "education"
+},
+{
+"subject": "Biological neuron",
+"content": "A neuron is a nerve cell with dendrites, cell body, and axon. It integrates inputs and may fire an action potential.",
+"category": "science"
+},
+{
+"subject": "Neuter",
+"content": "Neuter means: (1) grammar \u2014 neither masculine nor feminine; (2) biology \u2014 to sterilize an animal; (3) neutral / neither side. Do not confuse with neural (related to nerves or neural networks).",
+"category": "education"
+},
+{
+"subject": "Neuro-linguistic programming",
+"content": "NLP (neuro-linguistic programming) is a set of models about language, thought patterns, and communication (Bandler & Grinder). Useful as a communication toolkit. Clinical claims are debated; use critically.",
+"category": "education"
+},
+{
+"subject": "Neuro linguistic skills",
+"content": "Using precise language to clarify meaning: clear outcomes, sensory words (see/hear/feel), reframing, and checking understanding. Supports teaching and clear dialogue.",
+"category": "education"
+},
+{
+"subject": "Globalization",
+"content": "Globalization is growing interconnection of economies, information, culture, and supply chains across borders. Benefits include trade and knowledge sharing; challenges include inequality and local disruption.",
+"category": "education"
+},
+{
+"subject": "Nanotechnology",
+"content": "Nanotechnology designs and uses materials at roughly 1\u2013100 nanometres. Applications: electronics, medicine, sensors, advanced materials.",
+"category": "education"
+},
+{
+"subject": "Micro portal",
+"content": "A micro portal is a small, focused web or app gateway to a limited set of services or data \u2014 lighter than a full enterprise portal.",
+"category": "education"
+},
+{
+"subject": "Microprocessor",
+"content": "A microprocessor is an integrated circuit that functions as a CPU: it fetches, decodes, and executes instructions. Found in computers, phones, and embedded systems.",
+"category": "education"
+},
+{
+"subject": "Modus operandi",
+"content": "Modus operandi (MO) means a characteristic method of working \u2014 how a person or system typically operates to get results.",
+"category": "education"
+},
+{
+"subject": "Acquaint",
+"content": "To acquaint is to make familiar with a person, place, or fact. Example: acquaint yourself with the course outline before lectures.",
+"category": "education"
+},
+{
+"subject": "Aide-memoire",
+"content": "An aide-memoire is a memory aid: a short note, checklist, or summary that helps you remember key points.",
+"category": "education"
+},
+{
+"subject": "Zeugma",
+"content": "Zeugma is a figure of speech where one word applies to two others in different senses, e.g. 'She broke his car and his heart.'",
+"category": "education"
+},
+{
+"subject": "Articulate",
+"content": "To articulate is to express ideas clearly and effectively; also to join segments. Strong academic writing is articulate and precise.",
+"category": "education"
+},
+{
+"subject": "Computer-aided design",
+"content": "CAD (computer-aided design) uses software to create precise 2D/3D designs for engineering, architecture, and product design.",
+"category": "education"
+},
+{
+"subject": "Computing",
+"content": "Computing is the theory and practice of information processing with algorithms and machines: hardware, software, data, networks, and interaction.",
+"category": "education"
+},
+{
+"subject": "Gordian knot",
+"content": "To untie the Gordian knot means to solve a difficult problem with a bold, direct approach \u2014 from the legend of Alexander cutting the knot.",
+"category": "education"
+},
+{
+"subject": "Intelligent design",
+"content": "In engineering and software, intelligent design means purposeful, careful system design. As a biological-origins claim it is contested and not scientific consensus for evolution.",
+"category": "education"
+},
+{
+"subject": "Logical thinking",
+"content": "Logical thinking: state the question, list known facts, draw only what follows, check contradictions, and mark uncertainty.",
+"category": "education"
+},
+{
+"subject": "Learning cycle",
+"content": "Effective learning: input, store, retrieve, apply, correct errors, store improved knowledge. Teach this system with: Remember that\u2026",
+"category": "education"
+},
+{
+"subject": "Analysis feedback",
+"content": "When analyzing: restate the problem, use stored facts, reason step by step, give a clear answer, and say if confidence is low so you can be corrected.",
+"category": "education"
+}
+]

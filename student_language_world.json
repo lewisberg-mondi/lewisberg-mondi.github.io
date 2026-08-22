@@ -1,0 +1,142 @@
+[
+{
+"subject": "Triangle",
+"content": "A triangle is a 3-sided polygon. Angle sum is 180\u00b0. Types: equilateral, isosceles, scalene, right-angled.",
+"category": "math"
+},
+{
+"subject": "Circle",
+"content": "A circle is the set of points at fixed distance (radius) from a centre. Circumference = 2\u03c0r; area = \u03c0r\u00b2.",
+"category": "math"
+},
+{
+"subject": "Square",
+"content": "A square has 4 equal sides and 4 right angles (90\u00b0).",
+"category": "math"
+},
+{
+"subject": "Cube",
+"content": "A cube is a solid with 6 square faces, 12 edges, 8 vertices.",
+"category": "math"
+},
+{
+"subject": "Sphere",
+"content": "A sphere is a perfectly round solid; surface area 4\u03c0r\u00b2, volume (4/3)\u03c0r\u00b3.",
+"category": "math"
+},
+{
+"subject": "Angle",
+"content": "An angle is formed by two rays sharing an endpoint. Measured in degrees or radians. Right angle = 90\u00b0, straight = 180\u00b0.",
+"category": "math"
+},
+{
+"subject": "Seasons",
+"content": "Many regions have four seasons: spring, summer, autumn (fall), winter \u2014 driven by Earth's tilt and orbit.",
+"category": "geo"
+},
+{
+"subject": "Star",
+"content": "A star is a luminous sphere of plasma held by gravity, producing energy by nuclear fusion. The Sun is a star.",
+"category": "space"
+},
+{
+"subject": "Planet",
+"content": "A planet orbits a star, is rounded by its own gravity, and has cleared its orbital neighbourhood (IAU definition).",
+"category": "space"
+},
+{
+"subject": "Noun",
+"content": "A noun names a person, place, thing, or idea (e.g. student, Kenya, book, freedom).",
+"category": "language"
+},
+{
+"subject": "Verb",
+"content": "A verb expresses action or state (e.g. run, think, is, become).",
+"category": "language"
+},
+{
+"subject": "Adjective",
+"content": "An adjective describes a noun (e.g. bright, careful, large).",
+"category": "language"
+},
+{
+"subject": "Idiom",
+"content": "An idiom is a phrase whose meaning is not literal (e.g. 'break a Gordian knot' = solve a hard problem boldly).",
+"category": "language"
+},
+{
+"subject": "Punctuation",
+"content": "Punctuation marks structure writing: period, comma, question mark, colon, semicolon, quotation marks, apostrophe.",
+"category": "language"
+},
+{
+"subject": "Collocation",
+"content": "Collocation is the habitual pairing of words (e.g. make a decision, heavy rain).",
+"category": "language"
+},
+{
+"subject": "Phonetic symbols",
+"content": "IPA symbols represent speech sounds. Example: /\u0283/ as in ship, /\u03b8/ as in think.",
+"category": "language"
+},
+{
+"subject": "Consonant",
+"content": "Consonants are speech sounds with some airflow restriction (e.g. b, t, s, m). English has about 24 consonant sounds.",
+"category": "language"
+},
+{
+"subject": "Vowel",
+"content": "Vowels are open speech sounds (e.g. a, e, i, o, u sounds). English has more vowel sounds than vowel letters.",
+"category": "language"
+},
+{
+"subject": "Diphthong",
+"content": "A diphthong is a gliding vowel sound within one syllable (e.g. /a\u026a/ in time, /\u0254\u026a/ in boy).",
+"category": "language"
+},
+{
+"subject": "Metric system",
+"content": "Metric units: metre (length), kilogram (mass), second (time), litre (volume). Prefixes: milli, centi, kilo.",
+"category": "math"
+},
+{
+"subject": "Non-metric measures",
+"content": "Imperial/US customary: inch, foot, yard, mile; ounce, pound; pint, gallon. Convert carefully for science work.",
+"category": "math"
+},
+{
+"subject": "Ginger",
+"content": "Ginger root is used in food and traditional remedies; often associated with digestion support. Not a substitute for medical advice.",
+"category": "herbs"
+},
+{
+"subject": "Garlic",
+"content": "Garlic is used in cooking; traditionally linked to heart and immune folklore. Seek professional medical advice for health use.",
+"category": "herbs"
+},
+{
+"subject": "Aloe vera",
+"content": "Aloe vera gel is commonly used on skin; internal use needs caution. Not a substitute for medical care.",
+"category": "herbs"
+},
+{
+"subject": "Chamomile",
+"content": "Chamomile tea is often used for relaxation routines. Allergies possible (daisy family).",
+"category": "herbs"
+},
+{
+"subject": "Mint",
+"content": "Mint is used for flavour; traditionally associated with digestion comfort.",
+"category": "herbs"
+},
+{
+"subject": "Male names examples",
+"content": "Example male given names: James, David, John, Michael, Daniel, Joseph, Samuel, Peter, Kevin, Brian.",
+"category": "names"
+},
+{
+"subject": "Female names examples",
+"content": "Example female given names: Mary, Sarah, Emily, Anna, Grace, Rachel, Elizabeth, Sophia, Hannah, Joy.",
+"category": "names"
+}
+]
