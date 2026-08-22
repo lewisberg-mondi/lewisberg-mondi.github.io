@@ -411,8 +411,8 @@
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./sw.js").then(function (reg) {
-          console.log("Kanairoex PWA ready", reg.scope);
+        navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then(function (reg) {
+          console.log("Kanairoex PWA ready", reg.scope); try { reg.update(); } catch (_) {}
         }).catch(function (err) {
           console.warn("SW register failed (normal on some file:// hosts)", err);
         });

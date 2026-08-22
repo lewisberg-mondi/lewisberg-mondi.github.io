@@ -1,10 +1,19 @@
 /**
- * Online mode — multi-source fetch (Wikipedia + DuckDuckGo)
- * Hardened for GitHub Pages / HTTPS hosts:
- *  - Prefer Wikipedia REST (CORS *), fall back to action API with origin=*
- *  - Api-User-Agent header (Wikimedia policy)
- *  - DuckDuckGo is best-effort (CORS often blocked)
- *  - Clear errors when offline / blocked
+ * Kanairoex / LocalMind Web Research
+ * Browser-safe, GitHub Pages compatible, no API key required.
+ *
+ * Architecture:
+ *   intent -> source adapters -> normalized research document -> local memory
+ *
+ * Sources are deliberately public and browser-accessible:
+ *   1) Wikimedia REST page summary
+ *   2) MediaWiki Action API search/extracts
+ *   3) Wikidata entity search/description
+ *   4) DuckDuckGo Instant Answer (best effort)
+ *
+ * A static GitHub Pages site cannot perform unrestricted Google/Bing-style crawling.
+ * This module therefore never pretends that a lookup succeeded when all network
+ * sources failed, and it records the source(s) actually used.
  */
 const Online = (() => {
   let enabled = true;
@@ -12,23 +21,28 @@ const Online = (() => {
   const MAX_TEXT = 200000;
   const MAX_KNOWLEDGE = 50000;
   const FETCH_TIMEOUT_MS = 15000;
-  const API_UA = "KanairoexAI/1.0 (educational offline browser app; lookup)";
+  const API_UA = "KanairoexAI/1.1 (browser research app; https://github.com/)";
 
-  async function fetchWithTimeout(url, options) {
+  const SOURCE_NAMES = {
+    wikiRest: "Wikipedia REST",
+    wikiApi: "Wikipedia API",
+    wikidata: "Wikidata",
+    ddg: "DuckDuckGo Instant Answer"
+  };
+
+  async function fetchWithTimeout(url, options, timeoutMs) {
     const opts = Object.assign({}, options || {});
     const controller = new AbortController();
-    const timer = setTimeout(function () { controller.abort(); }, FETCH_TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), timeoutMs || FETCH_TIMEOUT_MS);
     opts.signal = controller.signal;
     try {
-      return await fetch(url, opts);
+      const response = await fetch(url, opts);
+      return response;
     } catch (e) {
-      if (e && e.name === "AbortError") throw new Error("Network request timed out after 15 seconds");
-      const msg = (e && e.message) ? e.message : String(e);
-      if (/Failed to fetch|NetworkError|Load failed|CORS/i.test(msg)) {
-        throw new Error(
-          "Browser blocked the network request (CORS/offline). " +
-          "Confirm you are online and that the site is served over HTTPS (e.g. GitHub Pages)."
-        );
+      if (e && e.name === "AbortError") throw new Error("Network request timed out after " + ((timeoutMs || FETCH_TIMEOUT_MS) / 1000) + " seconds");
+      const msg = e && e.message ? e.message : String(e);
+      if (/Failed to fetch|NetworkError|Load failed|CORS|network/i.test(msg)) {
+        throw new Error("The browser could not reach the web source (network/CORS). Check your connection and HTTPS site deployment.");
       }
       throw e;
     } finally {
@@ -37,27 +51,25 @@ const Online = (() => {
   }
 
   function isOnline() {
-    try {
-      if (typeof navigator === "undefined") return true;
-      // navigator.onLine can be wrong; treat unknown as online and let fetch fail clearly
-      return navigator.onLine !== false;
-    } catch (_) {
-      return true;
-    }
+    try { return typeof navigator === "undefined" ? true : navigator.onLine !== false; }
+    catch (_) { return true; }
   }
+
   function setEnabled(v) { enabled = !!v; }
   function getEnabled() { return enabled && isOnline(); }
 
   function loadPages() {
-    try { return JSON.parse(localStorage.getItem(PAGE_KEY) || "{}"); } catch { return {}; }
+    try { return JSON.parse(localStorage.getItem(PAGE_KEY) || "{}"); } catch (_) { return {}; }
   }
   function savePages(p) {
-    try { localStorage.setItem(PAGE_KEY, JSON.stringify(p)); } catch (e) {
-      const keys = Object.keys(p);
-      if (keys.length > 40) {
-        keys.slice(0, keys.length - 40).forEach(function (k) { delete p[k]; });
-        try { localStorage.setItem(PAGE_KEY, JSON.stringify(p)); } catch (e2) {}
-      }
+    try { localStorage.setItem(PAGE_KEY, JSON.stringify(p)); return true; }
+    catch (_) {
+      try {
+        const keys = Object.keys(p);
+        while (keys.length > 40) delete p[keys.shift()];
+        localStorage.setItem(PAGE_KEY, JSON.stringify(p));
+      } catch (_) {}
+      return false;
     }
   }
 
@@ -69,7 +81,6 @@ const Online = (() => {
       cache: "no-store",
       headers: Object.assign({
         "Accept": "application/json, text/plain, */*",
-        // Wikimedia asks clients to identify themselves
         "Api-User-Agent": API_UA
       }, extraHeaders || {})
     };
@@ -77,6 +88,13 @@ const Online = (() => {
 
   function wikiPageUrl(title) {
     return "https://en.wikipedia.org/wiki/" + encodeURIComponent(String(title || "").replace(/\s+/g, "_"));
+  }
+
+  function cleanTopic(topic) {
+    return String(topic || "").trim()
+      .replace(/[?.!]+$/g, "")
+      .replace(/\s+/g, " ")
+      .slice(0, 240);
   }
 
   function parseSummaryJson(data) {
@@ -91,125 +109,68 @@ const Online = (() => {
     };
   }
 
-  /** Resolve best Wikipedia title via REST first, then action API search */
-  async function resolveWikiTitle(topic) {
-    const clean = (topic || "").trim().replace(/[?.!]+$/g, "");
-    if (!clean) throw new Error("Empty topic");
+  async function wikiSummary(title) {
+    const encoded = encodeURIComponent(String(title).replace(/\s+/g, "_"));
+    const url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encoded;
+    const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }));
+    if (!res.ok) throw new Error("Wikipedia REST HTTP " + res.status);
+    const parsed = parseSummaryJson(await res.json());
+    if (!parsed) throw new Error("Wikipedia returned no usable summary");
+    return parsed;
+  }
 
-    // 1) REST summary by title guess
-    const encoded = encodeURIComponent(clean.replace(/\s+/g, "_"));
-    const sumUrl = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encoded;
-    try {
-      const res = await fetchWithTimeout(sumUrl, fetchOpts({ Accept: "application/json" }));
-      if (res.ok) {
-        const parsed = parseSummaryJson(await res.json());
-        if (parsed) return parsed;
-      }
-    } catch (e) { /* fall through */ }
+  async function wikiSearch(topic) {
+    const url = "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=" +
+      encodeURIComponent(topic) + "&srlimit=8&format=json&origin=*";
+    const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }));
+    if (!res.ok) throw new Error("Wikipedia search HTTP " + res.status);
+    const data = await res.json();
+    const hits = data && data.query && data.query.search ? data.query.search : [];
+    if (!hits.length) throw new Error("No Wikipedia result for " + topic);
+    return hits;
+  }
 
-    // 2) REST search (more reliable CORS than action API under load)
-    try {
-      const restSearch =
-        "https://en.wikipedia.org/w/rest.php/v1/search/page?q=" +
-        encodeURIComponent(clean) +
-        "&limit=5";
-      const rs = await fetchWithTimeout(restSearch, fetchOpts({ Accept: "application/json" }));
-      if (rs.ok) {
-        const js = await rs.json();
-        const pages = js.pages || [];
-        if (pages.length) {
-          const best = pages[0].title || pages[0].key;
-          const sum2 = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(String(best).replace(/\s+/g, "_"));
-          const r2 = await fetchWithTimeout(sum2, fetchOpts({ Accept: "application/json" }));
-          if (r2.ok) {
-            const parsed = parseSummaryJson(await r2.json());
-            if (parsed) return parsed;
-          }
-          return {
-            title: best,
-            summary: pages[0].description || pages[0].excerpt || "",
-            url: wikiPageUrl(best),
-            image: pages[0].thumbnail && pages[0].thumbnail.url ? pages[0].thumbnail.url : null,
-            description: pages[0].description || ""
-          };
-        }
-      }
-    } catch (e) { /* fall through */ }
+  async function wikiFull(title) {
+    const url = "https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&exsectionformat=plain&redirects=1&titles=" +
+      encodeURIComponent(title) + "&format=json&origin=*";
+    const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }));
+    if (!res.ok) throw new Error("Wikipedia article HTTP " + res.status);
+    const data = await res.json();
+    if (data && data.error) throw new Error(data.error.info || "Wikipedia API error");
+    const pages = data && data.query && data.query.pages ? data.query.pages : {};
+    const page = Object.values(pages)[0];
+    if (!page || page.missing || !page.extract) throw new Error("No article text returned");
+    return String(page.extract).trim();
+  }
 
-    // 3) Classic action API search (origin=* for CORS)
-    const searchUrl =
-      "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=" +
-      encodeURIComponent(clean) +
-      "&srlimit=5&format=json&origin=*";
-    const sRes = await fetchWithTimeout(searchUrl, fetchOpts({ Accept: "application/json" }));
-    if (sRes.status === 429) {
-      throw new Error("Wikipedia is rate-limiting requests. Wait ~20 seconds and try again.");
-    }
-    if (!sRes.ok) throw new Error("Wikipedia search failed (HTTP " + sRes.status + ")");
-    const sData = await sRes.json();
-    const hits = (sData.query && sData.query.search) || [];
-    if (!hits.length) throw new Error('No Wikipedia page found for "' + clean + '"');
-
-    const best = hits[0].title;
-    try {
-      const sum2 = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(best.replace(/\s+/g, "_"));
-      const r2 = await fetchWithTimeout(sum2, fetchOpts({ Accept: "application/json" }));
-      if (r2.ok) {
-        const parsed = parseSummaryJson(await r2.json());
-        if (parsed) return parsed;
-      }
-    } catch (e) { /* use hit snippet */ }
-
+  async function wikidataSearch(topic) {
+    const url = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search=" +
+      encodeURIComponent(topic) + "&language=en&uselang=en&type=item&limit=5&format=json&origin=*";
+    const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }));
+    if (!res.ok) throw new Error("Wikidata HTTP " + res.status);
+    const data = await res.json();
+    const hits = data && Array.isArray(data.search) ? data.search : [];
+    if (!hits.length) throw new Error("No Wikidata entity found");
+    const best = hits[0];
     return {
-      title: best,
-      summary: String(hits[0].snippet || "").replace(/<[^>]+>/g, ""),
-      url: wikiPageUrl(best),
-      image: null,
-      description: ""
+      id: best.id,
+      title: best.label || topic,
+      description: best.description || "",
+      url: "https://www.wikidata.org/wiki/" + encodeURIComponent(best.id)
     };
   }
 
-  /**
-   * Optional longer article text (action API). Never throws — summary is enough.
-   * Do NOT call rest_v1/page/mobile-sections* — Wikimedia shut it down (HTTP 403 "Access denied").
-   */
-  async function fetchWikipediaFull(title) {
-    try {
-      const url =
-        "https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&exsectionformat=plain&redirects=1&titles=" +
-        encodeURIComponent(title) +
-        "&format=json&origin=*";
-      const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }));
-      if (!res.ok) return "";
-      const data = await res.json();
-      if (data && data.error) return "";
-      const pages = (data.query && data.query.pages) || {};
-      const page = Object.values(pages)[0];
-      if (!page || page.missing) return "";
-      return (page.extract || "").trim();
-    } catch (e) {
-      return "";
-    }
-  }
-
-  /** DuckDuckGo Instant Answer — best-effort; many browsers block this host */
   async function fetchDuckDuckGo(topic) {
     try {
-      const url =
-        "https://api.duckduckgo.com/?q=" +
-        encodeURIComponent(topic) +
+      const url = "https://api.duckduckgo.com/?q=" + encodeURIComponent(topic) +
         "&format=json&no_html=1&skip_disambig=1";
-      const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }));
+      const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }), 9000);
       if (!res.ok) return null;
       const d = await res.json();
       const related = [];
-      (d.RelatedTopics || []).forEach(function (rt) {
+      (d.RelatedTopics || []).forEach(rt => {
         if (rt.Text) related.push(rt.Text);
-        if (rt.Topics) {
-          rt.Topics.forEach(function (t) {
-            if (t.Text) related.push(t.Text);
-          });
-        }
+        (rt.Topics || []).forEach(t => { if (t.Text) related.push(t.Text); });
       });
       return {
         heading: d.Heading || "",
@@ -222,139 +183,120 @@ const Online = (() => {
         related: related.slice(0, 12),
         image: d.Image ? "https://duckduckgo.com" + d.Image : null
       };
-    } catch (e) {
-      return null;
-    }
+    } catch (_) { return null; }
   }
 
-  /**
-   * Multi-source gather: full Wikipedia + optional DuckDuckGo.
-   * Wikipedia alone is enough for a successful lookup.
-   */
   async function fetchTopicFull(topic) {
-    const clean = (topic || "").trim().replace(/[?.!]+$/g, "");
+    const clean = cleanTopic(topic);
     if (!clean) throw new Error("Empty topic");
-    if (!isOnline()) {
-      throw new Error("Your browser reports offline. Connect to the internet and try again.");
-    }
+    if (!isOnline()) throw new Error("Browser reports offline. Connect to the internet and try again.");
 
-    // Run sources in parallel; DDG failure must not fail the whole lookup
-    const wikiPromise = resolveWikiTitle(clean);
-    const ddgPromise = fetchDuckDuckGo(clean).catch(function () { return null; });
-
-    let wikiMeta;
-    try {
-      wikiMeta = await wikiPromise;
-    } catch (e) {
-      // Last chance: DDG-only answer
-      const ddgOnly = await ddgPromise;
-      if (ddgOnly && (ddgOnly.abstract || ddgOnly.answer || ddgOnly.definition)) {
-        const parts = ["# " + clean, ""];
-        if (ddgOnly.answer) { parts.push("## Direct answer", ddgOnly.answer, ""); }
-        if (ddgOnly.definition) { parts.push("## Definition", ddgOnly.definition, ""); }
-        if (ddgOnly.abstract) { parts.push("## Overview", ddgOnly.abstract, ""); }
-        const combined = parts.join("\n").trim();
-        return {
-          title: ddgOnly.heading || clean,
-          extract: combined.slice(0, 2500),
-          content: combined,
-          fullText: ddgOnly.abstract || "",
-          summary: ddgOnly.abstract || ddgOnly.answer || "",
-          url: ddgOnly.abstractUrl || ("https://duckduckgo.com/?q=" + encodeURIComponent(clean)),
-          image: ddgOnly.image,
-          sources: [{ name: "DuckDuckGo", url: ddgOnly.abstractUrl || "" }].filter(function (s) { return s.url; }),
-          chars: combined.length
-        };
-      }
-      throw e;
-    }
-
-    const ddg = await ddgPromise;
-
+    const errors = [];
+    let wiki = null;
+    let wikiSource = null;
     let fullText = "";
+    let wd = null;
+    let ddg = null;
+
+    // Fast path: exact Wikipedia summary. This is a browser/CORS-friendly endpoint.
     try {
-      fullText = await fetchWikipediaFull(wikiMeta.title);
-    } catch (e) {
-      fullText = wikiMeta.summary || "";
-    }
-    if (!fullText) fullText = wikiMeta.summary || "";
+      wiki = await wikiSummary(clean);
+      wikiSource = SOURCE_NAMES.wikiRest;
+    } catch (e) { errors.push("Wikipedia REST: " + e.message); }
 
-    // Build combined document
-    const parts = [];
-    parts.push("# " + (wikiMeta.title || clean));
-    if (wikiMeta.description) parts.push("(" + wikiMeta.description + ")");
+    // Search if exact title did not work.
+    if (!wiki) {
+      try {
+        const hits = await wikiSearch(clean);
+        const best = hits[0];
+        wiki = {
+          title: best.title,
+          summary: String(best.snippet || "").replace(/<[^>]+>/g, ""),
+          url: wikiPageUrl(best.title),
+          image: null,
+          description: ""
+        };
+        wikiSource = SOURCE_NAMES.wikiApi;
+        try {
+          const s = await wikiSummary(best.title);
+          wiki = Object.assign(wiki, s);
+        } catch (_) {}
+      } catch (e) { errors.push("Wikipedia search: " + e.message); }
+    }
+
+    // Full article is best-effort; summary remains valid if extraction fails.
+    if (wiki) {
+      try { fullText = await wikiFull(wiki.title); }
+      catch (e) { errors.push("Wikipedia article: " + e.message); }
+    }
+
+    // Independent entity source, useful when Wikipedia is unavailable.
+    try { wd = await wikidataSearch(clean); }
+    catch (e) { errors.push("Wikidata: " + e.message); }
+
+    // Optional secondary web answer source.
+    ddg = await fetchDuckDuckGo(clean);
+
+    if (!wiki && !wd && !(ddg && (ddg.abstract || ddg.answer || ddg.definition))) {
+      throw new Error("No online source could be reached. " + errors.slice(0, 3).join(" | "));
+    }
+
+    const title = (wiki && wiki.title) || (wd && wd.title) || (ddg && ddg.heading) || clean;
+    const baseSummary = (wiki && wiki.summary) || (ddg && (ddg.abstract || ddg.answer || ddg.definition)) || (wd && wd.description) || "";
+    const article = fullText || baseSummary;
+    const parts = ["# " + title];
+    if (wiki && wiki.description) parts.push("(" + wiki.description + ")");
     parts.push("");
-    parts.push("Source: " + (wikiMeta.url || "Wikipedia"));
-    parts.push("");
 
-    if (ddg && ddg.answer) {
-      parts.push("## Direct answer");
-      parts.push(ddg.answer);
-      parts.push("");
-    }
-    if (ddg && ddg.definition) {
-      parts.push("## Definition");
-      parts.push(ddg.definition + (ddg.definitionUrl ? "\n(" + ddg.definitionUrl + ")" : ""));
-      parts.push("");
-    }
-    if (ddg && ddg.abstract && ddg.abstract !== fullText.slice(0, ddg.abstract.length)) {
-      parts.push("## Quick overview (DuckDuckGo / " + (ddg.abstractSource || "web") + ")");
-      parts.push(ddg.abstract);
-      parts.push("");
+    if (wiki) {
+      parts.push("Source: " + wiki.url, "");
+      if (ddg && ddg.answer) parts.push("## Direct web answer", ddg.answer, "");
+      if (ddg && ddg.definition) parts.push("## Web definition", ddg.definition, "");
+      if (ddg && ddg.abstract && ddg.abstract !== article.slice(0, ddg.abstract.length)) {
+        parts.push("## Web overview", ddg.abstract, "");
+      }
+      parts.push("## Wikipedia article", article, "");
+    } else {
+      parts.push("## Online overview", article, "");
     }
 
-    parts.push("## Full article (Wikipedia)");
-    parts.push(fullText || wikiMeta.summary || "No full text available.");
-    parts.push("");
-
+    if (wd && wd.description) {
+      parts.push("## Wikidata", wd.description, "Entity: " + wd.url, "");
+    }
     if (ddg && ddg.related && ddg.related.length) {
       parts.push("## Related topics");
-      ddg.related.forEach(function (r) { parts.push("• " + r); });
+      ddg.related.forEach(r => parts.push("• " + r));
       parts.push("");
     }
 
     const combined = parts.join("\n").trim();
-    const image = wikiMeta.image || (ddg && ddg.image) || null;
+    const sources = [];
+    if (wiki) sources.push({ name: wikiSource || SOURCE_NAMES.wikiRest, url: wiki.url });
+    if (wd) sources.push({ name: SOURCE_NAMES.wikidata, url: wd.url });
+    if (ddg && ddg.abstractUrl) sources.push({ name: ddg.abstractSource || SOURCE_NAMES.ddg, url: ddg.abstractUrl });
+    if (ddg) sources.push({ name: SOURCE_NAMES.ddg, url: "https://duckduckgo.com/?q=" + encodeURIComponent(clean) });
 
     return {
-      title: wikiMeta.title || clean,
-      extract: combined.slice(0, 2500), // short preview for chat UI
-      content: combined,                // full body
-      fullText: fullText,
-      summary: wikiMeta.summary,
-      url: wikiMeta.url,
-      image: image,
-      sources: [
-        wikiMeta.url ? { name: "Wikipedia", url: wikiMeta.url } : null,
-        ddg && ddg.abstractUrl ? { name: ddg.abstractSource || "DuckDuckGo", url: ddg.abstractUrl } : null,
-        { name: "DuckDuckGo Instant Answer", url: "https://duckduckgo.com/?q=" + encodeURIComponent(clean) }
-      ].filter(Boolean),
-      chars: combined.length
-    };
-  }
-
-  // Back-compat alias used by older call sites
-  async function fetchWikipedia(topic) {
-    const data = await fetchTopicFull(topic);
-    return {
-      title: data.title,
-      extract: data.content || data.extract,
-      url: data.url,
-      image: data.image
+      title,
+      extract: combined.slice(0, 3000),
+      content: combined.slice(0, MAX_TEXT),
+      fullText: fullText || article,
+      summary: baseSummary,
+      url: (wiki && wiki.url) || (wd && wd.url) || (ddg && ddg.abstractUrl) || ("https://duckduckgo.com/?q=" + encodeURIComponent(clean)),
+      image: (wiki && wiki.image) || (ddg && ddg.image) || null,
+      sources,
+      chars: combined.length,
+      researchedAt: new Date().toISOString(),
+      sourceCount: sources.length,
+      networkErrors: errors.slice(0, 8)
     };
   }
 
   async function fetchUrlText(url) {
     let res;
-    try {
-      res = await fetchWithTimeout(url, fetchOpts());
-    } catch (netErr) {
-      throw new Error(
-        "Network/CORS blocked for this URL. " +
-        "Prefer “look up Topic” (multi-source Wikipedia + DuckDuckGo) when opened from a file."
-      );
-    }
-    if (!res.ok) throw new Error("Fetch failed " + res.status);
+    try { res = await fetchWithTimeout(url, fetchOpts()); }
+    catch (e) { throw new Error("Network/CORS blocked for this URL. Try: look up Topic"); }
+    if (!res.ok) throw new Error("Fetch failed HTTP " + res.status);
     const ct = (res.headers.get("content-type") || "").toLowerCase();
     if (ct.includes("application/json")) {
       const j = await res.json();
@@ -362,40 +304,25 @@ const Online = (() => {
     }
     if (ct.includes("image/")) {
       const blob = await res.blob();
-      const dataUrl = await new Promise(function (resolve, reject) {
-        const r = new FileReader();
-        r.onload = function () { resolve(r.result); };
-        r.onerror = reject;
-        r.readAsDataURL(blob);
-      });
-      return { text: "[Image stored as data URL]", contentType: "image", dataUrl: dataUrl };
+      const dataUrl = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(blob); });
+      return { text: "[Image stored as data URL]", contentType: "image", dataUrl };
     }
     const html = await res.text();
-    const text = html
-      .replace(/<script[\s\S]*?<\/script>/gi, " ")
-      .replace(/<style[\s\S]*?<\/style>/gi, " ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, MAX_TEXT);
-    return { text: text, contentType: "html", html: html.slice(0, 150000) };
+    const text = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, MAX_TEXT);
+    return { text, contentType: "html", html: html.slice(0, 150000) };
   }
 
   function storeInMemory(subject, content, source) {
-    if (typeof Knowledge !== "undefined") {
-      Knowledge.add(
-        subject,
-        content.slice(0, MAX_KNOWLEDGE) + (source ? "\n\n(Source: " + source + ")" : ""),
-        "online",
-        { source: source || "online", dedupe: true }
-      );
+    if (typeof Knowledge !== "undefined" && Knowledge.add) {
+      Knowledge.add(subject, String(content || "").slice(0, MAX_KNOWLEDGE) + (source ? "\n\n(Source: " + source + ")" : ""), "online", { source: source || "online", dedupe: true });
     }
-    if (typeof Blockchain !== "undefined") {
-      Blockchain.addBlock({ type: "online", subject: subject, source: source || null, chars: (content || "").length });
+    if (typeof Blockchain !== "undefined" && Blockchain.addBlock) {
+      try { Blockchain.addBlock({ type: "online", subject, source: source || null, chars: String(content || "").length }); } catch (_) {}
     }
-    if (typeof Neurons !== "undefined") Neurons.activate("online:learn", 4);
+    if (typeof Neurons !== "undefined" && Neurons.activate) Neurons.activate("online:learn", 4);
     if (typeof SelfEvolution !== "undefined" && SelfEvolution.afterOnlineLearn) {
-      try { SelfEvolution.afterOnlineLearn(subject, (content || "").length); } catch (e) {}
+      try { SelfEvolution.afterOnlineLearn(subject, String(content || "").length); } catch (_) {}
     }
   }
 
@@ -404,12 +331,21 @@ const Online = (() => {
     pages[url] = {
       savedAt: Date.now(),
       title: payload.title || url,
-      text: (payload.text || payload.extract || payload.content || "").slice(0, MAX_TEXT),
+      text: String(payload.text || payload.extract || payload.content || "").slice(0, MAX_TEXT),
       html: payload.html ? String(payload.html).slice(0, 150000) : null,
       image: payload.image || payload.dataUrl || null,
-      sources: payload.sources || null
+      sources: payload.sources || null,
+      researchedAt: payload.researchedAt || new Date().toISOString()
     };
     savePages(pages);
+  }
+
+  async function probe() {
+    if (!isOnline()) return { ok: false, reason: "Browser reports offline" };
+    try {
+      const res = await fetchWithTimeout("https://en.wikipedia.org/api/rest_v1/page/summary/Internet", fetchOpts({ Accept: "application/json" }), 7000);
+      return { ok: !!res.ok, status: res.status, source: "Wikipedia REST" };
+    } catch (e) { return { ok: false, reason: e.message }; }
   }
 
   function status() {
@@ -418,25 +354,17 @@ const Online = (() => {
       browserOnline: isOnline(),
       lookupReady: getEnabled(),
       offlinePages: Object.keys(loadPages()).length,
-      sources: ["Wikipedia REST", "Wikipedia API", "DuckDuckGo (optional)"]
+      sources: Object.values(SOURCE_NAMES),
+      architecture: "browser-source adapters -> normalized research -> local memory"
     };
   }
 
   async function learnTopic(topic) {
-    if (!isOnline()) {
-      throw new Error("Browser reports offline. Connect to the internet, then try: look up " + (topic || "Topic"));
-    }
-    if (!enabled) {
-      throw new Error("Online mode is disabled. Type: online on");
-    }
+    if (!enabled) throw new Error("Online mode is disabled. Type: online on");
+    if (!isOnline()) throw new Error("Browser reports offline. Connect to the internet, then try: look up " + (topic || "Topic"));
     const data = await fetchTopicFull(topic);
-    storeInMemory(data.title, data.content || data.extract, data.url);
-    storePageOffline(data.url || ("wiki:" + data.title), {
-      title: data.title,
-      text: data.content || data.extract,
-      image: data.image,
-      sources: data.sources
-    });
+    storeInMemory(data.title, data.content || data.extract, data.sources && data.sources[0] ? data.sources[0].url : data.url);
+    storePageOffline(data.url || ("wiki:" + data.title), data);
     return data;
   }
 
@@ -445,66 +373,43 @@ const Online = (() => {
     const got = await fetchUrlText(url);
     const subject = "Web: " + url.replace(/^https?:\/\//, "").slice(0, 80);
     storeInMemory(subject, got.text || "", url);
-    storePageOffline(url, { title: subject, text: got.text, html: got.html, dataUrl: got.dataUrl });
-    return { title: subject, content: (got.text || "").slice(0, 8000), extract: (got.text || "").slice(0, 2500), url: url, image: got.dataUrl };
+    storePageOffline(url, { title: subject, text: got.text, html: got.html, dataUrl: got.dataUrl, sources: [{ name: "Direct URL", url }] });
+    return { title: subject, content: (got.text || "").slice(0, 8000), extract: (got.text || "").slice(0, 2500), url, image: got.dataUrl, sources: [{ name: "Direct URL", url }], chars: (got.text || "").length };
   }
 
   function listOfflinePages() {
-    return Object.entries(loadPages()).map(function (pair) {
-      return { url: pair[0], title: pair[1].title, savedAt: pair[1].savedAt, chars: (pair[1].text || "").length };
-    });
+    return Object.entries(loadPages()).map(([url, p]) => ({ url, title: p.title, savedAt: p.savedAt, chars: (p.text || "").length }));
   }
-
-  function getOfflinePage(url) {
-    return loadPages()[url] || null;
-  }
+  function getOfflinePage(url) { return loadPages()[url] || null; }
 
   function searchOfflinePages(query) {
-    const q = (query || "").toLowerCase().split(/\W+/).filter(function (w) { return w.length > 2; });
+    const q = String(query || "").toLowerCase().split(/\W+/).filter(w => w.length > 2);
     const pages = loadPages();
     const hits = [];
-    for (const url of Object.keys(pages)) {
+    Object.keys(pages).forEach(url => {
       const p = pages[url];
       const blob = ((p.title || "") + " " + (p.text || "")).toLowerCase();
       let score = 0;
-      for (const w of q) if (blob.includes(w)) score++;
-      if (score > 0) hits.push({ url: url, title: p.title, score: score, snippet: (p.text || "").slice(0, 500) });
-    }
-    hits.sort(function (a, b) { return b.score - a.score; });
+      q.forEach(w => { if (blob.includes(w)) score++; });
+      if (score) hits.push({ url, title: p.title, score, snippet: (p.text || "").slice(0, 500) });
+    });
+    hits.sort((a, b) => b.score - a.score);
     return hits.slice(0, 8);
   }
 
   function detectIntent(text) {
-    const raw = (text || "").trim();
+    const raw = String(text || "").trim();
     const lower = raw.toLowerCase();
     if (!lower) return null;
-    // System / profile commands are never web topics
-    if (/^(profile|my profile|show profile|view profile|post profile|who am i|balance|wallet|mission control|p2p\b|commands|diagnose|streak|review|set photo|set video|set bio|did|dwn)\b/i.test(lower)) {
-      return null;
-    }
-
-    function cleanQuery(q) {
-      return String(q || "")
-        .replace(/[?.!]+$/g, "")
-        .replace(/^(?:for|about|on)\s+/i, "")
-        .replace(/\s+(?:please|online|for me|now|from the web|from internet|from wikipedia|on wikipedia|on google|via google)$/i, "")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    if (/offline pages|saved pages|list downloaded|show offline/i.test(lower)) {
-      return { type: "list" };
-    }
-
+    if (/^(profile|my profile|show profile|view profile|post profile|who am i|balance|wallet|mission control|p2p\b|commands|diagnose|streak|review|set photo|set video|set bio|did|dwn)\b/i.test(lower)) return null;
+    const cleanQuery = q => String(q || "").replace(/[?.!]+$/g, "").replace(/^(?:for|about|on)\s+/i, "")
+      .replace(/\s+(?:please|online|for me|now|from the web|from internet|from wikipedia|on wikipedia|on google)$/i, "").replace(/\s+/g, " ").trim();
+    if (/offline pages|saved pages|list downloaded|show offline/i.test(lower)) return { type: "list" };
     let m = raw.match(/(?:fetch url|download url|read url|learn from url|save url)\s+(\S+)/i);
     if (m) return { type: "url", query: m[1].trim().replace(/[.,;:!?)\]}>]+$/, "") };
-
     m = raw.match(/https?:\/\/\S+/i);
-    if (m && /fetch|download|learn|store|save|read|offline/i.test(lower)) {
-      return { type: "url", query: m[0].replace(/[.,;:!?)\]}>]+$/, "") };
-    }
-
-    const topicPatterns = [
+    if (m && /fetch|download|learn|store|save|read|offline/i.test(lower)) return { type: "url", query: m[0].replace(/[.,;:!?)\]}>]+$/, "") };
+    const patterns = [
       /(?:^|\b)(?:look\s*up|lookup)\s+(.+)/i,
       /(?:^|\b)search\s+online\s+(?:for\s+)?(.+)/i,
       /(?:^|\b)(?:google|web\s*search|search\s+the\s+web|search\s+web)\s+(?:for\s+)?(.+)/i,
@@ -512,41 +417,18 @@ const Online = (() => {
       /(?:^|\b)(?:learn\s+about|wikipedia|wiki)\s+(.+)/i,
       /(?:^|\b)fetch\s+(.+)/i
     ];
-    for (let i = 0; i < topicPatterns.length; i++) {
-      m = lower.match(topicPatterns[i]);
-      if (m) {
-        const q = cleanQuery(m[1]);
-        if (q.length > 1) return { type: "topic", query: q };
-      }
+    for (let i = 0; i < patterns.length; i++) {
+      m = raw.match(patterns[i]);
+      if (m) { const q = cleanQuery(m[1]); if (q.length > 1) return { type: "topic", query: q }; }
     }
-
     if (/\b(online|wikipedia|from the web|from internet|google)\b/i.test(lower)) {
-      m = lower.match(/(?:tell me about|what is|what's|who is|who was)\s+(.+)/i);
-      if (m) {
-        const q = cleanQuery(m[1]);
-        if (q.length > 1) return { type: "topic", query: q };
-      }
+      m = raw.match(/(?:tell me about|what is|what's|who is|who was)\s+(.+)/i);
+      if (m) { const q = cleanQuery(m[1]); if (q.length > 1) return { type: "topic", query: q }; }
     }
-
     return null;
   }
 
-  return {
-    isOnline: isOnline,
-    setEnabled: setEnabled,
-    getEnabled: getEnabled,
-    status: status,
-    fetchWikipedia: fetchWikipedia,
-    fetchTopicFull: fetchTopicFull,
-    fetchUrlText: fetchUrlText,
-    learnTopic: learnTopic,
-    learnUrl: learnUrl,
-    detectIntent: detectIntent,
-    storeInMemory: storeInMemory,
-    listOfflinePages: listOfflinePages,
-    getOfflinePage: getOfflinePage,
-    searchOfflinePages: searchOfflinePages
-  };
+  return { isOnline, setEnabled, getEnabled, status, probe, fetchTopicFull, fetchWikipedia: fetchTopicFull, fetchUrlText, learnTopic, learnUrl, detectIntent, storeInMemory, listOfflinePages, getOfflinePage, searchOfflinePages };
 })();
 
-if (typeof window !== 'undefined') window.Online = Online;
+if (typeof window !== "undefined") window.Online = Online;
