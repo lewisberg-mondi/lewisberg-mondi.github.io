@@ -1,6 +1,6 @@
 # Kanairoex AI — Complete Guide
 
-> **Current build: v39 — image-search/CORS fallback and service-worker cache and browser research fallback fix.** The recommended test command is `look up image of Jesus`. The image pipeline now has Openverse, Wikimedia fetch, Wikimedia JSONP, Wikipedia thumbnail, and direct Commons fallback paths. See `DEBUG-REPORT.md` for the repair analysis and test results.
+> **Current build: v40 — image-search/CORS fallback and service-worker cache and browser research fallback fix.** The recommended test command is `look up image of Jesus`. The image pipeline now has Openverse, Wikimedia fetch, Wikimedia JSONP, Wikipedia thumbnail, and direct Commons fallback paths. See `DEBUG-REPORT.md` for the repair analysis and test results.
 
 Private **offline-first** study AI that runs entirely in your browser. No account required. Your knowledge, wallet, profile photo/video, and chat history stay on **this device** (localStorage + IndexedDB). Optional **WebRTC P2P** lets you chat, send files, share your profile, and transfer educational **LMT** tokens between browsers.
 
@@ -124,7 +124,7 @@ Optional: send a larger video or any file with `p2p file` after sharing the prof
 ## 5. Wallet & LMT tokens
 
 **Symbol:** 💎 **LMT** (Kanairoex Token)  
-**Genesis balance:** 1 LMT · **Question reward:** 0.001 LMT  
+**Genesis balance:** 5,000 LMT · **Question reward:** 0.001 LMT  
 **Simulated price:** starts ~0.001 USD, +0.05%/day (display only)
 
 | Command | Meaning |
@@ -404,7 +404,7 @@ The app never downloads or republishes an image automatically. It displays remot
 
 ### Important GitHub Pages / service-worker detail
 
-`image-research.js` is now **network-first** in the service worker and the project cache has been bumped to `v39`. The script URL is also versioned (`image-research.js?v=38`). This prevents an old cached image-search module from surviving a GitHub Pages deployment.
+`image-research.js` is now **network-first** in the service worker and the project cache has been bumped to `v40`. The script URL is also versioned (`image-research.js?v=38`). This prevents an old cached image-search module from surviving a GitHub Pages deployment.
 
 After deploying an update, open the site over HTTPS and do a hard refresh. If an old service worker is still active, close the site tabs, reopen it, and reload once or twice so the new worker activates.
 
@@ -426,11 +426,11 @@ The current build addresses both problems.
 
 ---
 
-## v39 Intelligence Upgrade
+## v40 Intelligence Upgrade
 
-Kanairoex v39 adds a coherent Brain Controller on top of the existing AI Core and Reasoning engine. It does not pretend that a small browser model is a giant cloud model; instead it improves **reasonableness, evidence discipline, planning, context, verification, memory safety, and diagnostics**.
+Kanairoex v40 adds a coherent Brain Controller on top of the existing AI Core and Reasoning engine. It does not pretend that a small browser model is a giant cloud model; instead it improves **reasonableness, evidence discipline, planning, context, verification, memory safety, and diagnostics**.
 
-### v39 pipeline
+### v40 pipeline
 
 `User → Context → Planner → Existing Reasoning/Tools → Evidence → Verification → Response → Memory`
 
@@ -458,7 +458,7 @@ The chat command `diagnose` also gives a short health summary.
 
 ### Knowledge correction safety
 
-When you teach a fact that conflicts with an existing fact, v39 does **not** silently replace the old fact. It stages the new claim and asks for:
+When you teach a fact that conflicts with an existing fact, v40 does **not** silently replace the old fact. It stages the new claim and asks for:
 
 `confirm this correction`
 
@@ -466,7 +466,7 @@ This preserves competing versions instead of destroying prior knowledge.
 
 ### Image-search reliability
 
-Image requests continue to use the v38 repair path, now under v39 cache/versioning:
+Image requests continue to use the v40 repair path, now under v40 cache/versioning:
 
 1. Openverse fetch
 2. Wikimedia Commons API
@@ -476,4 +476,22 @@ Image requests continue to use the v38 repair path, now under v39 cache/versioni
 
 The failure of one provider should not make the entire AI appear broken.
 
-See `V39-INTELLIGENCE.md` for the complete architecture and deployment guide.
+See `V40-INTELLIGENCE.md` for the complete architecture and deployment guide.
+
+
+## GitHub Pages image-search fix
+
+See `GITHUB-PAGES-FIX.md` for the v40 static-host image-search architecture, deployment steps, browser diagnostics, and fallback behavior.
+
+
+## v41 Hosted/GitHub Pages reliability
+
+If research or image search works in a code editor but fails after GitHub Pages deployment, v41 automatically retries public API metadata through hosted CORS relays after direct CORS/JSONP paths fail. See `GITHUB-PAGES-FIX.md`.
+
+The browser diagnostics are:
+
+```js
+ImageResearch.diagnose()
+Online.status()
+await Online.probe()
+```

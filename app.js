@@ -995,7 +995,7 @@ function updateLlmStatusLine() {
             const idata = await ImageResearch.search(ii.query, 12);
             ImageResearch.saveMetadata(idata);
             result = {
-              thinking: "→ Searching image sources (Openverse, Wikimedia)\n→ Collecting Creative Commons results\n→ Saving image metadata to offline memory",
+              thinking: "→ Searching image sources\n→ Using GitHub Pages CORS/JSONP fallbacks when needed\n→ Collecting image metadata",
               reply:
                 "Found **" + idata.images.length + " images** for **" + idata.query + "**.\n\n" +
                 "Sources: " + (idata.sources || []).join(", ") + ".\n" +
@@ -1008,8 +1008,8 @@ function updateLlmStatusLine() {
             result = {
               thinking: "→ Public image APIs were unavailable\n→ Trying browser-safe Wikimedia fallback\n→ Falling back to direct Commons search",
               reply:
-                "I couldn't load image cards automatically this time." +
-                (fallbackUrl ? "\n\nThe direct Wikimedia image search is still available below." : "\n\nPlease try again while online."),
+                "I couldn't retrieve image cards from the hosted public providers." +
+                (fallbackUrl ? "\n\nYou can still open the direct Wikimedia image search below." : "\n\nCheck your connection and try again."),
               creative: fallbackUrl ? { type: "image-search-fallback", url: fallbackUrl, query: ii.query } : null
             };
           }

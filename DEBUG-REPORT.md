@@ -122,7 +122,7 @@ show photos of airplanes
 ImageResearch.diagnose()   # browser console only
 ```
 
-If the browser still displays an older UI, close old tabs and reload so the v39 service worker can activate. A hard refresh is recommended after the first deployment.
+If the browser still displays an older UI, close old tabs and reload so the v40 service worker can activate. A hard refresh is recommended after the first deployment.
 
 ## Other system observations
 
@@ -142,6 +142,6 @@ PASS: GitHub CORS failure -> repository JSONP fallback
 
 ---
 
-## v39 superseding note
+## v40 superseding note
 
-This historical v38 report is retained for traceability. The final v39 release adds the Brain Controller, planner, evidence engine, verifier, context manager, benchmark suite, v39 service-worker cache, and expanded regression tests. See `V39-INTELLIGENCE.md` and `V39-TEST-REPORT.md`.
+This historical v40 report is retained for traceability. The final v40 release adds the Brain Controller, planner, evidence engine, verifier, context manager, benchmark suite, v40 service-worker cache, and expanded regression tests. See `V40-INTELLIGENCE.md` and `V40-TEST-REPORT.md`.

@@ -86,6 +86,53 @@ const Online = (() => {
     };
   }
 
+
+  // GitHub Pages/custom-domain transport fallback. Static hosting cannot add
+  // server-side CORS headers, so blocked public API reads can be retried through
+  // public CORS relays. Direct requests always remain the first choice.
+  const CORS_RELAYS = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?url='
+  ];
+
+  async function fetchViaRelay(url, timeoutMs) {
+    let last = null;
+    for (const base of CORS_RELAYS) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs || FETCH_TIMEOUT_MS);
+      try {
+        const response = await fetch(base + encodeURIComponent(url), {
+          method: 'GET', mode: 'cors', credentials: 'omit', cache: 'no-store',
+          signal: controller.signal,
+          headers: { 'Accept': 'application/json, text/plain, */*' }
+        });
+        if (!response.ok) throw new Error('relay HTTP ' + response.status);
+        return response;
+      } catch (e) { last = e; }
+      finally { clearTimeout(timer); }
+    }
+    throw last || new Error('No CORS relay available');
+  }
+
+  async function fetchJsonWithRelayFallback(url, timeoutMs) {
+    try {
+      const res = await fetchWithTimeout(url, fetchOpts({ Accept: 'application/json' }), timeoutMs);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    } catch (directError) {
+      try {
+        const res = await fetchViaRelay(url, timeoutMs);
+        const text = await res.text();
+        if (!text || /^\s*</.test(text)) throw new Error('relay returned non-JSON content');
+        return JSON.parse(text);
+      } catch (relayError) {
+        const e = new Error((directError && directError.message ? directError.message : 'Direct request failed') +
+          '; relay fallback: ' + (relayError && relayError.message ? relayError.message : 'failed'));
+        e.direct = directError; e.relay = relayError; throw e;
+      }
+    }
+  }
+
   function wikiPageUrl(title) {
     return "https://en.wikipedia.org/wiki/" + encodeURIComponent(String(title || "").replace(/\s+/g, "_"));
   }
@@ -112,9 +159,7 @@ const Online = (() => {
   async function wikiSummary(title) {
     const encoded = encodeURIComponent(String(title).replace(/\s+/g, "_"));
     const url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encoded;
-    const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }));
-    if (!res.ok) throw new Error("Wikipedia REST HTTP " + res.status);
-    const parsed = parseSummaryJson(await res.json());
+    const parsed = parseSummaryJson(await fetchJsonWithRelayFallback(url));
     if (!parsed) throw new Error("Wikipedia returned no usable summary");
     return parsed;
   }
@@ -122,9 +167,7 @@ const Online = (() => {
   async function wikiSearch(topic) {
     const url = "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=" +
       encodeURIComponent(topic) + "&srlimit=8&format=json&origin=*";
-    const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }));
-    if (!res.ok) throw new Error("Wikipedia search HTTP " + res.status);
-    const data = await res.json();
+    const data = await fetchJsonWithRelayFallback(url);
     const hits = data && data.query && data.query.search ? data.query.search : [];
     if (!hits.length) throw new Error("No Wikipedia result for " + topic);
     return hits;
@@ -133,9 +176,7 @@ const Online = (() => {
   async function wikiFull(title) {
     const url = "https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&exsectionformat=plain&redirects=1&titles=" +
       encodeURIComponent(title) + "&format=json&origin=*";
-    const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }));
-    if (!res.ok) throw new Error("Wikipedia article HTTP " + res.status);
-    const data = await res.json();
+    const data = await fetchJsonWithRelayFallback(url);
     if (data && data.error) throw new Error(data.error.info || "Wikipedia API error");
     const pages = data && data.query && data.query.pages ? data.query.pages : {};
     const page = Object.values(pages)[0];
@@ -146,9 +187,7 @@ const Online = (() => {
   async function wikidataSearch(topic) {
     const url = "https://www.wikidata.org/w/api.php?action=wbsearchentities&search=" +
       encodeURIComponent(topic) + "&language=en&uselang=en&type=item&limit=5&format=json&origin=*";
-    const res = await fetchWithTimeout(url, fetchOpts({ Accept: "application/json" }));
-    if (!res.ok) throw new Error("Wikidata HTTP " + res.status);
-    const data = await res.json();
+    const data = await fetchJsonWithRelayFallback(url);
     const hits = data && Array.isArray(data.search) ? data.search : [];
     if (!hits.length) throw new Error("No Wikidata entity found");
     const best = hits[0];
@@ -343,8 +382,9 @@ const Online = (() => {
   async function probe() {
     if (!isOnline()) return { ok: false, reason: "Browser reports offline" };
     try {
-      const res = await fetchWithTimeout("https://en.wikipedia.org/api/rest_v1/page/summary/Internet", fetchOpts({ Accept: "application/json" }), 7000);
-      return { ok: !!res.ok, status: res.status, source: "Wikipedia REST" };
+      const url = "https://en.wikipedia.org/api/rest_v1/page/summary/Internet";
+      await fetchJsonWithRelayFallback(url, 7000);
+      return { ok: true, status: 200, source: "Wikipedia REST/relay" };
     } catch (e) { return { ok: false, reason: e.message }; }
   }
 
@@ -355,6 +395,8 @@ const Online = (() => {
       lookupReady: getEnabled(),
       offlinePages: Object.keys(loadPages()).length,
       sources: Object.values(SOURCE_NAMES),
+      corsRelayFallback: true,
+      corsRelays: CORS_RELAYS.slice(),
       architecture: "browser-source adapters -> normalized research -> local memory"
     };
   }

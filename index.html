@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kanairoex AI — Offline/Online Agentic AI Workstation</title>
+  <title>Kanairoex AI — Offline Agentic AI Workstation</title>
   <meta name="description" content="Private offline AI for students and professionals. Learn, research, build websites, grade work, map UTM — runs fully in your browser." />
   <meta name="theme-color" content="#0f1419" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -309,7 +309,7 @@
           </div>
           <div class="settings-group">
             <h3>About</h3>
-            <p>Kanairoex is a fully client-side AI  built with pure HTML, CSS, JavaScript & JSON data packs.. It uses a blockchain-inspired memory structure, a growing knowledge base, simple reasoning rules, and mathematical evaluation. No data ever leaves your device.</p>
+            <p>Kanairoex is a fully client-side AI  built with pure HTML, CSS & JavaScript. It uses a blockchain-inspired memory structure, a growing knowledge base, simple reasoning rules, and mathematical evaluation. No data ever leaves your device.</p>
             <p class="muted">Inspired by systems like Grok, ChatGPT and DeepSeek — but designed for private, offline ownership.</p>
           </div>
         </div>
@@ -332,8 +332,8 @@
   <script defer src="quiz.js"></script>
   <script defer src="chats.js"></script>
   <script defer src="dictionary.js"></script>
-  <script defer src="github-code-research.js?v=39"></script>
-  <script defer src="reference-research.js?v=39"></script>
+  <script defer src="github-code-research.js?v=40"></script>
+  <script defer src="reference-research.js?v=40"></script>
 
   <!-- Neural Core -->
   <script defer src="random.js"></script>
@@ -365,7 +365,7 @@
   <script defer src="predict.js"></script>
   <script defer src="coder.js"></script>
   <script defer src="summarizer.js"></script>
-  <script defer src="online.js?v=39"></script>
+  <script defer src="online.js?v=40"></script>
   <script defer src="offline-assistant.js"></script>
   <script defer src="preload.js"></script>
   <script defer src="verify.js"></script>
@@ -377,7 +377,7 @@
   <script defer src="usdt-withdraw.js"></script>
   <script defer src="mmf.js"></script>
   <script defer src="mind.js"></script>
-  <script defer src="reasoning.js?v=39"></script>
+  <script defer src="reasoning.js?v=41"></script>
   <script defer src="mood-emoji.js"></script>
   <script defer src="ai-core.js"></script>
   <script defer src="voice.js"></script>
@@ -395,12 +395,12 @@
   <script defer src="offline-web-vault.js"></script>
   <script defer src="offline-connectivity.js"></script>
   <script defer src="thinking-engine.js"></script>
-  <script defer src="brain-context.js?v=39"></script>
-  <script defer src="brain-planner.js?v=39"></script>
-  <script defer src="brain-evidence.js?v=39"></script>
-  <script defer src="brain-verifier.js?v=39"></script>
-  <script defer src="brain-controller.js?v=39"></script>
-  <script defer src="benchmark.js?v=39"></script>
+  <script defer src="brain-context.js?v=41"></script>
+  <script defer src="brain-planner.js?v=41"></script>
+  <script defer src="brain-evidence.js?v=41"></script>
+  <script defer src="brain-verifier.js?v=41"></script>
+  <script defer src="brain-controller.js?v=41"></script>
+  <script defer src="benchmark.js?v=41"></script>
   <script defer src="lm-upgrade.js"></script>
   <script defer src="self-evolution.js"></script>
   <script defer src="token-economy.js"></script>
@@ -415,14 +415,14 @@
   <script defer src="identity.js"></script>
   <script defer src="dwn-local.js"></script>
   <script defer src="study-hub.js"></script>
-  <script defer src="research-manager.js?v=39"></script>
-  <script defer src="video-research.js?v=39"></script>
-  <script defer src="image-research.js?v=39"></script>
-  <script defer src="app.js?v=39"></script>
+  <script defer src="research-manager.js?v=41"></script>
+  <script defer src="video-research.js?v=41"></script>
+  <script defer src="image-research.js?v=41"></script>
+  <script defer src="app.js?v=41"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./sw.js?v=38", { updateViaCache: "none" }).then(function (reg) {
+        navigator.serviceWorker.register("./sw.js?v=41", { updateViaCache: "none" }).then(function (reg) {
           console.log("Kanairoex PWA ready", reg.scope); try { reg.update(); } catch (_) {}
         }).catch(function (err) {
           console.warn("SW register failed (normal on some file:// hosts)", err);
