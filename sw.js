@@ -1,12 +1,12 @@
 /* Kanairoex / LocalMind service worker — network-aware application cache. */
-const CACHE = "kanairoex-v36-image-search";
+const CACHE = "kanairoex-v35-research-video-github-reference";
 const CORE = [
   "./index.html", "./styles.css", "./manifest.json", "./icon.svg", "./app.js",
   "./ai-core.js", "./reasoning.js", "./online.js", "./github-code-research.js", "./reference-research.js", "./knowledge.js", "./response.js",
   "./blockchain.js", "./neurons.js", "./sw.js"
 ];
 const ASSETS = CORE.concat([
-  "./research-manager.js", "./video-research.js", "./image-research.js", "./github-code-research.js", "./reference-research.js", "./offline-web-vault.js", "./offline-connectivity.js", "./offline-assistant.js", "./preload.js",
+  "./research-manager.js", "./video-research.js", "./github-code-research.js", "./reference-research.js", "./offline-web-vault.js", "./offline-connectivity.js", "./offline-assistant.js", "./preload.js",
   "./question.js", "./profile.js", "./mood-emoji.js", "./voice.js", "./v3-upgrades.js", "./v4-core.js", "./v4-ui.js",
   "./thinking-engine.js", "./lm-upgrade.js", "./self-evolution.js", "./token-economy.js", "./local-ai-suite.js",
   "./cognitive-engine.js", "./local-llm.js", "./multimodal.js", "./external-llm.js", "./secure-memory.js",
@@ -19,7 +19,7 @@ const ASSETS = CORE.concat([
 
 // These are the files most likely to change during GitHub Pages deployments.
 // They use network-first with cached fallback so new versions are picked up.
-const NETWORK_FIRST = new Set(["index.html", "app.js", "ai-core.js", "reasoning.js", "online.js", "research-manager.js", "video-research.js", "image-research.js", "github-code-research.js", "reference-research.js", "sw.js"]);
+const NETWORK_FIRST = new Set(["index.html", "app.js", "ai-core.js", "reasoning.js", "online.js", "research-manager.js", "video-research.js", "github-code-research.js", "reference-research.js", "sw.js"]);
 
 self.addEventListener("install", event => {
   event.waitUntil((async () => {

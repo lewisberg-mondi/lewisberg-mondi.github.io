@@ -377,7 +377,7 @@
   <script defer src="usdt-withdraw.js"></script>
   <script defer src="mmf.js"></script>
   <script defer src="mind.js"></script>
-  <script defer src="reasoning.js?v=37"></script>
+  <script defer src="reasoning.js?v=36"></script>
   <script defer src="mood-emoji.js"></script>
   <script defer src="ai-core.js"></script>
   <script defer src="voice.js"></script>
@@ -410,13 +410,13 @@
   <script defer src="dwn-local.js"></script>
   <script defer src="study-hub.js"></script>
   <script defer src="research-manager.js?v=35"></script>
-  <script defer src="video-research.js?v=37"></script>
-  <script defer src="image-research.js?v=37"></script>
-  <script defer src="app.js?v=37"></script>
+  <script defer src="video-research.js?v=35"></script>
+  <script defer src="image-research.js?v=36"></script>
+  <script defer src="app.js?v=36"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./sw.js?v=37", { updateViaCache: "none" }).then(function (reg) {
+        navigator.serviceWorker.register("./sw.js?v=35", { updateViaCache: "none" }).then(function (reg) {
           console.log("Kanairoex PWA ready", reg.scope); try { reg.update(); } catch (_) {}
         }).catch(function (err) {
           console.warn("SW register failed (normal on some file:// hosts)", err);
@@ -426,7 +426,7 @@
   </script>
   
   
-      <!-- ========== SOURCE CODE HIDING & PROTECTION MODULE ========== -->
+    <!-- ========== SOURCE CODE HIDING & PROTECTION MODULE ========== -->
 <!-- Insert this entire script block just before the closing </body> tag in your kanairoex.html -->
 <script>
 (function() {
@@ -842,6 +842,9 @@
 
 
 
+
+  
+  
   
   
 </body>
