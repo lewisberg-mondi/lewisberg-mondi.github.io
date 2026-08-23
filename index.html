@@ -3,855 +3,551 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kanairoex AI — Offline Agentic AI Workstation</title>
-  <meta name="description" content="Private offline AI for students and professionals. Learn, research, build websites, grade work, map UTM — runs fully in your browser." />
-  <meta name="theme-color" content="#0f1419" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>" />
+  <title>Kanairoex AI — Private Offline-First Assistant</title>
+  <meta name="description" content="Kanairoex AI is a private, offline-first Android assistant with chat, memory, multi-token wallet, P2P, research, and local learning. Download the APK." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230F172A'/%3E%3Ccircle cx='32' cy='32' r='22' fill='%235B8DEF'/%3E%3Ccircle cx='32' cy='32' r='14' fill='%230B1220'/%3E%3Cpath d='M24 20v24M24 32l16-12M24 32l16 12' stroke='%23E8EEFF' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <style>
+    :root {
+      --bg: #070a12;
+      --bg2: #0c1220;
+      --card: #121a2b;
+      --card2: #162036;
+      --border: rgba(148, 163, 184, 0.14);
+      --text: #eef2ff;
+      --muted: #9aa6c1;
+      --accent: #6d8cff;
+      --accent2: #8b5cf6;
+      --success: #34d399;
+      --glow: rgba(109, 140, 255, 0.35);
+      --radius: 18px;
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    .container { width: min(1120px, 92vw); margin: 0 auto; }
+
+    /* Background */
+    .bg-orb {
+      position: fixed; inset: auto; pointer-events: none; z-index: 0;
+      width: 55vw; height: 55vw; border-radius: 50%;
+      filter: blur(80px); opacity: 0.35;
+    }
+    .orb-1 { top: -15vw; left: -10vw; background: radial-gradient(circle, #3b5bdb, transparent 70%); }
+    .orb-2 { top: 40vh; right: -20vw; background: radial-gradient(circle, #7c3aed, transparent 70%); }
+    .orb-3 { bottom: -10vw; left: 30vw; background: radial-gradient(circle, #0ea5e9, transparent 70%); opacity: 0.2; }
+
+    /* Nav */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(16px);
+      background: rgba(7, 10, 18, 0.72);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav {
+      display: flex; align-items: center; justify-content: space-between;
+      min-height: 64px; gap: 16px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.02em; }
+    .brand-mark {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: linear-gradient(135deg, #5b8def, #8b5cf6);
+      display: grid; place-items: center;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 8px 24px var(--glow);
+    }
+    .brand-mark svg { width: 20px; height: 20px; }
+    .nav-links { display: flex; gap: 18px; align-items: center; color: var(--muted); font-size: 14px; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white; font-weight: 600; font-size: 13px;
+      padding: 10px 16px; border-radius: 999px;
+      box-shadow: 0 8px 24px var(--glow);
+    }
+    .nav-cta:hover { filter: brightness(1.08); }
+
+    /* Hero */
+    .hero {
+      position: relative; z-index: 1;
+      padding: 72px 0 48px;
+      display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 40px; align-items: center;
+    }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      color: #a5b4fc; background: rgba(109,140,255,0.12);
+      border: 1px solid rgba(109,140,255,0.25);
+      padding: 6px 12px; border-radius: 999px; margin-bottom: 18px;
+    }
+    .hero h1 {
+      font-size: clamp(34px, 5vw, 52px);
+      line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 16px;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, #93c5fd, #c4b5fd 50%, #f0abfc);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hero-lead {
+      color: var(--muted); font-size: 17px; max-width: 540px; margin-bottom: 28px;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; }
+    .btn-primary, .btn-secondary {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px 22px; border-radius: 14px; font-weight: 650; font-size: 15px;
+      border: 1px solid transparent; cursor: pointer; transition: .15s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #6d8cff, #8b5cf6);
+      color: #fff; box-shadow: 0 12px 32px var(--glow);
+    }
+    .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.06); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.04);
+      border-color: var(--border); color: var(--text);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.07); }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 13px; }
+    .hero-meta strong { color: var(--text); }
+
+    .phone {
+      position: relative;
+      background: linear-gradient(180deg, #152038, #0d1424);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 14px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+      min-height: 420px;
+    }
+    .phone-notch {
+      width: 36%; height: 8px; border-radius: 999px; background: #0a0f1a;
+      margin: 0 auto 14px;
+    }
+    .phone-screen {
+      background: #0b1220; border-radius: 18px; padding: 16px; min-height: 360px;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .fake-top {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 18px; font-size: 13px; color: var(--muted);
+    }
+    .fake-title { color: var(--text); font-weight: 650; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 6px; }
+    .fake-welcome { text-align: center; padding: 18px 8px 10px; }
+    .fake-logo {
+      width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 10px;
+      background: linear-gradient(135deg, #5b8def, #8b5cf6);
+      display: grid; place-items: center;
+      box-shadow: 0 10px 30px rgba(91,141,239,0.35);
+    }
+    .fake-welcome h3 { font-size: 16px; margin-bottom: 6px; }
+    .fake-welcome p { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+    .fake-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    .fake-chip {
+      font-size: 11px; color: #c7d2fe; background: #151f33;
+      border: 1px solid var(--border); border-radius: 999px; padding: 5px 10px;
+    }
+    .fake-input {
+      margin-top: 18px; display: flex; gap: 8px; align-items: center;
+      background: #10182a; border: 1px solid var(--border); border-radius: 14px; padding: 8px 10px;
+    }
+    .fake-input span { flex: 1; color: #6b7897; font-size: 12px; }
+    .fake-send {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: linear-gradient(135deg, #6d8cff, #8b5cf6);
+    }
+
+    /* Sections */
+    section { position: relative; z-index: 1; padding: 56px 0; }
+    .section-head { max-width: 640px; margin-bottom: 28px; }
+    .section-head h2 {
+      font-size: clamp(24px, 3.2vw, 34px); letter-spacing: -0.02em; margin-bottom: 10px;
+    }
+    .section-head p { color: var(--muted); font-size: 15px; }
+
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .card {
+      background: linear-gradient(180deg, rgba(22,32,54,0.9), rgba(12,18,32,0.95));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      transition: .15s ease;
+    }
+    .card:hover { border-color: rgba(109,140,255,0.35); transform: translateY(-2px); }
+    .card-icon {
+      width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+      background: rgba(109,140,255,0.12); color: #a5b4fc; font-size: 18px; margin-bottom: 12px;
+    }
+    .card h3 { font-size: 16px; margin-bottom: 6px; }
+    .card p { color: var(--muted); font-size: 13.5px; }
+
+    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .step {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px;
+    }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: grid; place-items: center; font-size: 13px; font-weight: 700; margin-bottom: 12px;
+    }
+    .step h3 { font-size: 15px; margin-bottom: 6px; }
+    .step p { color: var(--muted); font-size: 13px; }
+
+    .commands {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px;
+    }
+    .cmd-row {
+      display: grid; grid-template-columns: 220px 1fr; gap: 12px;
+      padding: 12px 14px; border-bottom: 1px solid var(--border); align-items: start;
+    }
+    .cmd-row:last-child { border-bottom: none; }
+    .cmd-row code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12.5px; color: #c4b5fd;
+      background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.2);
+      padding: 4px 8px; border-radius: 8px; display: inline-block;
+    }
+    .cmd-row span { color: var(--muted); font-size: 13.5px; }
+
+    .download-band {
+      background:
+        radial-gradient(ellipse at 20% 0%, rgba(109,140,255,0.22), transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(139,92,246,0.18), transparent 45%),
+        linear-gradient(180deg, #121a2b, #0c1220);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px 28px;
+      text-align: center;
+    }
+    .download-band h2 { font-size: 28px; margin-bottom: 8px; }
+    .download-band p { color: var(--muted); max-width: 560px; margin: 0 auto 20px; }
+    .note {
+      margin-top: 14px; color: #8b96b0; font-size: 12.5px;
+    }
+
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 28px 0 40px; color: var(--muted); font-size: 13px;
+    }
+    .footer-row { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; padding-top: 40px; }
+      .grid-3, .steps { grid-template-columns: 1fr 1fr; }
+      .nav-links a:not(.nav-cta) { display: none; }
+      .cmd-row { grid-template-columns: 1fr; gap: 6px; }
+    }
+    @media (max-width: 560px) {
+      .grid-3, .grid-2, .steps { grid-template-columns: 1fr; }
+      .hero-actions { flex-direction: column; }
+      .btn-primary, .btn-secondary { width: 100%; }
+    }
+  </style>
 </head>
 <body>
-  <div class="app">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="logo">
-          <span class="logo-icon">🧠</span>
-          <div>
-            <h1>Kanairoex AI</h1>
-            <p class="tagline">💎 LMT · University · Professional</p>
-          </div>
-        </div>
-        <button class="icon-btn" id="closeSidebar" title="Close sidebar">×</button>
-      </div>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
 
-      <nav class="sidebar-nav">
-        <button class="nav-btn active" data-panel="chat">💬 Chat</button>
-        <button class="nav-btn" data-panel="knowledge">📚 Knowledge</button>
-        <button class="nav-btn" data-panel="blockchain">⛓️ Memory Chain</button>
-        <button class="nav-btn" data-panel="teach">🎓 Teach</button>
-        <button class="nav-btn" data-panel="ai-lab">🧠 AI Lab</button>
-        <button class="nav-btn" data-panel="settings">⚙️ Settings</button>
+  <header>
+    <div class="container nav">
+      <a class="brand" href="#top">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M7 4v16M7 12l8-7M7 12l8 7" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        Kanairoex AI
+      </a>
+      <nav class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how">How to use</a>
+        <a href="#commands">Commands</a>
+        <a class="nav-cta" href="Kanairoex-AI.apk" download="Kanairoex-AI.apk">Download APK</a>
       </nav>
+    </div>
+  </header>
 
-      <div class="sidebar-footer">
-        <div class="stats">
-          <div class="stat"><span id="statBlocks">0</span> blocks</div>
-          <div class="stat"><span id="statFacts">0</span> facts</div>
-          <div class="stat"><span id="statNeurons">0</span> facts+</div>
+  <main id="top">
+    <section class="container hero">
+      <div>
+        <div class="eyebrow">Offline-first · Private · On-device</div>
+        <h1>Your private AI assistant.<br /><span>Works without the cloud.</span></h1>
+        <p class="hero-lead">
+          Kanairoex AI is an Android app for chat, long-term memory, research, files, multi-token wallet tools,
+          and peer-to-peer sharing — with your data staying on your device.
+        </p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="Kanairoex-AI.apk" download="Kanairoex-AI.apk" id="downloadBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download for Android
+          </a>
+          <a class="btn-secondary" href="#how">See how it works</a>
         </div>
-        <p class="version">v14.0.0 · Secure Memory · Space Comms · Ollama · WebLLM · Offline-first</p>
+        <div class="hero-meta">
+          <span><strong>Free</strong> APK install</span>
+          <span><strong>No account</strong> required</span>
+          <span><strong>Offline</strong> memory &amp; chat</span>
+        </div>
       </div>
-    </aside>
 
-    <!-- Main content -->
-    <main class="main">
-      <header class="topbar">
-        <button class="icon-btn menu-btn" id="openSidebar">☰</button>
-        <div class="topbar-title">
-          <h2 id="panelTitle">Chat</h2>
-          <span class="status-dot" id="statusDot" title="Ready"></span>
-          <span id="netStatus" class="net-status" title="Network">…</span>
-        </div>
-        <div class="topbar-actions">
-          <button class="btn secondary" id="installBtn" title="Install PWA" style="display:none">Install</button>
-          <button class="btn secondary" id="themeBtn" title="Toggle theme">🌓</button>
-          <button class="btn danger" id="clearBtn" title="Clear all memory">Clear</button>
-        </div>
-      </header>
-
-      <!-- Chat Panel -->
-      <section class="panel active" id="panel-chat">
-        <div class="chat-container" id="chatContainer">
-          <div class="welcome" id="welcome">
-            <div class="welcome-icon">🧠</div>
+      <div class="phone" aria-hidden="true">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="fake-top">
+            <span class="fake-title">☰ &nbsp; Chat</span>
+            <span><span class="dot"></span>Online</span>
+          </div>
+          <div class="fake-welcome">
+            <div class="fake-logo">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 4v16M7 12l8-7M7 12l8 7" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </div>
             <h3>Welcome to Kanairoex AI</h3>
-            <p>Private offline-first assistant: <strong>chat</strong>, <strong>thinking</strong>, <strong>files</strong>, <strong>online→memory</strong>, <strong>multi-token P2P</strong>.<br>
-               Data stays on this device. Type <code>help</code> or <code>guide</code> for a quick tour.</p>
-            <div class="quick-actions">
-              <button class="chip" data-prompt="Hello">Say hello</button>
-              <button class="chip" data-prompt="What is artificial intelligence?">What is AI?</button>
-              <button class="chip" data-prompt="Remember that the capital of France is Paris">Teach a fact</button>
-              <button class="chip" data-prompt="wallet">My wallet</button>
-              <button class="chip" data-prompt="buy lmt 100 tron">Buy LMT (USDT)</button>
-              <button class="chip" data-prompt="mmf">Money market</button>
-              <button class="chip" data-prompt="create token MYT MyToken 1000000 0.01 🚀">Create token</button>
-              <button class="chip" data-prompt="p2p status">P2P status</button>
-              <button class="chip" data-prompt="look up photosynthesis">Look up online</button>
-              
-              <button class="chip" data-prompt="Explain Hebbian learning for a university essay">Essay help</button>
-              <button class="chip" data-prompt="Build a portfolio website">Portfolio site</button>
-              <button class="chip" data-prompt="Summarize this story: Once upon a time a student walked to school and discovered a library of forgotten maps that led to a hidden valley of knowledge.">Summarize a story</button>
-              <button class="chip" data-prompt="What is a Hopfield network?">Hopfield</button>
-              <button class="chip" data-prompt="Explore transformer architecture">Transformer</button>
-<button class="chip" data-prompt="Grade this work: excellent research, clear structure, good examples, minor grammar issues">Grade sample</button>
+            <p>Private offline-first assistant for chat, memory, research &amp; P2P.</p>
+            <div class="fake-chips">
+              <span class="fake-chip">Say hello</span>
+              <span class="fake-chip">What is AI?</span>
+              <span class="fake-chip">My wallet</span>
+              <span class="fake-chip">Look up online</span>
+              <span class="fake-chip">P2P status</span>
             </div>
+          </div>
+          <div class="fake-input">
+            <span>Message Kanairoex…</span>
+            <div class="fake-send"></div>
           </div>
         </div>
-        <div class="input-area">
-          <div class="input-wrapper">
-            <textarea id="userInput" placeholder="Message Kanairoex… (try teaching it something)" rows="1"></textarea>
-            <button class="send-btn" id="sendBtn" title="Send">➤</button>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="container">
+        <div class="section-head">
+          <h2>Built for real capability</h2>
+          <p>More than a chatbot — a local assistant with memory, tools, research, and on-device workflows.</p>
+        </div>
+        <div class="grid-3">
+          <article class="card">
+            <div class="card-icon">💬</div>
+            <h3>Private chat</h3>
+            <p>Talk to Kanairoex on your phone. Conversations stay local with history you control.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">🧠</div>
+            <h3>Long-term memory</h3>
+            <p>Teach facts with “Remember that…”. Knowledge is stored on device and reusable later.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">🔗</div>
+            <h3>Memory chain</h3>
+            <p>Blockchain-style local ledger tracks messages and learned facts for transparency.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">🌐</div>
+            <h3>Web research</h3>
+            <p>Look up topics online when connected, then keep useful results in offline memory.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">🖼️</div>
+            <h3>Images &amp; videos</h3>
+            <p>Search images, explore video results, and save media into a local gallery workflow.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">📁</div>
+            <h3>Files &amp; documents</h3>
+            <p>Load files, draft CVs, reports, letters, and summaries with the built-in writer tools.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">💎</div>
+            <h3>Multi-token wallet</h3>
+            <p>Local LMT wallet simulation, create tokens, swap, liquidity, and portfolio views.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">📡</div>
+            <h3>P2P / WebRTC</h3>
+            <p>Connect devices, chat peer-to-peer, share profiles, and send files over a data channel.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">🔒</div>
+            <h3>Offline-first design</h3>
+            <p>Core chat and memory work without the cloud. Optional online tools when you choose them.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="how">
+      <div class="container">
+        <div class="section-head">
+          <h2>How to install &amp; use</h2>
+          <p>Sideload the APK in a few steps, then start chatting and teaching Kanairoex.</p>
+        </div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <h3>Download the APK</h3>
+            <p>Tap <strong>Download for Android</strong> on this page to save <code>Kanairoex-AI.apk</code>.</p>
           </div>
-          <div class="input-hints" style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
-            <input type="file" id="p2pFileInput" accept="*/*" style="display:none" />
-            <label class="chip" style="cursor:pointer;">📁 Load file<input type="file" id="fileInput" accept=".txt,.md,.json,.csv,.js,.html,.css,.xml,.log,.geojson,.mp3,.wav,.m4a,audio/*,image/*,.png,.jpg,.jpeg,.webp,.gif" style="display:none"></label>
-            <label class="chip" style="cursor:pointer;">🖼️ Image<input type="file" id="imageInput" accept="image/*" style="display:none"></label>
-            <span>Tip: Start with “Remember that…” to teach • “Correct me if wrong:” for checks</span>
+          <div class="step">
+            <div class="step-num">2</div>
+            <h3>Allow install</h3>
+            <p>In Android settings, allow installs from your browser or file manager (unknown apps).</p>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <h3>Open the app</h3>
+            <p>Launch <strong>Kanairoex AI</strong>. No sign-up. Your workspace starts empty and private.</p>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <h3>Chat &amp; teach</h3>
+            <p>Type a message, try chips on the welcome screen, or teach facts with “Remember that…”.</p>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- Knowledge Panel -->
-      <section class="panel" id="panel-knowledge">
-        <div class="panel-content">
-          <div class="panel-toolbar">
-            <input type="search" id="knowledgeSearch" placeholder="Search knowledge…" />
-            <button class="btn secondary" id="addFactBtn">+ Add Fact</button>
-          </div>
-          <div class="knowledge-list" id="knowledgeList"></div>
+    <section id="commands">
+      <div class="container">
+        <div class="section-head">
+          <h2>Useful commands</h2>
+          <p>Type these in chat to unlock common workflows quickly.</p>
         </div>
-      </section>
-
-      <!-- Blockchain Panel -->
-      <section class="panel" id="panel-blockchain">
-        <div class="panel-content">
-          <div class="panel-toolbar">
-            <button class="btn secondary" id="refreshChain">Refresh</button>
-            <button class="btn secondary" id="verifyChain">Verify Integrity</button>
-          </div>
-          <div class="chain-status" id="chainStatus"></div>
-          <div class="blockchain-view" id="blockchainView"></div>
+        <div class="commands">
+          <div class="cmd-row"><code>help</code> / <code>guide</code><span>Quick tour of capabilities and tips.</span></div>
+          <div class="cmd-row"><code>Remember that Paris is the capital of France</code><span>Store a fact in local knowledge memory.</span></div>
+          <div class="cmd-row"><code>look up photosynthesis</code><span>Online topic research (when connected); results can be saved offline.</span></div>
+          <div class="cmd-row"><code>search images of lions</code><span>Image research with public sources and previews.</span></div>
+          <div class="cmd-row"><code>search videos about space</code><span>Video discovery via public adapters.</span></div>
+          <div class="cmd-row"><code>wallet</code><span>Open multi-token wallet status and balances.</span></div>
+          <div class="cmd-row"><code>create token MYT MyToken 1000000 0.01 🚀</code><span>Create a custom token (emoji required).</span></div>
+          <div class="cmd-row"><code>p2p offer</code> / <code>p2p answer</code><span>Set up peer-to-peer connection between devices.</span></div>
+          <div class="cmd-row"><code>set photo</code> / <code>profile</code><span>Save profile media and view your local profile.</span></div>
+          <div class="cmd-row"><code>diagnose</code><span>Check system / brain module health.</span></div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- Teach Panel -->
-      <section class="panel" id="panel-teach">
-        <div class="panel-content">
-          <div class="teach-form">
-            <h3>Teach Kanairoex AI</h3>
-            <p>Provide a clear fact or rule. It will be stored permanently in the blockchain memory and used for future reasoning.</p>
-            <label>Subject / Topic</label>
-            <input type="text" id="teachSubject" placeholder="e.g. Capital of France" />
-            <label>Fact / Definition / Rule</label>
-            <textarea id="teachFact" rows="3" placeholder="e.g. Paris is the capital of France."></textarea>
-            <label>Category (optional)</label>
-            <select id="teachCategory">
-              <option value="general">General</option>
-              <option value="science">Science</option>
-              <option value="math">Math</option>
-              <option value="history">History</option>
-              <option value="language">Language</option>
-              <option value="personal">Personal</option>
-              <option value="rule">Rule / Logic</option>
-            </select>
-            <button class="btn primary" id="teachSubmit">Store in Memory</button>
-            <div id="teachFeedback" class="feedback"></div>
-          </div>
-          <div class="teach-examples">
-            <h4>Example teachings</h4>
-            <ul>
-              <li>“The speed of light is approximately 299,792 km/s”</li>
-              <li>“If someone says the Earth is flat, correct them with evidence”</li>
-              <li>“My name is Alex and I prefer metric units”</li>
-              <li>“2 + 2 = 4 is a fundamental arithmetic fact”</li>
-            </ul>
-          </div>
+    <section id="privacy">
+      <div class="container">
+        <div class="section-head">
+          <h2>Privacy by design</h2>
+          <p>Built for people who want an assistant without handing over every conversation to a remote server.</p>
         </div>
-      </section>
-
-
-      <section class="panel" id="panel-ai-lab">
-        <div class="panel-content">
-
-          <!-- Native backends: Ollama + LM Studio -->
-          <div class="card">
-            <h3>🦙 Ollama &amp; 🎛️ LM Studio</h3>
-            <p style="opacity:0.85;font-size:0.92rem;line-height:1.45">
-              Connect to native local AI runtimes on this machine. Full GPU/CPU power, larger models.
-              Start Ollama or LM Studio first, then probe and activate a model.
-            </p>
-            <div class="quick-actions">
-              <button class="btn primary" id="extProbeBtn">Probe Backends</button>
-              <button class="btn secondary" id="extStatusBtn">Full Status</button>
-              <button class="btn secondary" id="extDisconnectBtn">Disconnect</button>
-            </div>
-            <div id="extBackendsList" style="margin-top:12px;font-size:0.9rem;line-height:1.55"></div>
-            <div class="settings-group" style="margin-top:12px">
-              <label>Activate backend</label>
-              <select id="extBackendSelect">
-                <option value="ollama">🦙 Ollama (localhost:11434)</option>
-                <option value="lmstudio">🎛️ LM Studio (localhost:1234)</option>
-                <option value="llamacpp">⚡ llama.cpp server (localhost:8080)</option>
-                <option value="custom">🔌 Custom OpenAI-compatible</option>
-              </select>
-              <label style="margin-top:8px">Model</label>
-              <select id="extModelSelect"><option value="">— probe first —</option></select>
-              <label style="margin-top:8px">Custom base URL (optional)</label>
-              <input type="text" id="extCustomUrl" placeholder="http://localhost:8000" />
-            </div>
-            <div class="quick-actions" style="margin-top:10px">
-              <button class="btn primary" id="extActivateBtn">Activate Selected</button>
-            </div>
-            <div id="extActiveLine" style="font-size:0.85rem;margin-top:10px;opacity:0.85">No external backend active</div>
-          </div>
-
-          <!-- Browser WebLLM -->
-          <div class="card" style="margin-top:16px">
-            <h3>Local LLM (WebGPU — in-browser)</h3>
-            <p style="opacity:0.85;font-size:0.92rem;line-height:1.45">
-              Run a model entirely inside the browser (no native app needed). Requires WebGPU.
-              Weaker than Ollama/LM Studio on the same hardware, but zero install.
-            </p>
-            <div class="settings-group" style="margin:12px 0">
-              <label for="llmModelSelect">Model</label>
-              <select id="llmModelSelect">
-                <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi-3.5 Mini (recommended, ~2.4 GB)</option>
-                <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B (fast, ~0.8 GB)</option>
-                <option value="gemma-2-2b-it-q4f16_1-MLC">Gemma 2 2B (~1.6 GB)</option>
-                <option value="TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC">TinyLlama 1.1B (~0.7 GB)</option>
-              </select>
-            </div>
-            <div class="quick-actions">
-              <button class="btn primary" id="llmLoadBtn">Load WebLLM</button>
-              <button class="btn secondary" id="llmUnloadBtn">Unload</button>
-              <button class="btn secondary" id="llmStatusBtn">Status</button>
-            </div>
-            <div id="llmProgressWrap" style="margin-top:10px;display:none">
-              <div style="height:8px;background:#1e293b;border-radius:4px;overflow:hidden">
-                <div id="llmProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);transition:width .2s"></div>
-              </div>
-              <div id="llmProgressText" style="font-size:0.85rem;margin-top:6px;opacity:0.85">—</div>
-            </div>
-            <div id="llmStatusLine" style="font-size:0.85rem;margin-top:8px;opacity:0.8">WebLLM not loaded</div>
-          </div>
-
-          <!-- Multimodal -->
-          <div class="card" style="margin-top:16px">
-            <h3>Multimodal (Image Understanding)</h3>
-            <p style="opacity:0.85;font-size:0.92rem;line-height:1.45">
-              Caption images and answer visual questions on-device (Transformers.js).
-              After the first download the models work offline.
-            </p>
-            <div class="quick-actions">
-              <button class="btn primary" id="mmLoadBtn">Load Vision Models</button>
-              <button class="btn secondary" id="mmStatusBtn">Status</button>
-              <label class="btn secondary" style="cursor:pointer">Analyze Image
-                <input id="mmImageInput" type="file" accept="image/*" hidden>
-              </label>
-            </div>
-            <div id="mmProgressWrap" style="margin-top:10px;display:none">
-              <div style="height:8px;background:#1e293b;border-radius:4px;overflow:hidden">
-                <div id="mmProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#10b981,#3b82f6);transition:width .2s"></div>
-              </div>
-              <div id="mmProgressText" style="font-size:0.85rem;margin-top:6px;opacity:0.85">—</div>
-            </div>
-            <div id="mmPreview" style="margin-top:12px"></div>
-          </div>
-
-          <!-- Classic offline lab -->
-          <div class="card" style="margin-top:16px">
-            <h3>Offline AI Lab</h3>
-            <p>Local-only intelligence tools. No API key required.</p>
-            <div class="quick-actions">
-              <button class="btn secondary" id="aiDiagnoseBtn">Run Diagnostics</button>
-              <button class="btn secondary" id="aiMemoryBtn">Memory Stats</button>
-              <button class="btn secondary" id="aiExportBtn">Export AI Memory</button>
-              <label class="btn secondary" style="cursor:pointer">Import Files<input id="aiLabFiles" type="file" multiple hidden></label>
-            </div>
-            <textarea id="aiAgentTask" rows="4" placeholder="Give the offline agent a task… e.g. Find relevant information about transformer architecture in my local memory."></textarea>
-            <button class="btn primary" id="aiRunAgent">Run Offline Agent</button>
-            <pre id="aiLabOutput" style="white-space:pre-wrap;max-height:420px;overflow:auto;margin-top:12px"></pre>
-          </div>
+        <div class="grid-2">
+          <article class="card">
+            <div class="card-icon">📱</div>
+            <h3>On-device storage</h3>
+            <p>History, knowledge, and settings primarily live in local browser storage inside the app WebView.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">🧹</div>
+            <h3>You control reset</h3>
+            <p>Use Clear in the app when you want a fresh start. Export tools help you back up memory when needed.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">☁️</div>
+            <h3>Online is optional</h3>
+            <p>Research and some adapters need internet. Core chat and memory workflows are designed offline-first.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">🔧</div>
+            <h3>Experimental power tools</h3>
+            <p>Wallet, token markets, and P2P are advanced local simulations / peer features — explore carefully.</p>
+          </article>
         </div>
-      </section>
+      </div>
+    </section>
 
-<!-- Settings Panel -->
-      <section class="panel" id="panel-settings">
-        <div class="panel-content">
-          <div class="card" style="margin-bottom:16px;">
-            <h3>University &amp; professional use</h3>
-            <p style="opacity:0.85;font-size:0.92rem;line-height:1.5;">
-              Kanairoex AI is a private offline assistant: chat, knowledge memory, and multi-token P2P transfers.
-              Works fully offline in the browser. Online lookup uses Wikipedia and DuckDuckGo when the network is available.
-              Always verify critical facts against your course materials and primary sources.
-            </p>
-          </div>
-
-          <div class="settings-group">
-            <h3>Personality</h3>
-            <label>AI Name</label>
-            <input type="text" id="aiName" value="Kanairoex" />
-            <label>Response Style</label>
-            <select id="responseStyle">
-              <option value="helpful">Helpful & clear</option>
-              <option value="concise">Concise</option>
-              <option value="curious">Curious & questioning</option>
-              <option value="strict">Strict & correcting</option>
-            </select>
-          </div>
-          <div class="settings-group">
-            <h3>Memory</h3>
-            <label class="checkbox-label">
-              <input type="checkbox" id="autoLearn" checked />
-              Automatically learn from conversations
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="correctMode" checked />
-              Correct user when conflicting with knowledge
-            </label>
-          </div>
-          <div class="settings-group">
-            <h3>Danger Zone</h3>
-            <button class="btn danger" id="resetAll">Reset Everything</button>
-          </div>
-          <div class="settings-group">
-            <h3>About</h3>
-            <p>Kanairoex is a fully client-side AI  built with pure HTML, CSS & JavaScript. It uses a blockchain-inspired memory structure, a growing knowledge base, simple reasoning rules, and mathematical evaluation. No data ever leaves your device.</p>
-            <p class="muted">Inspired by systems like Grok, ChatGPT and DeepSeek — but designed for private, offline ownership.</p>
-          </div>
+    <section>
+      <div class="container">
+        <div class="download-band" id="download">
+          <h2>Get Kanairoex AI on Android</h2>
+          <p>
+            Download the APK, install it, and start a private offline-first assistant with chat, memory,
+            research, files, wallet tools, and P2P — in one app.
+          </p>
+          <a class="btn-primary" href="Kanairoex-AI.apk" download="Kanairoex-AI.apk">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download Kanairoex-AI.apk
+          </a>
+          <p class="note">
+            Android may warn about unknown apps — that’s normal for sideloaded APKs.
+            Package: <strong>com.kanairoex.ai</strong> · App name: <strong>Kanairoex AI</strong>
+          </p>
+          <p class="note" id="dlStatus" style="color:#a5b4fc;margin-top:8px;"></p>
+          <p class="note" style="margin-top:10px;">
+            <strong>If the button does nothing:</strong> open the same folder as this page and tap
+            <strong>Kanairoex-AI.apk</strong> yourself. Or host the folder on a simple web server / GitHub Pages.
+          </p>
         </div>
-      </section>
-    </main>
-  </div>
+      </div>
+    </section>
+  </main>
 
-  <!-- Hidden file input for import -->
+  <footer>
+    <div class="container footer-row">
+      <div>© <span id="year"></span> Kanairoex AI · Offline-first assistant</div>
+      <div>Private by default · Install from this page · No account required</div>
+    </div>
+  </footer>
 
-  <script defer src="blockchain.js"></script>
-  <script defer src="neurons.js"></script>
-  <script defer src="toolsx.js"></script>
-  <script defer src="i18n.js"></script>
-  <script defer src="rag.js"></script>
-  <script defer src="knowledge.js"></script>
-  <script defer src="math.js"></script>
-  <script defer src="interpreter.js"></script>
-  <script defer src="files.js"></script>
-  <script defer src="rules.js"></script>
-  <script defer src="quiz.js"></script>
-  <script defer src="chats.js"></script>
-  <script defer src="dictionary.js"></script>
-  <script defer src="github-code-research.js?v=40"></script>
-  <script defer src="reference-research.js?v=40"></script>
-
-  <!-- Neural Core -->
-  <script defer src="random.js"></script>
-  <script defer src="vector.js"></script>
-  <script defer src="matrix.js"></script>
-  <script defer src="tensor.js"></script>
-  <script defer src="activations.js"></script>
-  <script defer src="layers.js"></script>
-  <script defer src="loss.js"></script>
-  <script defer src="optimizer.js"></script>
-  <script defer src="autograd.js"></script>
-  <script defer src="backprop.js"></script>
-  <script defer src="embedding.js"></script>
-  <script defer src="tokenizer.js"></script>
-  <script defer src="positionalEncoding.js"></script>
-  <script defer src="attention.js"></script>
-  <script defer src="multiHeadAttention.js"></script>
-  <script defer src="layerNormalization.js"></script>
-  <script defer src="feedForward.js"></script>
-  <script defer src="transformerBlock.js"></script>
-  <script defer src="transformer.js"></script>
-  <script defer src="lmHead.js"></script>
-  <script defer src="beamSearch.js"></script>
-  <script defer src="sampler.js"></script>
-  <script defer src="index.js"></script>
-
-  <script defer src="response.js"></script>
-  <script defer src="worldtime.js"></script>
-  <script defer src="predict.js"></script>
-  <script defer src="coder.js"></script>
-  <script defer src="summarizer.js"></script>
-  <script defer src="online.js?v=40"></script>
-  <script defer src="offline-assistant.js"></script>
-  <script defer src="preload.js"></script>
-  <script defer src="verify.js"></script>
-  <script defer src="writer.js"></script>
-  <script defer src="question.js"></script>
-  <script defer src="profile.js"></script>
-  <script defer src="media-gallery.js"></script>
-  <script defer src="usdt-buy.js"></script>
-  <script defer src="usdt-withdraw.js"></script>
-  <script defer src="mmf.js"></script>
-  <script defer src="mind.js"></script>
-  <script defer src="reasoning.js?v=41"></script>
-  <script defer src="mood-emoji.js"></script>
-  <script defer src="ai-core.js"></script>
-  <script defer src="voice.js"></script>
-  <!-- Advanced technology modules -->
-  <script defer src="opfs.js"></script>
-  <script defer src="idb-store.js"></script>
-  <script defer src="crypto-utils.js"></script>
-  <script defer src="webrtc-peer.js"></script>
-  <script defer src="lmt-wallet.js"></script>
-  <script defer src="memory-node.js"></script>
-  <script defer src="andex.js"></script>
-  <script defer src="v3-upgrades.js"></script>
-  <script defer src="v4-core.js"></script>
-  <script defer src="v4-ui.js"></script>
-  <script defer src="offline-web-vault.js"></script>
-  <script defer src="offline-connectivity.js"></script>
-  <script defer src="thinking-engine.js"></script>
-  <script defer src="brain-context.js?v=41"></script>
-  <script defer src="brain-planner.js?v=41"></script>
-  <script defer src="brain-evidence.js?v=41"></script>
-  <script defer src="brain-verifier.js?v=41"></script>
-  <script defer src="brain-controller.js?v=41"></script>
-  <script defer src="benchmark.js?v=41"></script>
-  <script defer src="lm-upgrade.js"></script>
-  <script defer src="self-evolution.js"></script>
-  <script defer src="token-economy.js"></script>
-  <script defer src="local-ai-suite.js"></script>
-  <script defer src="cognitive-engine.js"></script>
-  <script defer src="local-llm.js"></script>
-  <script defer src="multimodal.js"></script>
-  <script defer src="external-llm.js"></script>
-  <script defer src="secure-memory.js"></script>
-  <script defer src="llm-bridge.js"></script>
-
-  <script defer src="identity.js"></script>
-  <script defer src="dwn-local.js"></script>
-  <script defer src="study-hub.js"></script>
-  <script defer src="research-manager.js?v=41"></script>
-  <script defer src="video-research.js?v=41"></script>
-  <script defer src="image-research.js?v=41"></script>
-  <script defer src="app.js?v=41"></script>
   <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./sw.js?v=41", { updateViaCache: "none" }).then(function (reg) {
-          console.log("Kanairoex PWA ready", reg.scope); try { reg.update(); } catch (_) {}
-        }).catch(function (err) {
-          console.warn("SW register failed (normal on some file:// hosts)", err);
-        });
-      });
-    }
-  </script>
-  
-  
-    <!-- ========== SOURCE CODE HIDING & PROTECTION MODULE ========== -->
-<!-- Insert this entire script block just before the closing </body> tag in your kanairoex.html -->
-<script>
-(function() {
-    'use strict';
-    
-    // ============================================================
-    // ADVANCED SOURCE CODE HIDING SYSTEM
-    // Prevents viewing, inspection, debugging and copying of source
-    // ============================================================
-    
-    // 1. PREVENT RIGHT-CLICK CONTEXT MENU
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        return false;
-    });
-    
-    // 2. PREVENT DEVTOOLS SHORTCUTS (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+S)
-    document.addEventListener('keydown', function(e) {
-        // F12
-        if (e.key === 'F12') {
-            e.preventDefault();
-            return false;
-        }
-        // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U (view source), Ctrl+S (save)
-        if ((e.ctrlKey || e.metaKey) && (e.shiftKey || e.key === 'u' || e.key === 's')) {
-            if (e.key === 'u' || e.key === 's' || e.key === 'I' || e.key === 'J' || e.key === 'C') {
-                e.preventDefault();
-                return false;
-            }
-        }
-        // Ctrl+Shift+I (alternative)
-        if (e.ctrlKey && e.shiftKey && e.keyCode === 73) {
-            e.preventDefault();
-            return false;
-        }
-        // Ctrl+Shift+J
-        if (e.ctrlKey && e.shiftKey && e.keyCode === 74) {
-            e.preventDefault();
-            return false;
-        }
-        // Ctrl+U
-        if (e.ctrlKey && e.key === 'u') {
-            e.preventDefault();
-            return false;
-        }
-        // Ctrl+S
-        if (e.ctrlKey && e.key === 's') {
-            e.preventDefault();
-            return false;
-        }
-    });
-    
-    // 3. DETECT DEVTOOLS OPENING (based on timing/performance)
-    let devToolsOpen = false;
-    const element = new Image();
-    Object.defineProperty(element, 'id', {
-        get: function() {
-            devToolsOpen = true;
-            throw new Error('DevTools detected!');
-        }
-    });
-    
-    function detectDevTools() {
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Reliable APK download (works better than download="" alone on some browsers)
+    async function downloadApk(ev) {
+      if (ev) ev.preventDefault();
+      const url = 'Kanairoex-AI.apk';
+      const filename = 'Kanairoex-AI.apk';
+      const status = document.getElementById('dlStatus');
+      if (status) status.textContent = 'Starting download…';
+
+      try {
+        // Prefer fetch + blob so the browser treats it as a real download
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () {
+          URL.revokeObjectURL(objectUrl);
+          a.remove();
+        }, 2000);
+        if (status) status.textContent = 'Download started. Check your Downloads folder.';
+      } catch (err) {
+        // Fallback: navigate to the file (works when served over http, or may open install on Android)
         try {
-            console.log('%c', element);
-        } catch(e) {
-            devToolsOpen = true;
+          const a = document.createElement('a');
+          a.href = url;
+          a.setAttribute('download', filename);
+          a.rel = 'noopener';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          if (status) status.textContent = 'If nothing happened, open the site folder and tap Kanairoex-AI.apk directly.';
+        } catch (e2) {
+          if (status) status.textContent = 'Auto-download blocked. Open the folder and tap Kanairoex-AI.apk manually.';
+          alert('Could not auto-download.\n\nOpen this folder and tap:\nKanairoex-AI.apk');
         }
-        
-        if (devToolsOpen) {
-            // Redirect or clear page
-            document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0f1e;color:#ff4444;font-family:monospace;"><div style="text-align:center;"><h1>⚠️ ACCESS DENIED</h1><p>Developer tools detected. Please close DevTools to continue.</p><button onclick="location.reload()">Reload Page</button></div></div>';
-            document.title = 'Access Denied';
-            throw new Error('DevTools open - access blocked');
-        }
+      }
+      return false;
     }
-    
-    setInterval(detectDevTools, 2000);
-    
-    // 4. OVERRIDE CONSOLE METHODS to prevent logging of sensitive data
-    const noop = function() {};
-    const consoleMethods = ['log', 'info', 'warn', 'debug', 'trace', 'dir', 'table', 'group', 'groupCollapsed', 'groupEnd', 'profile', 'profileEnd'];
-    consoleMethods.forEach(method => {
-        if (console[method]) {
-            console[method] = noop;
-        }
+
+    document.querySelectorAll('a[href="Kanairoex-AI.apk"]').forEach(function (el) {
+      el.addEventListener('click', downloadApk);
     });
-    // Keep error method but intercept
-    const originalError = console.error;
-    console.error = function() {
-        // Filter out errors that might expose code
-        let args = Array.from(arguments);
-        args = args.map(arg => typeof arg === 'string' ? '[Filtered]' : arg);
-        originalError.apply(console, args);
-    };
-    
-    // 5. PREVENT SELECTION AND COPYING OF TEXT/HTML
-    document.addEventListener('selectstart', function(e) {
-        e.preventDefault();
-        return false;
-    });
-    
-    document.addEventListener('copy', function(e) {
-        e.preventDefault();
-        return false;
-    });
-    
-    document.addEventListener('cut', function(e) {
-        e.preventDefault();
-        return false;
-    });
-    
-    // 6. OBFUSCATE DOM STRUCTURE: intercept and scramble class/id names dynamically
-    const originalCreateElement = document.createElement.bind(document);
-    document.createElement = function(tagName) {
-        const element = originalCreateElement(tagName);
-        if (tagName === 'script') {
-            // Prevent dynamic script inspection
-            Object.defineProperty(element, 'src', {
-                get: () => '',
-                set: (val) => { /* ignore */ }
-            });
-            Object.defineProperty(element, 'innerHTML', {
-                get: () => '',
-                set: (val) => { /* ignore */ }
-            });
-        }
-        return element;
-    };
-    
-    // 7. BLOCK EXTERNAL DEBUGGING TOOLS: detect if DOM is being inspected
-    let devtoolsDetectionCount = 0;
-    function checkDevToolsAdvanced() {
-        const threshold = 160;
-        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-        if (widthThreshold || heightThreshold) {
-            devtoolsDetectionCount++;
-            if (devtoolsDetectionCount > 2) {
-                // Force page reload and clear
-                window.location.href = 'about:blank';
-            }
-        } else {
-            devtoolsDetectionCount = 0;
-        }
-        requestAnimationFrame(checkDevToolsAdvanced);
-    }
-    requestAnimationFrame(checkDevToolsAdvanced);
-    
-    // 8. PREVENT SOURCE CODE VIEWING VIA fetch/XHR of same page
-    const originalFetch = window.fetch;
-    window.fetch = function(url, options) {
-        if (typeof url === 'string' && (url.includes(window.location.pathname) || url === window.location.href)) {
-            return Promise.reject(new Error('Access denied'));
-        }
-        return originalFetch.apply(this, arguments);
-    };
-    
-    // 9. OVERRIDE XMLHttpRequest to block reading the HTML source
-    const XHR = XMLHttpRequest.prototype;
-    const originalOpen = XHR.open;
-    const originalSend = XHR.send;
-    XHR.open = function(method, url) {
-        this._url = url;
-        if (typeof url === 'string' && (url.includes(window.location.pathname) || url === window.location.href)) {
-            throw new Error('Access denied');
-        }
-        return originalOpen.apply(this, arguments);
-    };
-    
-    // 10. HIDE ACTUAL SOURCE FROM "VIEW SOURCE" by replacing page content with encrypted version
-    // This will scramble the HTML after load so right-click view source shows nothing useful
-    function scrambleDomForSourceView() {
-        // This technique adds a meta refresh to confuse view-source
-        const meta = document.createElement('meta');
-        meta.setAttribute('http-equiv', 'refresh');
-        meta.setAttribute('content', '0;url=' + window.location.href + '#nop');
-        document.head.appendChild(meta);
-        
-        // Remove all comments from DOM (they can reveal code)
-        const iterator = document.createNodeIterator(document.body, NodeFilter.SHOW_COMMENT, null);
-        let currentNode;
-        while (currentNode = iterator.nextNode()) {
-            currentNode.remove();
-        }
-        
-        // Replace all meaningful text with encoded entities visually? No, keep UI but break source readability
-        // Override innerHTML getter for body
-        Object.defineProperty(document.body, 'innerHTML', {
-            get: function() {
-                return '<!-- Protected Content --><div style="display:none">Access Denied</div>';
-            },
-            set: function(val) {
-                // Allow setting but hide actual from getter
-                return val;
-            }
-        });
-        
-        // Block DOM inspection via outerHTML
-        Object.defineProperty(Element.prototype, 'outerHTML', {
-            get: function() {
-                return '<element protected="true">';
-            }
-        });
-    }
-    
-    // 11. OBFUSCATE THE MAIN APP SCRIPT BY ENCRYPTING/RUNNING THROUGH EVAL (light obfuscation)
-    // Instead of storing code in clear, we store encoded version.
-    // NOTE: This is already applied to existing code but we add extra layer for dynamic elements.
-    function dynamicObfuscation() {
-        // Intercept any new script additions
-        const originalAppendChild = Node.prototype.appendChild;
-        Node.prototype.appendChild = function(child) {
-            if (child.tagName === 'SCRIPT' && child.src === '') {
-                // obfuscate inline script content
-                const originalContent = child.textContent;
-                const obfuscated = btoa(originalContent);
-                child.textContent = '';
-                // Will be executed in a safe manner later
-                setTimeout(() => {
-                    const decoded = atob(obfuscated);
-                    try {
-                        new Function(decoded)();
-                    } catch(e) {}
-                }, 10);
-                return originalAppendChild.call(this, child);
-            }
-            return originalAppendChild.call(this, child);
-        };
-    }
-    
-    // 12. PREVENT DRAG AND DROP OF ELEMENTS TO EXPOSE PATHS
-    document.addEventListener('dragstart', function(e) {
-        e.preventDefault();
-        return false;
-    });
-    
-    // 13. ADD A FAKE "INSPECT ELEMENT" BLOCKER
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && e.shiftKey && e.keyCode === 67) { // Ctrl+Shift+C
-            e.preventDefault();
-            return false;
-        }
-        if (e.ctrlKey && e.keyCode === 123) { // Ctrl+F12
-            e.preventDefault();
-            return false;
-        }
-    });
-    
-    // 14. REDIRECT IF SOMEONE TRIES TO SAVE PAGE AS
-    window.addEventListener('beforeunload', function(e) {
-        // Do nothing special but can prevent unload
-    });
-    
-    // 15. FORCE CLEAR CONSOLE ON ANY ATTEMPT TO OPEN (periodic clear)
-    let lastClear = 0;
-    setInterval(() => {
-        if (typeof console.clear === 'function') {
-            console.clear();
-        }
-        // Also try to clear any error stacks
-        if (window.performance && window.performance.clearResourceTimings) {
-            window.performance.clearResourceTimings();
-        }
-    }, 500);
-    
-    // 16. REMOVE ANY ATTRIBUTES THAT COULD BE USED FOR DEBUGGING (data-debug, etc)
-    function cleanseAttributes() {
-        const allElements = document.querySelectorAll('*');
-        allElements.forEach(el => {
-            if (el.hasAttribute('data-debug') || el.hasAttribute('debug') || el.hasAttribute('data-source')) {
-                el.removeAttribute('data-debug');
-                el.removeAttribute('debug');
-                el.removeAttribute('data-source');
-            }
-            // remove any class that mentions debug or test
-            if (el.className && typeof el.className === 'string') {
-                let classes = el.className.split(' ');
-                classes = classes.filter(c => !c.includes('debug') && !c.includes('test') && !c.includes('source'));
-                el.className = classes.join(' ');
-            }
-        });
-    }
-    
-    // 17. DISABLE BROWSER EXTENSIONS READING DOM (by freezing some prototypes)
-    Object.freeze(document.cookie);
-    Object.freeze(localStorage);
-    Object.freeze(sessionStorage);
-    
-    // 18. FINAL: EXECUTE AFTER PAGE FULLY LOADED
-    window.addEventListener('load', function() {
-        scrambleDomForSourceView();
-        cleanseAttributes();
-        dynamicObfuscation();
-        
-        // Remove the loading overlay if exists? In your existing code, we might keep UI intact but add a small watermark
-        const overlay = document.getElementById('secure-overlay');
-        if (overlay) overlay.style.display = 'none';
-        
-        // Additional: disable text selection on entire app
-        document.body.style.userSelect = 'none';
-        document.body.style.webkitUserSelect = 'none';
-        document.body.style.msUserSelect = 'none';
-        
-        // Prevent image dragging
-        const images = document.querySelectorAll('img');
-        images.forEach(img => {
-            img.setAttribute('draggable', 'false');
-            img.addEventListener('dragstart', (e) => e.preventDefault());
-        });
-        
-        // Override any attempts to open devtools from iframe
-        window.addEventListener('message', function(e) {
-            if (e.data && e.data.type === 'devtools') {
-                e.stopPropagation();
-            }
-        });
-        
-        // Periodic check for changed DOM to prevent injection of inspector tools
-        setInterval(() => {
-            const bodyHtml = document.body.innerHTML;
-            if (bodyHtml.includes('__react_devtools') || bodyHtml.includes('__VUE_DEVTOOLS')) {
-                document.body.innerHTML = '<h1 style="color:red">Security Violation Detected</h1>';
-                window.location.reload();
-            }
-        }, 3000);
-    });
-    
-    // 19. PREVENT SOURCE CODE FROM BEING ACCESSIBLE VIA BLOB OR DATA URL
-    const originalCreateObjectURL = URL.createObjectURL;
-    URL.createObjectURL = function(obj) {
-        if (obj && obj.type === 'text/html') {
-            throw new Error('Not allowed');
-        }
-        return originalCreateObjectURL.apply(this, arguments);
-    };
-    
-    // 20. CLOUD – Hide original script elements content by removing innerHTML after eval
-    const allScripts = document.querySelectorAll('script');
-    allScripts.forEach(script => {
-        if (!script.src && script.textContent.length > 50) {
-            const content = script.textContent;
-            script.textContent = '';
-            // Re-execute via Function constructor in a safe way (already done but prevent leaving trace)
-            setTimeout(() => {
-                try {
-                    new Function(content)();
-                } catch(e) {}
-            }, 0);
-        }
-    });
-    
-    console.log('%c🔒 Secure Mode Active – Source Code Protected', 'color: #00ff88; font-size: 16px;');
-})();
-</script>
-
-<!-- 
-    ADDITIONAL PROTECTION: This meta tag prevents being saved as .html easily
-    and adds extra layer against source view.
--->
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-
-<style>
-    /* Disable selection globally */
-    body {
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        -khtml-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-    }
-    /* Prevent text selection on all interactive elements */
-    button, input, textarea, div, p, h1, h2, h3, span {
-        user-select: none;
-    }
-    /* Allow input fields text selection only for typing, but not copy paste */
-    input, textarea {
-        user-select: text;
-    }
-    input::selection, textarea::selection {
-        background: #00ff88;
-        color: #000;
-    }
-</style>
-
-<!-- 
-    HOW TO INTEGRATE INTO YOUR kanairoex.html:
-    
-    1. Copy the entire <script> block above and paste it at the VERY END of your file, just before the </body> tag.
-    2. Also add the <meta> tags inside <head> section or before </head>.
-    3. The CSS style can be merged with your existing styles.
-    
-    This protection will:
-    - Block right-click, view-source attempts, keyboard shortcuts (F12, Ctrl+U, Ctrl+S, Ctrl+Shift+I, etc.)
-    - Disable console logging and devtools detection
-    - Prevent copying, selecting, saving page as HTML
-    - Obfuscate script content and DOM structure dynamically
-    - Override innerHTML getter to hide actual source
-    - Clear console periodically
-    - Block fetch/XHR attempts to read the same HTML source
-    - Disable drag & drop and image dragging
-    - Block browser extensions that inspect DOM
-    
-    NOTE: No system is 100% unhackable, but this provides strong client-side obfuscation
-    and makes it extremely difficult for average users to view or copy your source code.
--->
-
-
-
-
-
-
-
-  
-  
-  
-  
+  </script>
 </body>
 </html>
