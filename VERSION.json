@@ -1,10 +1,5 @@
 {
-  "name": "Kanairoex AI",
-  "version": "39.0.0",
-  "release": "intelligence-reliability-upgrade",
-  "date": "2026-08-23",
-  "imageSearch": "Openverse + Wikimedia + JSONP + Wikipedia thumbnail + direct Commons fallback",
-  "brain": ["context", "planner", "evidence", "verifier", "controller", "benchmark"],
-  "serviceWorkerCache": "kanairoex-v39-research-fallbacks",
-  "tests": "RUN-ALL-TESTS.js"
+  "version": "41.0.0",
+  "codename": "Hosted Web Fallbacks",
+  "changes": ["CORS relay fallback for GitHub Pages/custom domains", "Image search relay fallback", "Online research relay fallback", "service worker cache v41"]
 }

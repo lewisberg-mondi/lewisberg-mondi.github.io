@@ -1,5 +1,5 @@
 /* Kanairoex / LocalMind service worker — network-aware application cache. */
-const CACHE = "kanairoex-v39-research-fallbacks";
+const CACHE = "kanairoex-v41-hosted-fallbacks";
 const CORE = [
   "./index.html", "./styles.css", "./manifest.json", "./icon.svg", "./app.js",
   "./ai-core.js", "./reasoning.js", "./online.js", "./github-code-research.js", "./reference-research.js", "./image-research.js", "./knowledge.js", "./response.js",

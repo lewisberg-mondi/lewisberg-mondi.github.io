@@ -1,8 +1,8 @@
-# Kanairoex AI v39 — Intelligence & Reliability Guide
+# Kanairoex AI v40 — Intelligence & Reliability Guide
 
 ## What changed
 
-v39 adds a single Brain Controller above the existing Reasoning/AI Core instead of replacing the existing engines.
+v40 adds a single Brain Controller above the existing Reasoning/AI Core instead of replacing the existing engines.
 
 ### Brain pipeline
 
@@ -19,7 +19,7 @@ v39 adds a single Brain Controller above the existing Reasoning/AI Core instead 
 - Image search can fall back from Openverse/Wikimedia fetch to Wikimedia JSONP and Wikipedia thumbnail/direct Commons search.
 - Important factual answers expose a confidence/evidence object internally through `result.brain`.
 - Conflicting taught facts are no longer silently replaced. Kanairoex stages the new claim and asks for `confirm this correction`.
-- Service-worker cache version is v39 and the brain modules are network-first.
+- Service-worker cache version is v40 and the brain modules are network-first.
 
 ## Commands
 
@@ -47,12 +47,12 @@ The diagnostic functions report capability state; they do not pretend that a rem
 
 ## Deployment
 
-1. Upload the **contents** of the v39 folder to GitHub Pages.
+1. Upload the **contents** of the v40 folder to GitHub Pages.
 2. Serve the site over HTTPS.
-3. Hard-refresh once after deployment so the v39 service worker replaces older caches.
+3. Hard-refresh once after deployment so the v40 service worker replaces older caches.
 4. Test `look up image of Jesus`.
 5. If a provider is blocked, the UI should show a usable fallback rather than a generic failure.
 
 ## Limitations
 
-A small browser model is not equivalent to a large cloud model. v39 improves orchestration, evidence discipline, context and verification; it does not magically increase the parameter count of the local model. Internet-dependent research still requires a working browser/network path.
+A small browser model is not equivalent to a large cloud model. v40 improves orchestration, evidence discipline, context and verification; it does not magically increase the parameter count of the local model. Internet-dependent research still requires a working browser/network path.
