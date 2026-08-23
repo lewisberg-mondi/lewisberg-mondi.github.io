@@ -1,9 +1,9 @@
 /* Kanairoex / LocalMind service worker — network-aware application cache. */
-const CACHE = "kanairoex-v35-research-video-github-reference";
+const CACHE = "kanairoex-v39-research-fallbacks";
 const CORE = [
   "./index.html", "./styles.css", "./manifest.json", "./icon.svg", "./app.js",
-  "./ai-core.js", "./reasoning.js", "./online.js", "./github-code-research.js", "./reference-research.js", "./knowledge.js", "./response.js",
-  "./blockchain.js", "./neurons.js", "./sw.js"
+  "./ai-core.js", "./reasoning.js", "./online.js", "./github-code-research.js", "./reference-research.js", "./image-research.js", "./knowledge.js", "./response.js",
+  "./blockchain.js", "./neurons.js", "./sw.js", "./benchmark.js", "./brain-controller.js", "./brain-verifier.js", "./brain-evidence.js", "./brain-planner.js", "./brain-context.js"
 ];
 const ASSETS = CORE.concat([
   "./research-manager.js", "./video-research.js", "./github-code-research.js", "./reference-research.js", "./offline-web-vault.js", "./offline-connectivity.js", "./offline-assistant.js", "./preload.js",
@@ -19,7 +19,7 @@ const ASSETS = CORE.concat([
 
 // These are the files most likely to change during GitHub Pages deployments.
 // They use network-first with cached fallback so new versions are picked up.
-const NETWORK_FIRST = new Set(["index.html", "app.js", "ai-core.js", "reasoning.js", "online.js", "research-manager.js", "video-research.js", "github-code-research.js", "reference-research.js", "sw.js"]);
+const NETWORK_FIRST = new Set(["index.html", "app.js", "ai-core.js", "reasoning.js", "online.js", "research-manager.js", "video-research.js", "image-research.js", "github-code-research.js", "reference-research.js", "sw.js", "brain-context.js", "brain-planner.js", "brain-evidence.js", "brain-verifier.js", "brain-controller.js", "benchmark.js"]);
 
 self.addEventListener("install", event => {
   event.waitUntil((async () => {

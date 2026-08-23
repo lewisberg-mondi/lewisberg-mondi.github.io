@@ -1,0 +1,50 @@
+
+=== tests/brain-ai-integration.test.js ===
+PASS: AI Core integration with v39 brain pipeline, verification and context
+
+=== tests/brain.test.js ===
+PASS: brain controller, planner, context, evidence, verifier and benchmark suite
+
+=== tests/deep-research-video.test.js ===
+PASS: long research collects, combines and completes
+
+=== tests/github-fallbacks.test.js ===
+PASS: GitHub CORS failure -> repository JSONP fallback
+
+=== tests/github-reference.test.js ===
+PASS: GitHub + Britannica + Oxford intent/adapter smoke tests
+
+=== tests/image-fallbacks.test.js ===
+PASS: blocked CORS -> Wikimedia JSONP -> Wikipedia thumbnail fallbacks
+
+=== tests/image-research.test.js ===
+PASS: image intent + Openverse/Wikimedia search + memory metadata
+
+=== tests/image-routing.test.js ===
+PASS: AI preserves imageSearch routing metadata
+
+=== tests/system-v39.test.js ===
+PASS: v39 index/service-worker wiring and GitHub browser header audit
+
+=== tests/video-research.test.js ===
+PASS: video intent -> search -> playable result -> memory metadata
+
+=== tests/video-routing.test.js ===
+PASS: AI preserves videoSearch routing metadata
+
+=== tests/web-research.test.js ===
+PASS: intent -> online research -> normalized result
+
+=== TEST-ledger-supply.js ===
+PASS: authoritative ledger, global 33B supply status/enforcement, atomic lock, backup input guard
+
+=== TEST-system.js ===
+PASS: system static audit — 114 JavaScript files syntax-checked, 81 HTML script references verified, economy/security/Mission-Control consistency checks passed.
+
+=== TEST-token-system.js ===
+PASS: wallet display, emoji validation, atomic token creation, creation economics, signed P2P verification, liquidity add/remove, and swap regression suite
+
+=== TEST-web-research.js ===
+PASS: web research + video integration tests
+
+PASS: 16 test suites completed successfully.
