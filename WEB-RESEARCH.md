@@ -40,3 +40,11 @@ The service worker is versioned as `kanairoex-v31-web-research` and uses network
 - Video results include thumbnails, watch links and an embedded-player option when the source supports it.
 - Video metadata and links are saved to LocalMind memory. Arbitrary online videos are **not** automatically copied to local storage; downloading is only appropriate when the source provides a permitted downloadable file.
 - GitHub Pages remains a static frontend. Public third-party adapters can fail or change, so the application rotates through several configured Piped instances and reports failure instead of pretending that a search succeeded.
+
+## Image Search (v36)
+
+- Commands such as `search images of lions`, `find pictures of cars`, `show photos of airplanes`, `images of people`, or `picture of a plane` trigger public image research.
+- Sources (no API key): **Openverse** (Creative Commons) and **Wikimedia Commons**.
+- Results show a thumbnail grid with Open / Source actions; licenses are displayed when available.
+- Metadata is saved to LocalMind memory. Images are not bulk-downloaded automatically — open the source to respect license terms.
+- Profile/gallery commands (`set photo`, `add photo`) are not treated as online image search.
