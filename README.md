@@ -1,5 +1,7 @@
 # Kanairoex AI — Complete Guide
 
+> **Current build: v39 — image-search/CORS fallback and service-worker cache and browser research fallback fix.** The recommended test command is `look up image of Jesus`. The image pipeline now has Openverse, Wikimedia fetch, Wikimedia JSONP, Wikipedia thumbnail, and direct Commons fallback paths. See `DEBUG-REPORT.md` for the repair analysis and test results.
+
 Private **offline-first** study AI that runs entirely in your browser. No account required. Your knowledge, wallet, profile photo/video, and chat history stay on **this device** (localStorage + IndexedDB). Optional **WebRTC P2P** lets you chat, send files, share your profile, and transfer educational **LMT** tokens between browsers.
 
 **LMT is educational only — not real cryptocurrency.**
@@ -122,7 +124,7 @@ Optional: send a larger video or any file with `p2p file` after sharing the prof
 ## 5. Wallet & LMT tokens
 
 **Symbol:** 💎 **LMT** (Kanairoex Token)  
-**Genesis balance:** 5,000 LMT · **Question reward:** 0.001 LMT  
+**Genesis balance:** 1 LMT · **Question reward:** 0.001 LMT  
 **Simulated price:** starts ~0.001 USD, +0.05%/day (display only)
 
 | Command | Meaning |
@@ -380,3 +382,98 @@ The reference adapter provides official Encyclopaedia Britannica and Oxford refe
 
 Retrieved research is saved to LocalMind memory when the relevant adapter succeeds.
 
+
+## Image search: how it works and how to troubleshoot it
+
+Kanairoex recognizes commands such as:
+
+- `look up image of Jesus`
+- `search images of lions`
+- `find pictures of cars`
+- `show photos of airplanes`
+
+The image pipeline is intentionally multi-layered because this is a static GitHub Pages application with no private backend:
+
+1. **Openverse** — searches openly licensed images.
+2. **Wikimedia Commons Action API** — searches Commons files and returns thumbnails plus license metadata.
+3. **Wikimedia JSONP fallback** — used when a mobile browser/WebView blocks normal cross-origin `fetch()`/CORS but still permits loading public scripts.
+4. **Wikipedia thumbnail fallback** — returns a representative thumbnail for well-known topics when the image-search APIs are unavailable.
+5. **Direct Wikimedia search link** — shown as the final manual fallback if every automatic route fails.
+
+The app never downloads or republishes an image automatically. It displays remote thumbnails and source/license links; check the license on the source page before reuse.
+
+### Important GitHub Pages / service-worker detail
+
+`image-research.js` is now **network-first** in the service worker and the project cache has been bumped to `v39`. The script URL is also versioned (`image-research.js?v=38`). This prevents an old cached image-search module from surviving a GitHub Pages deployment.
+
+After deploying an update, open the site over HTTPS and do a hard refresh. If an old service worker is still active, close the site tabs, reopen it, and reload once or twice so the new worker activates.
+
+### Image-search diagnostics
+
+For developers, the browser console can inspect the last image-search attempt with:
+
+```js
+ImageResearch.diagnose()
+```
+
+It reports the configured public endpoints, whether the JSONP/Wikipedia fallbacks are enabled, and the last provider failures/successes.
+
+### Why the old error happened
+
+The previous implementation depended entirely on normal browser `fetch()` calls to Openverse and Wikimedia. If the browser/WebView rejected either cross-origin request, both providers could fail together and the UI only showed a generic "public image search services are unavailable" message. In addition, the service worker treated `image-research.js` as a normal cached asset rather than a network-first changing module, which could leave an older implementation active after deployment.
+
+The current build addresses both problems.
+
+---
+
+## v39 Intelligence Upgrade
+
+Kanairoex v39 adds a coherent Brain Controller on top of the existing AI Core and Reasoning engine. It does not pretend that a small browser model is a giant cloud model; instead it improves **reasonableness, evidence discipline, planning, context, verification, memory safety, and diagnostics**.
+
+### v39 pipeline
+
+`User → Context → Planner → Existing Reasoning/Tools → Evidence → Verification → Response → Memory`
+
+New modules:
+
+- `brain-context.js` — recent conversation state, active topic and lightweight entity tracking.
+- `brain-planner.js` — intent classification, complexity estimation, tool selection and missing-information detection.
+- `brain-evidence.js` — source ranking and calibrated evidence confidence.
+- `brain-verifier.js` — routing/payload/response checks.
+- `brain-controller.js` — orchestration layer and system principles.
+- `benchmark.js` — deterministic browser-safe benchmark suite.
+
+### Developer diagnostics
+
+Open the browser console after deployment:
+
+```js
+BrainController.health()
+BrainController.diagnose()
+ImageResearch.diagnose()
+KanairoexBenchmark.run()
+```
+
+The chat command `diagnose` also gives a short health summary.
+
+### Knowledge correction safety
+
+When you teach a fact that conflicts with an existing fact, v39 does **not** silently replace the old fact. It stages the new claim and asks for:
+
+`confirm this correction`
+
+This preserves competing versions instead of destroying prior knowledge.
+
+### Image-search reliability
+
+Image requests continue to use the v38 repair path, now under v39 cache/versioning:
+
+1. Openverse fetch
+2. Wikimedia Commons API
+3. Wikimedia JSONP fallback for restrictive browsers/WebViews
+4. Wikipedia thumbnail fallback
+5. Direct Wikimedia Commons search link
+
+The failure of one provider should not make the entire AI appear broken.
+
+See `V39-INTELLIGENCE.md` for the complete architecture and deployment guide.

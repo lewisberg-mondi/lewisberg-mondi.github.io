@@ -32,3 +32,19 @@ The automated integration test uses mocked network responses because the build/t
 6. Research and video metadata are stored in LocalMind memory.
 7. GitHub Pages cache busting was strengthened with versioned critical scripts and service-worker cache `v34`.
 8. Existing stale test paths were corrected to the current project layout.
+
+## Image-search stabilization (2026-08-23)
+
+- Image intent `look up image of Jesus`: PASS.
+- Openverse + Wikimedia normalization: PASS.
+- Blocked-CORS simulation: PASS.
+- Wikimedia JSONP fallback simulation: PASS.
+- Wikipedia representative-thumbnail fallback simulation: PASS.
+- Service-worker image module: NETWORK_FIRST + cache `v37`.
+- Versioned deployment URLs: `image-research.js?v=37`, `app.js?v=37`, `sw.js?v=37`.
+
+---
+
+## v39 final release
+
+The v39 release supersedes this earlier report. Run `node RUN-ALL-TESTS.js` from the project root to execute the complete deterministic regression suite. The final v39 test result is recorded in `V39-TEST-REPORT.md` and `TEST-OUTPUT.txt`.

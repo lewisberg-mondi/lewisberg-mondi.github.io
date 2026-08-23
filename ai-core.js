@@ -68,8 +68,35 @@ const AI = (() => {
       }
     } catch (_) {}
 
+    // One coherent brain pass: context -> plan -> reasoning -> verification/evidence.
+    const brainState = (typeof BrainController !== "undefined" && BrainController.before)
+      ? BrainController.before(text, settings)
+      : { plan: { types: ["general"], complexity: 1 }, context: {} };
+
+    // Built-in diagnostics are deterministic and do not require network access.
+    if (/^diagnose(?:\s+(all|system|brain|image|web|memory))?$/i.test(text) && typeof BrainController !== "undefined") {
+      const d = BrainController.diagnose();
+      const h = BrainController.health();
+      const reply = "**Kanairoex system health**\n\n" +
+        "• Brain controller: **" + (d.ok ? "ready" : "degraded") + "**\n" +
+        "• Modules available: **" + Object.keys(h.modules).filter(k => h.modules[k]).length + "/" + Object.keys(h.modules).length + "**\n" +
+        "• Context turns: **" + ((d.context && d.context.turns) || 0) + "**\n" +
+        "• Image fallback: **" + (d.providers && d.providers.image && d.providers.image.jsonpFallback ? "enabled" : "unavailable") + "**\n\n" +
+        "Use `diagnose all` for the full diagnostic object in the developer console.";
+      const result = { thinking: "→ Brain diagnostics\n→ Checking modules\n→ Checking provider fallbacks", reply, creative: null, brain: { diagnostic: d, health: h } };
+      Blockchain.addBlock({ type: "message", role: "assistant", content: reply, thinking: result.thinking });
+      const history = loadHistory();
+      history.push({ role: "user", content: text, ts: Date.now() });
+      history.push({ role: "assistant", content: reply, thinking: result.thinking, ts: Date.now() });
+      saveHistory(history);
+      return { ...result, settings };
+    }
+
     // Run reasoning
-    const result = Reasoning.reason(text, settings);
+    let result = Reasoning.reason(text, settings);
+    if (typeof BrainController !== "undefined" && BrainController.after) {
+      result = BrainController.after(text, result, brainState);
+    }
 
     // Async advanced commands (WebRTC, wallet, etc.) — defer history until UI resolves them
     if (result && result._advancedPromise) {
@@ -117,6 +144,14 @@ const AI = (() => {
     history.push({ role: "user", content: text, ts: Date.now() });
     history.push({ role: "assistant", content: reply, thinking: result.thinking, ts: Date.now() });
     saveHistory(history);
+    try {
+      if (typeof BrainContext !== "undefined" && BrainContext.rememberTurn) {
+        BrainContext.rememberTurn(text, reply, {
+          intent: brainState.plan && brainState.plan.types ? brainState.plan.types.join("+") : "general",
+          activeTopic: (brainState.context && brainState.context.activeTopic) || ""
+        });
+      }
+    } catch (_) {}
 
     // Auto-learn simple statements if enabled
     if (settings.autoLearn) {
@@ -158,6 +193,9 @@ const AI = (() => {
       githubCodeSearch: result.githubCodeSearch || null,
       referenceSearch: result.referenceSearch || null,
       syncNow: result.syncNow || false,
+      brain: result.brain || null,
+      verification: result.brain && result.brain.verification ? result.brain.verification : null,
+      evidence: result.brain && result.brain.evidence ? result.brain.evidence : null,
       settings
     };
   }

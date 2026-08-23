@@ -19,10 +19,12 @@ const GitHubCodeResearch = (() => {
         credentials: 'omit',
         cache: 'no-store',
         signal: c.signal,
+        // Keep browser requests CORS-simple. GitHub's current REST default is
+        // 2022-11-28 when the X-GitHub-Api-Version header is omitted.
+        // A custom X-* header can trigger a browser preflight that some
+        // WebViews/privacy proxies reject. Browsers also control User-Agent.
         headers: {
-          Accept: 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
-          'User-Agent': 'Kanairoex-LocalMind/1.0 (educational offline AI)'
+          Accept: 'application/vnd.github+json'
         }
       });
       if (!r.ok) {
@@ -148,6 +150,35 @@ const GitHubCodeResearch = (() => {
     return [];
   }
 
+  function searchReposJsonp(q, limit) {
+    if (typeof document === 'undefined' || !document.createElement) {
+      return Promise.reject(new Error('GitHub JSONP unavailable outside a browser'));
+    }
+    const n = Math.min(limit || MAX_RESULTS, 10);
+    return new Promise((resolve, reject) => {
+      const cb = '__kanairoexGitHubJsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      const script = document.createElement('script');
+      let done = false;
+      const timer = setTimeout(() => finish(new Error('GitHub JSONP timed out')), TIMEOUT);
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete globalThis[cb]; } catch (_) { globalThis[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      function finish(err, data) {
+        if (done) return;
+        done = true;
+        cleanup();
+        if (err) reject(err); else resolve(data);
+      }
+      globalThis[cb] = (data) => finish(null, data);
+      script.onerror = () => finish(new Error('GitHub JSONP request failed'));
+      script.src = API + '/search/repositories?q=' + encodeURIComponent(q) +
+        '&sort=stars&order=desc&per_page=' + n + '&callback=' + encodeURIComponent(cb);
+      (document.head || document.documentElement || document.body).appendChild(script);
+    }).then((data) => (data.items || []).map(normalizeRepo).filter((x) => x.repoUrl || x.htmlUrl));
+  }
+
   async function fetchSnippet(item) {
     if (!item.rawUrl) return item;
     try {
@@ -180,7 +211,11 @@ const GitHubCodeResearch = (() => {
       items = await searchRepos(q, limit || MAX_RESULTS);
       mode = 'repositories';
     } catch (e) {
-      /* fall through */
+      /* Try a browser JSONP path before declaring the provider unavailable. */
+      try {
+        items = await searchReposJsonp(q, limit || MAX_RESULTS);
+        mode = 'repositories-jsonp';
+      } catch (_) {}
     }
 
     if (!items.length) {

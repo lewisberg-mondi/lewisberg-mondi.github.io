@@ -1376,6 +1376,16 @@ const Reasoning = (() => {
     }
 
     // 3. Teach intent
+    const confirmCorrection = /^(confirm this correction|confirm correction|store this correction)\s*$/i.test(String(userText || "").trim());
+    if (confirmCorrection) {
+      const staged = _staged;
+      if (staged && staged.subject && staged.content) {
+        const fact = Knowledge.add(staged.subject, staged.content, "corrected");
+        _staged = null;
+        return { thinking: buildThinking(steps.concat(["Confirmed knowledge correction"])), reply: "Correction stored as an additional version of **" + fact.subject + "**. Existing knowledge was preserved." };
+      }
+      return { thinking: buildThinking(steps), reply: "There is no pending correction to confirm." };
+    }
     const teachRaw = detectTeachIntent(userText);
     if (teachRaw) {
       steps.push("Detected teaching intent");
@@ -1384,6 +1394,28 @@ const Reasoning = (() => {
         return {
           thinking: buildThinking(steps),
           reply: "I need a clearer fact. Try: **Remember that the Nile is the longest river in Africa**"
+        };
+      }
+      // Preserve existing knowledge instead of silently overwriting a conflicting fact.
+      let conflicts = [];
+      try {
+        if (typeof Knowledge !== "undefined" && Knowledge.findRelevant) {
+          const subjectKey = String(subject || "").trim().toLowerCase();
+          conflicts = Knowledge.findRelevant(subject, 12).filter(function (f) {
+            return f && String(f.subject || "").trim().toLowerCase() === subjectKey &&
+              String(f.content || "").trim().toLowerCase() !== String(content || "").trim().toLowerCase();
+          });
+        }
+      } catch (_) {}
+      if (conflicts.length) {
+        _staged = { subject: subject, content: content, conflicts: conflicts.map(function (f) { return { subject: f.subject, content: f.content }; }) };
+        steps.push("Knowledge conflict detected");
+        const preview = conflicts.slice(0, 3).map(function (f) {
+          return "• **" + (f.subject || subject) + "** — " + (f.content || "");
+        }).join("\n");
+        return {
+          thinking: buildThinking(steps),
+          reply: "I found existing knowledge that may conflict with what you taught me. I did **not** silently replace it.\n\nExisting:\n" + preview + "\n\nNew claim:\n• **" + subject + "** — " + content + "\n\nSay **confirm this correction** if you want me to store the new claim as an additional disputed version."
         };
       }
       const fact = Knowledge.add(subject, content, "general");

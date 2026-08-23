@@ -1006,10 +1006,10 @@ function updateLlmStatusLine() {
           } catch (err) {
             const fallbackUrl = err && err.searchUrl;
             result = {
-              thinking: "→ Image search failed on public API instances",
+              thinking: "→ Public image APIs were unavailable\n→ Trying browser-safe Wikimedia fallback\n→ Falling back to direct Commons search",
               reply:
-                "I couldn't retrieve image cards from the public image-search services right now." +
-                (fallbackUrl ? "\n\nYou can still browse Wikimedia Commons below." : "\n\nTry again while online."),
+                "I couldn't load image cards automatically this time." +
+                (fallbackUrl ? "\n\nThe direct Wikimedia image search is still available below." : "\n\nPlease try again while online."),
               creative: fallbackUrl ? { type: "image-search-fallback", url: fallbackUrl, query: ii.query } : null
             };
           }
@@ -1125,6 +1125,14 @@ function updateLlmStatusLine() {
               creative: null
             };
           }
+        }
+
+        // Final post-tool verification: catches stale routing and malformed result payloads.
+        if (result && typeof BrainController !== "undefined" && BrainController.after && result.brain == null) {
+          try {
+            const postState = BrainController.before(text, result.settings || {});
+            result = BrainController.after(text, result, postState);
+          } catch (_) {}
         }
 
         // Strip ONLINE_FETCH marker if present

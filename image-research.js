@@ -6,6 +6,8 @@ const ImageResearch = (() => {
   const WIKIMEDIA =
     'https://commons.wikimedia.org/w/api.php';
   const timeout = 9000;
+  const JSONP_TIMEOUT = 10000;
+  let lastDiagnostics = null;
 
   async function fetchJson(url) {
     const c = new AbortController();
@@ -135,6 +137,76 @@ const ImageResearch = (() => {
     return { images, source: 'Wikimedia Commons' };
   }
 
+  // JSONP fallback is useful on restrictive mobile browsers/WebViews where
+  // cross-origin fetch is denied even though Wikimedia itself is reachable.
+  // It only reads public, unauthenticated Wikimedia data.
+  function oneWikimediaJsonp(q, limit) {
+    if (typeof document === 'undefined' || !document.createElement) {
+      return Promise.reject(new Error('JSONP unavailable outside a browser'));
+    }
+    return new Promise((resolve, reject) => {
+      const callbackName = '__kanairoexImageJsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      const script = document.createElement('script');
+      let finished = false;
+      const timer = setTimeout(() => finish(new Error('Wikimedia JSONP timed out')), JSONP_TIMEOUT);
+
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete globalThis[callbackName]; } catch (_) { globalThis[callbackName] = undefined; }
+        if (script && script.parentNode) script.parentNode.removeChild(script);
+      }
+      function finish(err, data) {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        if (err) reject(err);
+        else resolve(data);
+      }
+
+      globalThis[callbackName] = (data) => finish(null, data);
+      script.onerror = () => finish(new Error('Wikimedia JSONP request failed'));
+      script.src = WIKIMEDIA +
+        '?action=query&generator=search&gsrsearch=' +
+        encodeURIComponent(q) +
+        '&gsrnamespace=6&gsrlimit=' +
+        Math.min(Math.max(limit, 6), 20) +
+        '&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiurlwidth=480&format=json&callback=' +
+        encodeURIComponent(callbackName);
+      (document.head || document.documentElement || document.body).appendChild(script);
+    }).then((d) => {
+      const images = normalizeWikimedia(d, limit);
+      if (!images.length) throw Error('No Wikimedia results');
+      return { images, source: 'Wikimedia Commons (JSONP fallback)' };
+    });
+  }
+
+  // Wikipedia's public REST summary often exposes a representative thumbnail.
+  // This is a last-resort result, not a replacement for the full image search.
+  async function oneWikipediaThumbnail(q) {
+    const url = 'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(q.replace(/\s+/g, '_'));
+    const d = await fetchJson(url);
+    const thumb = d && d.thumbnail && d.thumbnail.source;
+    if (!thumb) throw Error('No Wikipedia thumbnail');
+    const page = (d.content_urls && d.content_urls.desktop && d.content_urls.desktop.page) ||
+      'https://en.wikipedia.org/wiki/' + encodeURIComponent(String(d.title || q).replace(/\s+/g, '_'));
+    return {
+      images: [{
+        id: 'wikipedia-' + (d.pageid || q),
+        title: d.title || q,
+        creator: '',
+        license: 'See source page',
+        licenseUrl: '',
+        thumbnail: thumb,
+        url: thumb,
+        sourceUrl: page,
+        source: 'Wikipedia',
+        width: d.thumbnail.width || null,
+        height: d.thumbnail.height || null
+      }],
+      source: 'Wikipedia thumbnail fallback'
+    };
+  }
+
   function searchUrl(q) {
     return (
       'https://commons.wikimedia.org/w/index.php?search=' +
@@ -147,28 +219,72 @@ const ImageResearch = (() => {
     const q = String(query || '').trim();
     if (!q) throw Error('Image search query is empty.');
 
-    const jobs = [oneOpenverse(q, Math.max(limit, 8)), oneWikimedia(q, Math.max(limit, 8))];
-    const settled = await Promise.allSettled(jobs);
+    const requestedLimit = Math.max(1, Math.min(Number(limit) || 12, 24));
+    const providerLimit = Math.max(requestedLimit, 8);
+    const jobs = [
+      ['Openverse', oneOpenverse(q, providerLimit)],
+      ['Wikimedia Commons', oneWikimedia(q, providerLimit)]
+    ];
+    const settled = await Promise.allSettled(jobs.map((x) => x[1]));
     let all = [];
     let used = [];
-    settled.forEach((r) => {
+    let failures = [];
+    settled.forEach((r, index) => {
+      const name = jobs[index][0];
       if (r.status === 'fulfilled') {
         all = all.concat(r.value.images || []);
-        used.push(r.value.source);
+        used.push(r.value.source || name);
+      } else {
+        failures.push(name + ': ' + ((r.reason && r.reason.message) || String(r.reason)));
       }
     });
 
-    const images = merge(all, limit);
+    // If normal CORS fetch is denied, use Wikimedia JSONP before giving up.
+    if (!all.length) {
+      try {
+        const r = await oneWikimediaJsonp(q, providerLimit);
+        all = all.concat(r.images || []);
+        used.push(r.source);
+      } catch (e) {
+        failures.push('Wikimedia JSONP fallback: ' + ((e && e.message) || String(e)));
+      }
+    }
+
+    // Last-resort single representative image for well-known topics.
+    if (!all.length) {
+      try {
+        const r = await oneWikipediaThumbnail(q);
+        all = all.concat(r.images || []);
+        used.push(r.source);
+      } catch (e) {
+        failures.push('Wikipedia thumbnail fallback: ' + ((e && e.message) || String(e)));
+      }
+    }
+
+    const images = merge(all, requestedLimit);
+    lastDiagnostics = { query: q, failures, sources: used.slice(), at: new Date().toISOString() };
     if (!images.length) {
       const e = Error('Public image search services are unavailable right now.');
       e.searchUrl = searchUrl(q);
+      e.diagnostics = lastDiagnostics;
       throw e;
     }
     return {
       query: q,
       images,
       sources: used,
+      diagnostics: lastDiagnostics,
       researchedAt: new Date().toISOString()
+    };
+  }
+
+  function diagnose() {
+    return {
+      openverse: OPENVERSE,
+      wikimedia: WIKIMEDIA,
+      jsonpFallback: true,
+      wikipediaThumbnailFallback: true,
+      last: lastDiagnostics
     };
   }
 
@@ -255,7 +371,7 @@ const ImageResearch = (() => {
     } catch (_) {}
   }
 
-  return { search, isIntent, saveMetadata, searchUrl };
+  return { search, isIntent, saveMetadata, searchUrl, diagnose };
 })();
 
 if (typeof window !== 'undefined') window.ImageResearch = ImageResearch;
