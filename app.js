@@ -1009,7 +1009,8 @@ function updateLlmStatusLine() {
               thinking: "→ Image search failed on public API instances",
               reply:
                 "I couldn't retrieve image cards from the public image-search services right now." +
-                (fallbackUrl ? "\n\nYou can still browse Wikimedia Commons below." : "\n\nTry again while online."),
+                (fallbackUrl ? "\n\nYou can still browse Wikimedia Commons below." : "\n\nTry again while online.") +
+                "\n\n_If this keeps failing after a deploy: hard-refresh the site (clear site data) so the new image-research.js loads._",
               creative: fallbackUrl ? { type: "image-search-fallback", url: fallbackUrl, query: ii.query } : null
             };
           }
