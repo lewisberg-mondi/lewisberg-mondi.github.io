@@ -151,6 +151,12 @@ const AI = (() => {
       reply: reply,
       creative: result.creative || null,
       online: result.online || null,
+      // Preserve special async-routing metadata so app.js can execute
+      // video search (and any future research handlers) after reasoning.
+      videoSearch: result.videoSearch || null,
+      imageSearch: result.imageSearch || null,
+      githubCodeSearch: result.githubCodeSearch || null,
+      referenceSearch: result.referenceSearch || null,
       syncNow: result.syncNow || false,
       settings
     };

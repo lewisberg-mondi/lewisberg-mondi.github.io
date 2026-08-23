@@ -16,7 +16,7 @@ Private **offline-first** study AI that runs entirely in your browser. No accoun
 6. [Create tokens, pools, swaps](#6-create-tokens-pools-swaps)
 7. [P2P connection (WebRTC)](#7-p2p-connection-webrtc)
 8. [Knowledge, teach, memory chain](#8-knowledge-teach-memory-chain)
-10. [Online lookup & offline pages](#10-online-lookup--offline-pages)
+10. [Online lookup, GitHub code & reference research](#10-online-lookup-github-code--reference-research)
 11. [AI Lab, local LLM, multimodal](#11-ai-lab-local-llm-multimodal)
 12. [Tools (math, code, CSV plot, …)](#12-tools-math-code-csv-plot-)
 13. [Panels in the sidebar](#13-panels-in-the-sidebar)
@@ -353,3 +353,30 @@ Static app: HTML + CSS + JS + JSON data packs. Entry point: **`index.html`**.
 LMT, FX, and USD values are **simulations for learning**.  
 
 For short deploy notes see **`DEPLOY.md`**. For practical classroom tips see **`PRACTICAL.md`**.
+
+
+## 10. Online lookup, GitHub code & reference research
+
+Kanairoex is offline-first but can research public web sources when the browser is online.
+
+Examples:
+
+```text
+look up photosynthesis
+search GitHub for code for an offline wallet
+search GitHub for JavaScript blockchain code
+search Britannica for Jesus
+search Oxford dictionary for wisdom
+define ubiquitous
+```
+
+### GitHub code research
+
+The GitHub adapter uses the public GitHub REST API. It searches public code first and falls back to public repositories if code search is rate-limited or unavailable. Results preserve repository links and reported license metadata. A retrieved source snippet is kept deliberately bounded; users should open the repository and review its license before reuse. GitHub documents authentication and rate-limit behavior in its REST API documentation.
+
+### Britannica / Oxford
+
+The reference adapter provides official Encyclopaedia Britannica and Oxford reference links. Britannica article text is not copied wholesale into the app. For dictionary lookups, a public definition fallback can be combined with Oxford Learner's Dictionaries / OED links.
+
+Retrieved research is saved to LocalMind memory when the relevant adapter succeeds.
+

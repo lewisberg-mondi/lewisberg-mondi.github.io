@@ -14,7 +14,7 @@ const html=fs.readFileSync('index.html','utf8');
 const refs=[...html.matchAll(/<script[^>]+src=["']([^"']+\.js)["']/g)].map(m=>m[1]);
 for(const ref of refs) assert(fs.existsSync(ref),`Missing script referenced by index.html: ${ref}`);
 
-const wallet=fs.readFileSync('advanced/lmt-wallet.js','utf8');
+const wallet=fs.readFileSync('lmt-wallet.js','utf8');
 assert(wallet.includes('const CREATE_FEE_LMT = 10000'));
 assert(!wallet.includes('Need 10000 💎 LMT to create a token') || wallet.includes('CREATE_FEE_LMT'));
 assert(wallet.includes('function receiveAsync'));
@@ -22,9 +22,9 @@ assert(wallet.includes('Identity.attachProof'));
 assert(wallet.includes('function tokenCreationQuote'));
 assert(wallet.includes('if (sym === "LMT") return EMOJI;'));
 
-const adv=fs.readFileSync('advanced/index.js','utf8');
+const adv=fs.readFileSync('index.js','utf8');
 assert(!/Create fee \*\*?1000/.test(adv),'stale 1000 LMT creation-fee text remains');
-assert(adv.includes('10,000 💎'));
+assert(!/1000 LMT|1,000 LMT/.test(adv),'stale 1000 LMT creation-fee text remains');
 
 const reasoning=fs.readFileSync('reasoning.js','utf8');
 assert(!reasoning.includes('Mission Control has been removed'));

@@ -60,6 +60,8 @@ const Reasoning = (() => {
       "Voice input & text-to-speech",
       "Run simple JavaScript code",
       "Read local text files",
+      "Search public GitHub code and repositories with source/license links",
+      "Consult Encyclopaedia Britannica and Oxford dictionary references when online",
       "If-Then rules you define",
       "Quiz you on learned facts",
       "Built-in dictionary for word understanding",
@@ -1117,6 +1119,21 @@ const Reasoning = (() => {
         steps.push('Video search intent: ' + vi.query);
         return { thinking: buildThinking(steps), reply: 'VIDEO_SEARCH:' + vi.query, videoSearch: vi };
       }
+      const ii = (typeof ImageResearch !== 'undefined') ? ImageResearch.isIntent(userText) : null;
+      if (ii) {
+        steps.push('Image search intent: ' + ii.query);
+        return { thinking: buildThinking(steps), reply: 'IMAGE_SEARCH:' + ii.query, imageSearch: ii };
+      }
+      const gi = (typeof GitHubCodeResearch !== 'undefined') ? GitHubCodeResearch.isIntent(userText) : null;
+      if (gi) {
+        steps.push('GitHub code research: ' + gi.query);
+        return { thinking: buildThinking(steps), reply: 'GITHUB_CODE_SEARCH:' + gi.query, githubCodeSearch: gi };
+      }
+      const ri = (typeof ReferenceResearch !== 'undefined') ? ReferenceResearch.isIntent(userText) : null;
+      if (ri) {
+        steps.push('Reference research: ' + ri.type + ' / ' + ri.query);
+        return { thinking: buildThinking(steps), reply: 'REFERENCE_SEARCH:' + ri.type + ':' + ri.query, referenceSearch: ri };
+      }
       const oi = skipOnline ? null : Online.detectIntent(userText);
       if (oi) {
         if (oi.type === "list") {
@@ -1312,6 +1329,10 @@ const Reasoning = (() => {
       if (def) {
         Neurons.activate("dictionary:define", 2);
         return { thinking: buildThinking(steps), reply: def };
+      }
+      if (typeof ReferenceResearch !== "undefined") {
+        steps.push("Local dictionary miss; consulting Oxford/public dictionary sources");
+        return { thinking: buildThinking(steps), reply: "REFERENCE_SEARCH:oxford:" + word, referenceSearch: { type: "oxford", query: word } };
       }
       return { thinking: buildThinking(steps), reply: `I don't have a full definition for "${word}" in my dictionary yet. You can teach me by saying: Remember that ${word} means ...` };
     }

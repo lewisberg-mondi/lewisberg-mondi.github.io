@@ -66,3 +66,7 @@ location.reload();
 See **README.md** → STUN / TURN section for full notes.
 
 Full details → see **README.md**.
+
+
+## GitHub and reference research
+The GitHub Pages build can query public GitHub REST endpoints from the browser, subject to CORS and rate limits. No GitHub token is embedded in the static site. For higher limits, add a backend/edge function and keep credentials server-side. Britannica and Oxford are integrated as authoritative reference links; copyrighted/paywalled article text is not scraped into the static app.

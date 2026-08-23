@@ -964,7 +964,10 @@ function updateLlmStatusLine() {
           }
         }
 
-        // Video search path
+        // Video search path — also recover from legacy/stale reasoning markers so an old cached reasoning.js cannot leave VIDEO_SEARCH on screen.
+        if (result && !result.videoSearch && typeof VideoResearch !== "undefined" && typeof result.reply === "string" && /^VIDEO_SEARCH:/i.test(result.reply)) {
+          result.videoSearch = { query: result.reply.replace(/^VIDEO_SEARCH:/i, "").trim() };
+        }
         if (result && result.videoSearch && typeof VideoResearch !== "undefined") {
           const vi = result.videoSearch;
           try {
@@ -972,7 +975,82 @@ function updateLlmStatusLine() {
             VideoResearch.saveMetadata(vd);
             result = { thinking: "→ Searching video sources\n→ Collecting results\n→ Saving video metadata to offline memory", reply: "Found **" + vd.videos.length + " videos** for **" + vd.query + "**.\n\nVideo metadata and links have been saved to LocalMind memory.\n\nYou can watch the videos below.", creative: { type: "video-search", items: vd.videos } };
           } catch (err) {
-            result = { thinking: "→ Video search failed", reply: "Video search failed: " + (err.message || err) + "\n\nTry again while online.", creative: null };
+            const fallbackUrl = err && err.searchUrl;
+            result = {
+              thinking: "→ Video search failed on public API instances",
+              reply: "I couldn't retrieve video cards from the public video-search services right now." +
+                (fallbackUrl ? "\n\nYou can still open the video search directly below." : "\n\nTry again while online."),
+              creative: fallbackUrl ? { type: "video-search-fallback", url: fallbackUrl, query: vi.query } : null
+            };
+          }
+        }
+
+        // Image search path — people, animals, cars, planes, objects, etc. (Openverse + Wikimedia)
+        if (result && !result.imageSearch && typeof ImageResearch !== "undefined" && typeof result.reply === "string" && /^IMAGE_SEARCH:/i.test(result.reply)) {
+          result.imageSearch = { query: result.reply.replace(/^IMAGE_SEARCH:/i, "").trim() };
+        }
+        if (result && result.imageSearch && typeof ImageResearch !== "undefined") {
+          const ii = result.imageSearch;
+          try {
+            const idata = await ImageResearch.search(ii.query, 12);
+            ImageResearch.saveMetadata(idata);
+            result = {
+              thinking: "→ Searching image sources (Openverse, Wikimedia)\n→ Collecting Creative Commons results\n→ Saving image metadata to offline memory",
+              reply:
+                "Found **" + idata.images.length + " images** for **" + idata.query + "**.\n\n" +
+                "Sources: " + (idata.sources || []).join(", ") + ".\n" +
+                "Licenses are typically Creative Commons / public domain — check each source before reuse.\n\n" +
+                "Thumbnails below; open full image or original source.",
+              creative: { type: "image-search", items: idata.images, query: idata.query }
+            };
+          } catch (err) {
+            const fallbackUrl = err && err.searchUrl;
+            result = {
+              thinking: "→ Image search failed on public API instances",
+              reply:
+                "I couldn't retrieve image cards from the public image-search services right now." +
+                (fallbackUrl ? "\n\nYou can still browse Wikimedia Commons below." : "\n\nTry again while online."),
+              creative: fallbackUrl ? { type: "image-search-fallback", url: fallbackUrl, query: ii.query } : null
+            };
+          }
+        }
+
+        // GitHub code research: public repositories/files, snippets, license and source links.
+        if (result && result.githubCodeSearch && typeof GitHubCodeResearch !== "undefined") {
+          const gi = result.githubCodeSearch;
+          try {
+            const gd = await GitHubCodeResearch.search(gi.query, 6);
+            GitHubCodeResearch.save(gd);
+            if (!gd.results || !gd.results.length) {
+              const ghUrl = 'https://github.com/search?q=' + encodeURIComponent(gd.query || gi.query) + '&type=repositories';
+              result = {
+                thinking: '→ Searching GitHub\n→ No public matches for this query',
+                reply: 'Found **0 GitHub results** for **' + (gd.query || gi.query) + '**.\n\nTry a shorter query (e.g. `website`, `portfolio`, `react app`) or open GitHub search directly.',
+                creative: { type: 'github-code-search-fallback', url: ghUrl, query: gd.query || gi.query }
+              };
+            } else {
+              const lines = gd.results.map(function(r, i) {
+                return (i + 1) + '. **' + (r.repo || r.name) + '**' + (r.path ? ' — `' + r.path + '`' : '') +
+                  '\nLanguage: ' + (r.language || 'unknown') + ' · License: ' + (r.license || 'not reported') +
+                  '\nSource: ' + (r.htmlUrl || r.repoUrl) + (r.snippet ? '\n\n```' + (r.language || '') + '\n' + r.snippet + '\n```' : (r.description ? '\n' + r.description : ''));
+              }).join('\n\n');
+              result = { thinking: '→ Searching GitHub\n→ Ranking public code results\n→ Fetching available source snippets\n→ Saving code research to offline memory', reply: 'Found **' + gd.results.length + ' GitHub results** for **' + gd.query + '**.\n\n' + lines + '\n\n✓ GitHub research saved to offline memory.', creative: { type: 'github-code-search', items: gd.results } };
+            }
+          } catch (err) {
+            const ghUrl = 'https://github.com/search?q=' + encodeURIComponent(gi.query) + '&type=repositories';
+            result = { thinking: '→ GitHub code research failed', reply: 'GitHub code search failed: ' + (err.message || err) + '\n\nTry again while online. Unauthenticated GitHub API has low rate limits.\n\nYou can still search on GitHub directly.', creative: { type: 'github-code-search-fallback', url: ghUrl, query: gi.query } };
+          }
+        }
+
+        // Encyclopaedia Britannica / Oxford reference research.
+        if (result && result.referenceSearch && typeof ReferenceResearch !== "undefined") {
+          const ri = result.referenceSearch;
+          try {
+            const rd = await ReferenceResearch.search(ri.query, ri.type);
+            ReferenceResearch.save(rd);
+            result = { thinking: '→ Consulting reference sources\n→ Comparing public knowledge with the requested reference\n→ Saving reference research to offline memory', reply: String(rd.content || '') + '\n\n✓ Reference research saved to offline memory.\nSources:\n' + (rd.sources || []).map(function(x){ return '• ' + x.name + ' — ' + x.url; }).join('\n'), creative: { type: 'reference-search', officialUrl: rd.officialUrl, title: rd.title, sources: rd.sources || [] } };
+          } catch (err) {
+            result = { thinking: '→ Reference lookup failed', reply: 'Reference lookup failed: ' + (err.message || err), creative: null };
           }
         }
 
@@ -990,9 +1068,17 @@ function updateLlmStatusLine() {
             if (oi.type === "url") {
               data = await Online.learnUrl(oi.query);
             } else if (typeof ResearchManager !== "undefined") {
-              data = await ResearchManager.research(oi.query);
+              data = await ResearchManager.research(oi.query, function(p) {
+                try {
+                  if (p && p.stage === "source") thinkingLines.push("Source " + p.index + ": " + (p.title || "research"));
+                  if (p && p.stage === "warning") thinkingLines.push("Skipped: " + (p.title || "source"));
+                } catch (_) {}
+              });
               Online.storeInMemory(data.title || oi.query, data.content || data.extract || "", (data.sources && data.sources[0] && data.sources[0].url) || "online research");
-              if (typeof OfflineAssistant !== "undefined" && OfflineAssistant.saveStructured) OfflineAssistant.saveStructured(data.title || oi.query, (data.content || "").slice(0, 50000), (data.sources && data.sources[0] && data.sources[0].url) || "online", 90);
+              if (typeof OfflineAssistant !== "undefined" && OfflineAssistant.saveStructured) OfflineAssistant.saveStructured(data.title || oi.query, (data.content || ""), (data.sources && data.sources[0] && data.sources[0].url) || "online", 90);
+              if (Array.isArray(data.chunks)) data.chunks.forEach(function(ch, idx) {
+                Online.storeInMemory((data.title || oi.query) + " — research part " + (idx + 1), ch.text || "", (data.sources && data.sources[0] && data.sources[0].url) || "online research");
+              });
             } else {
               data = await Online.learnTopic(oi.query);
             }
@@ -1006,7 +1092,7 @@ function updateLlmStatusLine() {
               OfflineAssistant.addWatch(data.title || oi.query);
               try { localStorage.setItem("localmind_last_sync", new Date().toISOString()); } catch(e) {}
             }
-            const body = (data.content || data.extract || "").slice(0, 30000);
+            const body = String(data.content || data.extract || "").slice(0, 120000);
             const srcLine = (data.sources && data.sources.length)
               ? data.sources.map(function (s) { return s.name + (s.url ? " — " + s.url : ""); }).join("\n")
               : (data.url || "online");
@@ -1022,7 +1108,7 @@ function updateLlmStatusLine() {
             }
             result = {
               thinking: thinkingLines.map(function (t) { return "→ " + t; }).join("\n"),
-              reply: natural + (chars > 30000 ? "\n\n…The complete research is stored in offline memory." : ""),
+              reply: natural + (chars > 120000 ? "\n\n…The complete research is stored in offline memory." : "\n\n✓ Complete research saved to offline memory."),
               creative: null
             };
           } catch (err) {
@@ -1329,6 +1415,148 @@ function updateLlmStatusLine() {
       bubble.appendChild(grid);
       const note=document.createElement("div"); note.textContent="Video links are saved to LocalMind memory. Videos are not automatically copied unless the source explicitly provides a permitted downloadable file."; note.style.cssText="font-size:12px;opacity:.7;margin-top:8px;"; bubble.appendChild(note);
     }
+
+    if (creative.type === "image-search" && Array.isArray(creative.items)) {
+      const grid = document.createElement("div");
+      grid.style.cssText = "margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;";
+      creative.items.forEach(function (img) {
+        const card = document.createElement("div");
+        card.style.cssText = "border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#0a0c10;";
+        const src = img.thumbnail || img.url;
+        if (src) {
+          const el = document.createElement("img");
+          el.src = src;
+          el.alt = img.title || "image";
+          el.loading = "lazy";
+          el.referrerPolicy = "no-referrer";
+          el.style.cssText = "width:100%;height:140px;object-fit:cover;display:block;background:#111;";
+          el.onerror = function () {
+            el.style.display = "none";
+          };
+          card.appendChild(el);
+        }
+        const body = document.createElement("div");
+        body.style.cssText = "padding:10px;display:flex;flex-direction:column;gap:6px;";
+        const title = document.createElement("div");
+        title.textContent = img.title || "Image";
+        title.style.cssText = "font-weight:600;line-height:1.3;font-size:13px;";
+        body.appendChild(title);
+        if (img.creator) {
+          const c = document.createElement("div");
+          c.textContent = img.creator;
+          c.style.cssText = "font-size:11px;opacity:.7;";
+          body.appendChild(c);
+        }
+        if (img.license) {
+          const lic = document.createElement("div");
+          lic.textContent = img.license;
+          lic.style.cssText = "font-size:10px;opacity:.6;";
+          body.appendChild(lic);
+        }
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;";
+        if (img.url || img.thumbnail) {
+          const openBtn = document.createElement("button");
+          openBtn.className = "btn primary";
+          openBtn.textContent = "Open";
+          openBtn.onclick = function () {
+            window.open(img.url || img.thumbnail, "_blank", "noopener,noreferrer");
+          };
+          row.appendChild(openBtn);
+        }
+        if (img.sourceUrl) {
+          const srcBtn = document.createElement("button");
+          srcBtn.className = "btn secondary";
+          srcBtn.textContent = "Source";
+          srcBtn.onclick = function () {
+            window.open(img.sourceUrl, "_blank", "noopener,noreferrer");
+          };
+          row.appendChild(srcBtn);
+        }
+        body.appendChild(row);
+        card.appendChild(body);
+        grid.appendChild(card);
+      });
+      bubble.appendChild(grid);
+      const note = document.createElement("div");
+      note.textContent =
+        "Image metadata is saved to LocalMind memory. Prefer checking the license on the source page before downloading or reusing.";
+      note.style.cssText = "font-size:12px;opacity:.7;margin-top:8px;";
+      bubble.appendChild(note);
+    }
+
+    if (creative.type === "image-search-fallback" && creative.url) {
+      const row = document.createElement("div");
+      row.style.cssText = "margin-top:12px;display:flex;flex-direction:column;gap:8px;";
+      const btn = document.createElement("button");
+      btn.className = "btn primary";
+      btn.textContent = "Open Wikimedia image search";
+      btn.onclick = function () {
+        window.open(creative.url, "_blank", "noopener,noreferrer");
+      };
+      row.appendChild(btn);
+      const note = document.createElement("div");
+      note.style.cssText = "font-size:12px;opacity:.7;";
+      note.textContent =
+        "Public image APIs were unavailable. LocalMind will try Openverse / Wikimedia again next time.";
+      row.appendChild(note);
+      bubble.appendChild(row);
+    }
+
+    if (creative.type === "github-code-search" && Array.isArray(creative.items)) {
+      const wrap=document.createElement("div"); wrap.style.cssText="margin-top:12px;display:flex;flex-direction:column;gap:10px;";
+      creative.items.forEach(function(r){
+        const card=document.createElement("div"); card.style.cssText="border:1px solid var(--border);border-radius:12px;padding:10px;background:#0a0c10;";
+        const title=document.createElement("div"); title.textContent=(r.repo||r.name)+(r.path?" — "+r.path:""); title.style.cssText="font-weight:700;"; card.appendChild(title);
+        const meta=document.createElement("div"); meta.textContent=(r.language||"unknown")+" · License: "+(r.license||"not reported"); meta.style.cssText="font-size:12px;opacity:.72;margin:4px 0;"; card.appendChild(meta);
+        const row=document.createElement("div"); row.style.cssText="display:flex;gap:7px;flex-wrap:wrap;";
+        if(r.htmlUrl||r.repoUrl){const b=document.createElement("button");b.className="btn primary";b.textContent="Open GitHub";b.onclick=function(){window.open(r.htmlUrl||r.repoUrl,"_blank","noopener,noreferrer")};row.appendChild(b);}
+        if(r.rawUrl){const b=document.createElement("button");b.className="btn secondary";b.textContent="Open raw code";b.onclick=function(){window.open(r.rawUrl,"_blank","noopener,noreferrer")};row.appendChild(b);}
+        card.appendChild(row);
+        if(r.snippet){const pre=document.createElement("pre"); pre.textContent=r.snippet; pre.style.cssText="margin-top:8px;max-height:360px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:12px;padding:10px;border-radius:8px;background:#050609;"; card.appendChild(pre);}
+        wrap.appendChild(card);
+      });
+      bubble.appendChild(wrap);
+      const note=document.createElement("div"); note.textContent="GitHub source links and retrieved snippets are saved to LocalMind memory. Always review the repository license before reusing code."; note.style.cssText="font-size:12px;opacity:.7;margin-top:8px;"; bubble.appendChild(note);
+    }
+
+    if (creative.type === "reference-search" && creative.officialUrl) {
+      const row=document.createElement("div"); row.style.cssText="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;";
+      const b=document.createElement("button"); b.className="btn primary"; b.textContent="Open official reference"; b.onclick=function(){window.open(creative.officialUrl,"_blank","noopener,noreferrer")}; row.appendChild(b);
+      (creative.sources||[]).forEach(function(src){ if(!src.url || src.url===creative.officialUrl) return; const x=document.createElement("button"); x.className="btn secondary"; x.textContent="Open "+(src.name||"source"); x.onclick=function(){window.open(src.url,"_blank","noopener,noreferrer")}; row.appendChild(x); });
+      bubble.appendChild(row);
+    }
+
+    if (creative.type === "video-search-fallback" && creative.url) {
+      const row = document.createElement("div");
+      row.style.cssText = "margin-top:12px;display:flex;flex-direction:column;gap:8px;";
+      const btn = document.createElement("button");
+      btn.className = "btn primary";
+      btn.textContent = "▶ Open video search";
+      btn.onclick = () => window.open(creative.url, "_blank", "noopener,noreferrer");
+      row.appendChild(btn);
+      const note = document.createElement("div");
+      note.style.cssText = "font-size:12px;opacity:.7;";
+      note.textContent = "The public video API instances were unavailable. LocalMind will use them again on the next search.";
+      row.appendChild(note);
+      bubble.appendChild(row);
+    }
+
+    if (creative.type === "github-code-search-fallback" && creative.url) {
+      const row = document.createElement("div");
+      row.style.cssText = "margin-top:12px;display:flex;flex-direction:column;gap:8px;";
+      const btn = document.createElement("button");
+      btn.className = "btn primary";
+      btn.textContent = "Open GitHub search";
+      btn.onclick = () => window.open(creative.url, "_blank", "noopener,noreferrer");
+      row.appendChild(btn);
+      const note = document.createElement("div");
+      note.style.cssText = "font-size:12px;opacity:.7;";
+      note.textContent = "Unauthenticated GitHub API limits are low. Opening GitHub directly always works while online.";
+      row.appendChild(note);
+      bubble.appendChild(row);
+    }
+
     if (creative.type === "embed" && creative.url) {
       const row = document.createElement("div");
       row.style.cssText = "margin-top:10px;display:flex;flex-direction:column;gap:8px;";

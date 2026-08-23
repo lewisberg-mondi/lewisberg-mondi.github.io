@@ -16,7 +16,7 @@ const context = {
 context.window=context;
 vm.createContext(context);
 vm.runInContext(fs.readFileSync("identity.js","utf8"), context);
-vm.runInContext(fs.readFileSync("advanced/lmt-wallet.js","utf8"), context);
+vm.runInContext(fs.readFileSync("lmt-wallet.js","utf8"), context);
 const W=context.LMTWallet;
 
 (async()=>{
