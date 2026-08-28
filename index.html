@@ -417,20 +417,77 @@
       <div class="container">
         <div class="section-head">
           <h2>Useful commands</h2>
-          <p>Type these in chat to unlock common workflows quickly.</p>
+          <p>Type these in chat to unlock workflows. Commands are case-insensitive. Skip anything you do not need yet.</p>
         </div>
         <div class="commands">
+
           <div class="cmd-row"><code>help</code> / <code>guide</code><span>Quick tour of capabilities and tips.</span></div>
+          <div class="cmd-row"><code>status</code> / <code>advanced status</code> / <code>tech status</code><span>System status: WebRTC, wallet, OPFS, IndexedDB, outbox.</span></div>
+          <div class="cmd-row"><code>diagnose</code> / <code>diagnose all</code><span>Brain and module health check.</span></div>
+
           <div class="cmd-row"><code>Remember that Paris is the capital of France</code><span>Store a fact in local knowledge memory.</span></div>
-          <div class="cmd-row"><code>look up photosynthesis</code><span>Online topic research (when connected); results can be saved offline.</span></div>
+          <div class="cmd-row"><code>Correct me if wrong: …</code><span>Ask Kanairoex to verify or correct a statement.</span></div>
+          <div class="cmd-row"><code>look up photosynthesis</code><span>Online topic research (when connected); can save results offline.</span></div>
           <div class="cmd-row"><code>search images of lions</code><span>Image research with public sources and previews.</span></div>
           <div class="cmd-row"><code>search videos about space</code><span>Video discovery via public adapters.</span></div>
-          <div class="cmd-row"><code>wallet</code><span>Open multi-token wallet status and balances.</span></div>
-          <div class="cmd-row"><code>create token MYT MyToken 1000000 0.01 🚀</code><span>Create a custom token (emoji required).</span></div>
-          <div class="cmd-row"><code>p2p offer</code> / <code>p2p answer</code><span>Set up peer-to-peer connection between devices.</span></div>
-          <div class="cmd-row"><code>set photo</code> / <code>profile</code><span>Save profile media and view your local profile.</span></div>
-          <div class="cmd-row"><code>diagnose</code><span>Check system / brain module health.</span></div>
+          <div class="cmd-row"><code>github code react hooks</code><span>Search public GitHub code examples.</span></div>
+
+          <div class="cmd-row"><code>wallet</code> / <code>balance</code> / <code>lmt wallet</code><span>Show multi-token wallet address, balances, and portfolio.</span></div>
+          <div class="cmd-row"><code>lmt history</code> / <code>wallet history</code><span>Recent wallet activity.</span></div>
+          <div class="cmd-row"><code>lmt price</code> / <code>price lmt</code> / <code>lmt market</code><span>LMT price and market pairs (offline system rates).</span></div>
+          <div class="cmd-row"><code>markets</code> / <code>pools</code> / <code>all tokens</code> / <code>token list</code><span>List markets, liquidity pools, and created tokens.</span></div>
+          <div class="cmd-row"><code>token MYT</code> / <code>token status</code> / <code>token lab</code> / <code>economy status</code><span>Token details, lab tools, and economy overview.</span></div>
+          <div class="cmd-row"><code>create token MYT MyToken 1000000 0.01 🚀</code><span>Create a token: symbol, name, supply, price, emoji (emoji required).</span></div>
+          <div class="cmd-row"><code>pay 20 LMT-ADDR</code><span>Send LMT to an address (use a real LMT-… address).</span></div>
+          <div class="cmd-row"><code>pay 10 MYT LMT-ADDR</code><span>Send another token to an address.</span></div>
+          <div class="cmd-row"><code>swap 50 LMT MYT</code> / <code>exchange 10 MYT LMT</code><span>Swap between LMT and another token via local pools.</span></div>
+          <div class="cmd-row"><code>add liquidity 100 LMT MYT 90000</code><span>Add liquidity to a pool (amounts depend on pair).</span></div>
+          <div class="cmd-row"><code>remove liquidity MYT 10</code> / <code>lp MYT</code><span>Remove or inspect liquidity positions.</span></div>
+          <div class="cmd-row"><code>explorer</code> / <code>lmt explorer</code><span>Local ledger / explorer view.</span></div>
+          <div class="cmd-row"><code>outbox</code> / <code>lmt outbox</code> / <code>flush outbox</code><span>View or flush queued outbound transfers.</span></div>
+          <div class="cmd-row"><code>export pools</code> / <code>download pools</code> / <code>sync pools</code><span>Export or sync market/pool data.</span></div>
+          <div class="cmd-row"><code>pool sync url https://…</code><span>Set a URL for pool/market sync.</span></div>
+
+          <div class="cmd-row"><code>wallet password</code> / <code>set wallet password</code><span>Set or change the Sudoku-style 16-digit wallet password (digits 1–4).</span></div>
+          <div class="cmd-row"><code>wallet unlock</code> / <code>lmt unlock</code><span>Unlock the wallet session.</span></div>
+          <div class="cmd-row"><code>wallet lock</code> / <code>lock wallet</code><span>Lock the wallet session.</span></div>
+          <div class="cmd-row"><code>wallet solve 1 2 3 4 …</code><span>Submit the 16-digit solution grid to unlock when challenged.</span></div>
+          <div class="cmd-row"><code>export wallet 1 2 3 4 …</code><span>Export an AES-GCM encrypted backup (requires password digits).</span></div>
+          <div class="cmd-row"><code>import wallet &lt;backup&gt; 1 2 3 4 …</code><span>Restore wallet from full backup string + 16-digit password.</span></div>
+
+          <div class="cmd-row"><code>p2p help</code> / <code>webrtc help</code> / <code>p2p setup</code><span>Peer-to-peer / WebRTC help and setup.</span></div>
+          <div class="cmd-row"><code>p2p status</code> / <code>webrtc status</code><span>Connection status and channel info.</span></div>
+          <div class="cmd-row"><code>p2p offer</code> / <code>webrtc offer</code><span>Create a connection offer to share with a peer.</span></div>
+          <div class="cmd-row"><code>p2p answer …</code> / <code>webrtc answer …</code><span>Accept a peer’s offer (paste the offer payload).</span></div>
+          <div class="cmd-row"><code>p2p mode auto</code> / <code>p2p mode local</code> / <code>p2p mode relay</code><span>Choose connection mode (auto, local, or relay).</span></div>
+          <div class="cmd-row"><code>p2p send Hello</code> / <code>p2p msg Hello</code><span>Send a text message over the data channel.</span></div>
+          <div class="cmd-row"><code>p2p send file</code> / <code>send file</code> / <code>p2p image</code> / <code>p2p video</code><span>Share files or media over P2P when connected.</span></div>
+          <div class="cmd-row"><code>p2p pay 5 MYT LMT-ADDR</code><span>Pay a peer over P2P when a channel is open.</span></div>
+          <div class="cmd-row"><code>p2p ice status</code> / <code>ice reset</code><span>ICE server status or reset.</span></div>
+          <div class="cmd-row"><code>p2p turn status</code> / <code>p2p turn set HOST SECRET</code><span>Configure or inspect TURN for NAT traversal.</span></div>
+          <div class="cmd-row"><code>p2p turn refresh</code> / <code>p2p turn clear</code> / <code>my turn</code><span>Refresh or clear TURN credentials.</span></div>
+          <div class="cmd-row"><code>p2p chat outbox</code> / <code>flush chat outbox</code><span>Queued P2P chat messages.</span></div>
+          <div class="cmd-row"><code>share profile</code> / <code>peer profiles</code> / <code>peer profile NAME</code><span>Share or list peer profiles.</span></div>
+
+          <div class="cmd-row"><code>node status</code> / <code>memory node</code> / <code>node on</code> / <code>node off</code><span>Local memory node controls.</span></div>
+          <div class="cmd-row"><code>share memory</code> / <code>sync memory</code><span>Share or sync memory with a configured endpoint.</span></div>
+          <div class="cmd-row"><code>memory sync url https://…</code> / <code>node sync url https://…</code><span>Set memory/node sync URL.</span></div>
+          <div class="cmd-row"><code>protect on</code> / <code>protect off</code> / <code>protect now</code><span>Privacy / protection controls for sensitive data paths.</span></div>
+
+          <div class="cmd-row"><code>buy help</code> / <code>buy status</code> / <code>buy orders</code><span>USDT/LMT purchase flow help and order status.</span></div>
+          <div class="cmd-row"><code>fund help</code> / <code>fund status</code> / <code>fund tiers</code><span>Money-market fund (MMF) help and tiers.</span></div>
+          <div class="cmd-row"><code>fund deposit</code> / <code>fund withdraw</code><span>Deposit or withdraw from the local fund workflow.</span></div>
+
+          <div class="cmd-row"><code>profile</code> / <code>my profile</code><span>View or edit your local profile.</span></div>
+          <div class="cmd-row"><code>set photo</code> / <code>add photo</code> / <code>set photo from gallery 1</code><span>Set profile photo from file or gallery.</span></div>
+          <div class="cmd-row"><code>beacon on</code> / <code>beacon off</code><span>Toggle presence beacon if enabled.</span></div>
+          <div class="cmd-row"><code>auto share on</code> / <code>auto share off</code><span>Auto-share profile or knowledge when P2P connects.</span></div>
+
         </div>
+        <p class="note" style="margin-top:16px;color:var(--muted);">
+          Tip: after <code>export wallet</code>, copy the full backup from the text block, then on another device run
+          <code>import wallet &lt;full backup&gt; &lt;16-digit password&gt;</code>. Line breaks in the backup are OK.
+        </p>
       </div>
     </section>
 
@@ -549,10 +606,8 @@
       el.addEventListener('click', downloadApk);
     });
   </script>
-  
-  
-        <!-- ========== SOURCE CODE HIDING & PROTECTION MODULE ========== -->
-<!-- Insert this entire script block just before the closing </body> tag in your kanairoex.html -->
+
+</body>
 <script>
 (function() {
     'use strict';
